@@ -195,7 +195,7 @@ defmodule ApathyDrive.RoomServer do
       |> MonsterSpawning.load_monsters()
       |> spawn_permanent_npc()
 
-    Logger.metadata(room: room.name <> "##{room.id}")
+    Logger.metadata(room: "#{room.name} - ##{room.id}")
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")

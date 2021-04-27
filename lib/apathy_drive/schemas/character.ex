@@ -717,22 +717,6 @@ defmodule ApathyDrive.Character do
         effect
       end
 
-    skill = Item.skill_for_character(character, item)
-
-    modifier =
-      if skill == 0 do
-        0.1
-      else
-        skill / character.level
-      end
-
-    effect =
-      effect
-      |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &trunc(&1 * modifier))
-      |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &trunc(&1 * modifier))
-
     effect =
       if "Heal" in Map.keys(effect) do
         Ability.process_duration_trait(
@@ -1456,14 +1440,7 @@ defmodule ApathyDrive.Character do
       lockpicking: ApathyDrive.Commands.Pick.skill(character),
       dodge: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
-      physical_resistance:
-        trunc(
-          (1 -
-             Protection.percent_for_ac_mr(
-               Mobile.physical_resistance_at_level(character, character.level)
-             )) *
-            100
-        ),
+      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
       magical_resistance:
         trunc(
           (1 -
@@ -2302,10 +2279,12 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_resistance_at_level(character, level) do
-      strength = attribute_at_level(character, :strength, level)
+      agility = attribute_at_level(character, :agility, level)
+      agility_bonus = div(agility, 4)
+
       ac = ability_value(character, "AC")
 
-      trunc(max(max(strength - 50, 0) + ac, 0))
+      ac + agility_bonus
     end
 
     def power_at_level(%Character{} = character, level) do

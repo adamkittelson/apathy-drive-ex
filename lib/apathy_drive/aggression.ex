@@ -131,7 +131,6 @@ defmodule ApathyDrive.Aggression do
   end
 
   def add_hate(%{} = mobile, ref, amount) do
-    IO.puts("adding #{amount} hate to #{mobile.name} for #{ref}")
     current = mobile.hate[ref] || 0
 
     update_in(mobile.hate, fn hate ->

@@ -412,11 +412,26 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.join("\n")
   end
 
+  def defense(item) do
+    value = Systems.Effect.effect_bonus(item, "AC")
+
+    cond do
+      value > item.ac ->
+        "<span style='color: #4850B8'>#{value}</span>"
+
+      item.quality == "low" ->
+        "<span class='dark-red'>#{value}</span>"
+
+      :else ->
+        value
+    end
+  end
+
   def look_at_item(%Character{} = character, %Item{type: "Armour"} = item) do
     item = """
     <p class='item'>
       #{Item.colored_name(item, titleize: true)}
-      Defense: #{item.ac}
+      Defense: #{defense(item)}
       <span style='color: #4850B8'>#{affix_trait_descriptions(item)}</span>
     </p>
     """

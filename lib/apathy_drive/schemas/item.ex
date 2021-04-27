@@ -10,6 +10,7 @@ defmodule ApathyDrive.Item do
     ItemAbility,
     ItemClass,
     ItemInstance,
+    ItemInstanceAffixTrait,
     ItemRace,
     ItemTrait,
     Match,
@@ -288,7 +289,7 @@ defmodule ApathyDrive.Item do
   end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
-    ii = Repo.preload(ii, :affix_traits)
+    ii = Repo.preload(ii, affix_traits: [affix_trait: [:trait]])
 
     values =
       ii
@@ -334,18 +335,36 @@ defmodule ApathyDrive.Item do
     |> load_item_abilities()
   end
 
-  def with_traits(%Item{} = item) do
-    item_traits =
-      item.id
-      |> ItemTrait.load_traits()
+  def delete_at(quality) when quality in ["unique", "set", "rare", "crafted"],
+    do: Timex.shift(DateTime.utc_now(), minutes: 30)
 
-    Systems.Effect.add(item, item_traits)
+  def delete_at("magic"), do: Timex.shift(DateTime.utc_now(), minutes: 20)
+  def delete_at(_), do: Timex.shift(DateTime.utc_now(), minutes: 10)
+
+  def with_traits(%Item{} = item) do
+    # item_traits =
+    #   item.id
+    #   |> ItemTrait.load_traits()
+
+    instance_traits =
+      item.instance_id
+      |> ItemInstanceAffixTrait.load_traits(item)
+
+    # Systems.Effect.add(item, Map.merge(item_traits, instance_traits))
+    Systems.Effect.add(item, instance_traits)
   end
 
   def of_quality_level(level) do
     __MODULE__
     |> Ecto.Query.where([i], i.quality_level <= ^level and i.quality_level >= ^level - 3)
     |> ApathyDrive.Repo.all()
+    |> case do
+      [] ->
+        of_quality_level(level - 3)
+
+      list ->
+        list
+    end
   end
 
   def match_by_name(name) do
@@ -497,7 +516,7 @@ defmodule ApathyDrive.Item do
   def traits(%Item{} = item) do
     item.effects
     |> Map.values()
-    |> Enum.find(&(&1["stack_key"] == "traits"))
+    |> Enum.find(%{}, &(&1["stack_key"] == "traits"))
     |> Ability.process_duration_traits(%{}, %{}, nil)
   end
 

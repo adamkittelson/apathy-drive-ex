@@ -462,7 +462,7 @@ defmodule ApathyDrive.Monster do
           name: item.name,
           quality: quality,
           level: max(1, monster_level),
-          delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+          delete_at: Item.delete_at(item.quality)
         }
         |> Repo.insert!()
         |> Repo.preload(:item)
@@ -534,7 +534,7 @@ defmodule ApathyDrive.Monster do
       val = affix_value(at.value)
 
       %ApathyDrive.ItemInstanceAffixTrait{
-        affix_traits_id: at.id,
+        affix_trait_id: at.id,
         item_instance_id: item_instance.id,
         value: val,
         description: affix_description(at.description, val)
@@ -568,7 +568,6 @@ defmodule ApathyDrive.Monster do
       affix_level
       |> Affix.prefix_for_level()
       |> Repo.preload(:affixes_traits)
-      |> IO.inspect()
 
     if prefix.affixes_traits == [] do
       generate_prefix(item_instance, affix_level)
@@ -578,7 +577,7 @@ defmodule ApathyDrive.Monster do
         val = affix_value(at.value)
 
         %ApathyDrive.ItemInstanceAffixTrait{
-          affix_traits_id: at.id,
+          affix_trait_id: at.id,
           item_instance_id: item_instance.id,
           value: val,
           description: affix_description(at.description, val)
@@ -595,7 +594,6 @@ defmodule ApathyDrive.Monster do
       affix_level
       |> Affix.suffix_for_level()
       |> Repo.preload(:affixes_traits)
-      |> IO.inspect()
 
     if suffix.affixes_traits == [] do
       generate_suffix(item_instance, affix_level)
@@ -605,7 +603,7 @@ defmodule ApathyDrive.Monster do
         val = affix_value(at.value)
 
         %ApathyDrive.ItemInstanceAffixTrait{
-          affix_traits_id: at.id,
+          affix_trait_id: at.id,
           item_instance_id: item_instance.id,
           value: val,
           description: affix_description(at.description, val)
