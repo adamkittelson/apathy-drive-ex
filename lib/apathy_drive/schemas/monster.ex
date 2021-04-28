@@ -527,11 +527,11 @@ defmodule ApathyDrive.Monster do
     affix =
       Affix
       |> Repo.get_by(name: "superior armor")
-      |> Repo.preload(:affixes_traits)
+      |> Repo.preload(affixes_traits: [:trait])
 
     affix.affixes_traits
     |> Enum.each(fn at ->
-      val = affix_value(at.value)
+      val = affix_value(at.value, at.trait.merge_by)
 
       %ApathyDrive.ItemInstanceAffixTrait{
         affix_trait_id: at.id,
@@ -567,14 +567,14 @@ defmodule ApathyDrive.Monster do
     prefix =
       affix_level
       |> Affix.prefix_for_level()
-      |> Repo.preload(:affixes_traits)
+      |> Repo.preload(affixes_traits: [:trait])
 
     if prefix.affixes_traits == [] do
       generate_prefix(item_instance, affix_level)
     else
       prefix.affixes_traits
       |> Enum.each(fn at ->
-        val = affix_value(at.value)
+        val = affix_value(at.value, at.trait.merge_by)
 
         %ApathyDrive.ItemInstanceAffixTrait{
           affix_trait_id: at.id,
@@ -593,14 +593,14 @@ defmodule ApathyDrive.Monster do
     suffix =
       affix_level
       |> Affix.suffix_for_level()
-      |> Repo.preload(:affixes_traits)
+      |> Repo.preload(affixes_traits: [:trait])
 
     if suffix.affixes_traits == [] do
       generate_suffix(item_instance, affix_level)
     else
       suffix.affixes_traits
       |> Enum.each(fn at ->
-        val = affix_value(at.value)
+        val = affix_value(at.value, at.trait.merge_by)
 
         %ApathyDrive.ItemInstanceAffixTrait{
           affix_trait_id: at.id,
@@ -615,15 +615,23 @@ defmodule ApathyDrive.Monster do
     end
   end
 
+  def affix_description(description, [%{"max" => max, "min" => min}]) do
+    ApathyDrive.Text.interpolate(description, %{"min" => min, "max" => max})
+  end
+
   def affix_description(description, val) when is_integer(val) do
     ApathyDrive.Text.interpolate(description, %{"amount" => val})
   end
 
-  def affix_value(%{"min" => min, "max" => max}) do
+  def affix_value(%{"min" => _min, "max" => _max} = val, "list") do
+    [val]
+  end
+
+  def affix_value(%{"min" => min, "max" => max}, _merge_by) do
     Enum.random(min..max)
   end
 
-  def affix_value(value) when is_integer(value) do
+  def affix_value(value, _merge_by) when is_integer(value) do
     value
   end
 

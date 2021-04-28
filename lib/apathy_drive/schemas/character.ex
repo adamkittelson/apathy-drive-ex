@@ -840,8 +840,8 @@ defmodule ApathyDrive.Character do
           %{
             kind: "physical",
             damage_type: table,
-            min: weapon.min_damage,
-            max: weapon.max_damage,
+            min: weapon.min_damage + Mobile.ability_value(character, "MinDamage"),
+            max: weapon.max_damage + Mobile.ability_value(character, "MaxDamage"),
             damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
           }
           | bonus_damage
