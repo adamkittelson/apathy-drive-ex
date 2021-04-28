@@ -2,6 +2,8 @@ defmodule ApathyDrive.Affix do
   use ApathyDriveWeb, :model
   require Ecto.Query
 
+  alias ApathyDrive.ItemInstanceAffixTrait
+
   schema "affixes" do
     field(:type, :string)
     field(:name, :string)
@@ -18,16 +20,18 @@ defmodule ApathyDrive.Affix do
     timestamps()
   end
 
-  def prefix_for_level(affix_level) do
-    group = prefix_group_for_level(affix_level)
+  def prefix_for_level(affix_level, item_instance) do
+    affix_groups_on_item = ItemInstanceAffixTrait.affix_groups_on_item(item_instance, "prefix")
+    group = prefix_group_for_level(affix_level, affix_groups_on_item)
 
     __MODULE__
     |> Ecto.Query.where([a], a.type == "prefix")
     |> affix_for_group_at_level(group, affix_level)
   end
 
-  def suffix_for_level(affix_level) do
-    group = suffix_group_for_level(affix_level)
+  def suffix_for_level(affix_level, item_instance) do
+    affix_groups_on_item = ItemInstanceAffixTrait.affix_groups_on_item(item_instance, "suffix")
+    group = suffix_group_for_level(affix_level, affix_groups_on_item)
 
     __MODULE__
     |> Ecto.Query.where([a], a.type == "suffix")
@@ -46,15 +50,17 @@ defmodule ApathyDrive.Affix do
     |> affix_for_group_at_level(group, affix_level)
   end
 
-  def prefix_group_for_level(affix_level) do
+  def prefix_group_for_level(affix_level, prefix_groups_on_item) do
     __MODULE__
     |> Ecto.Query.where([a], a.type == "prefix")
+    |> Ecto.Query.where([a], a.group not in ^prefix_groups_on_item)
     |> affix_group_for_level(affix_level)
   end
 
-  def suffix_group_for_level(affix_level) do
+  def suffix_group_for_level(affix_level, suffix_groups_on_item) do
     __MODULE__
     |> Ecto.Query.where([a], a.type == "suffix")
+    |> Ecto.Query.where([a], a.group not in ^suffix_groups_on_item)
     |> affix_group_for_level(affix_level)
   end
 
@@ -63,8 +69,9 @@ defmodule ApathyDrive.Affix do
       query
       |> Ecto.Query.where(
         [a],
-        a.level <= ^affix_level and a.max_level >= ^affix_level and a.group == ^group and
-          a.frequency >= 1
+        a.level <= ^affix_level and (a.max_level >= ^affix_level or is_nil(a.max_level)) and
+          a.group == ^group and
+          a.frequency >= 1 and not is_nil(a.frequency)
       )
       |> Repo.all()
 
@@ -91,7 +98,8 @@ defmodule ApathyDrive.Affix do
     query
     |> Ecto.Query.where(
       [a],
-      a.level <= ^affix_level and a.max_level >= ^affix_level and a.frequency >= 1
+      a.level <= ^affix_level and (a.max_level >= ^affix_level or is_nil(a.max_level)) and
+        a.frequency >= 1 and not is_nil(a.frequency)
     )
     |> Ecto.Query.select([:group])
     |> Repo.all()

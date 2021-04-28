@@ -10,6 +10,15 @@ defmodule ApathyDrive.ItemInstanceAffixTrait do
     field(:description, :string)
   end
 
+  def affix_groups_on_item(item_instance, affix_type) do
+    __MODULE__
+    |> Ecto.Query.where([iiat], iiat.item_instance_id == ^item_instance.id)
+    |> Ecto.Query.preload(affix_trait: [:affix])
+    |> Repo.all()
+    |> Enum.filter(&(&1.affix_trait.affix.type == affix_type))
+    |> Enum.map(& &1.affix_trait.affix.group)
+  end
+
   def load_traits(nil, _item), do: %{}
 
   def load_traits(item_instance_id, item) do
@@ -31,38 +40,5 @@ defmodule ApathyDrive.ItemInstanceAffixTrait do
     |> Map.put_new("AC", item.ac)
     |> Map.put("stack_key", "traits")
     |> Map.put("stack_count", 1)
-  end
-
-  def set_ac(item, effect) do
-    if item.ac do
-      ac_traits =
-        Enum.reduce(item.affix_traits, %{}, fn trait, traits ->
-          name = trait.affix_trait.trait.name
-
-          if name == "AC%" do
-            traits
-            |> Map.put_new("AC%", 0)
-            |> update_in(["AC%"], &(&1 + trait.value))
-          else
-            traits
-          end
-        end)
-
-      ac =
-        Enum.reduce(ac_traits, item.ac, fn
-          {"AC%", value}, ac ->
-            bonus = max(1, item.ac * (value / 100))
-            ac + bonus
-
-          _, ac ->
-            ac
-        end)
-
-      IO.puts("#{item.name}, ac: #{item.ac}, with bonus: #{ac}")
-
-      Map.put(effect, "AC", ac)
-    else
-      effect
-    end
   end
 end

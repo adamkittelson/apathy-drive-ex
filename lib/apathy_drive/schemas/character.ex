@@ -1445,7 +1445,8 @@ defmodule ApathyDrive.Character do
         trunc(
           (1 -
              Protection.percent_for_ac_mr(
-               Mobile.magical_resistance_at_level(character, character.level)
+               Mobile.magical_resistance_at_level(character, character.level),
+               character.level
              )) *
             100
         ),
@@ -2279,12 +2280,12 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_resistance_at_level(character, level) do
-      agility = attribute_at_level(character, :agility, level)
-      agility_bonus = div(agility, 4)
+      strength = attribute_at_level(character, :strength, level)
+      strength_bonus = div(strength, 4)
 
       ac = ability_value(character, "AC")
 
-      ac + agility_bonus
+      ac + strength_bonus
     end
 
     def power_at_level(%Character{} = character, level) do

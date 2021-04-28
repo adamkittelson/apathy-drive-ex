@@ -409,6 +409,7 @@ defmodule ApathyDrive.Commands.Look do
   def affix_trait_descriptions(item) do
     item.affix_traits
     |> Enum.map(& &1.description)
+    |> Enum.reject(&is_nil/1)
     |> Enum.join("\n")
   end
 

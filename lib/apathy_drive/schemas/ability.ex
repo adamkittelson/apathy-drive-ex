@@ -167,6 +167,7 @@ defmodule ApathyDrive.Ability do
     "MR",
     "MR%",
     "ManaRegen",
+    "MagicFind",
     "MaxHP",
     "MaxMana",
     "MinDamage",
@@ -2342,7 +2343,7 @@ defmodule ApathyDrive.Ability do
 
             resist = Mobile.physical_resistance_at_level(target, target.level)
 
-            resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
             damage = ability_damage + bonus_damage
 
@@ -2363,7 +2364,7 @@ defmodule ApathyDrive.Ability do
           %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
             resist = Mobile.physical_resistance_at_level(target, target.level)
 
-            resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
             damage = dmg + bonus_damage
 
@@ -2386,7 +2387,7 @@ defmodule ApathyDrive.Ability do
 
             resist = Mobile.magical_resistance_at_level(target, target.level)
 
-            resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
             damage = ability_damage + bonus_damage
 
@@ -2410,7 +2411,7 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent, target} ->
             resist = Mobile.magical_resistance_at_level(target, target.level)
 
-            resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
             damage = damage + bonus_damage
 
@@ -2747,7 +2748,7 @@ defmodule ApathyDrive.Ability do
 
             resist = Mobile.physical_resistance_at_level(target, target.level)
 
-            resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
             damage = ability_damage + bonus_damage
 
@@ -2773,7 +2774,7 @@ defmodule ApathyDrive.Ability do
 
             resist = Mobile.magical_resistance_at_level(target, target.level)
 
-            resist_percent = Protection.percent_for_ac_mr(resist)
+            resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
             damage = ability_damage + bonus_damage
 
