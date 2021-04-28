@@ -39,8 +39,6 @@ defmodule ApathyDrive.Character do
     Trait
   }
 
-  alias ApathyDrive.Commands.Protection
-
   require Logger
   import Comeonin.Bcrypt
 
@@ -1435,21 +1433,11 @@ defmodule ApathyDrive.Character do
       level: character.level,
       alignment: legal_status(character),
       perception: Mobile.perception_at_level(character, character.level, room),
-      accuracy: Mobile.accuracy_at_level(character, character.level, room),
+      attack: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level),
       lockpicking: ApathyDrive.Commands.Pick.skill(character),
-      dodge: Mobile.dodge_at_level(character, character.level, room),
+      defense: Mobile.dodge_at_level(character, character.level, room),
       stealth: Mobile.stealth_at_level(character, character.level),
-      physical_resistance: Mobile.physical_resistance_at_level(character, character.level),
-      magical_resistance:
-        trunc(
-          (1 -
-             Protection.percent_for_ac_mr(
-               Mobile.magical_resistance_at_level(character, character.level),
-               character.level
-             )) *
-            100
-        ),
       hp: hp_at_level(character, character.level),
       hp_regen: hp_regen,
       max_hp: max_hp,
@@ -1689,9 +1677,8 @@ defmodule ApathyDrive.Character do
       agility = Mobile.attribute_at_level(character, :agility, character.level)
       charm = Mobile.attribute_at_level(character, :charm, character.level)
 
-      agi = agility + charm / 10
-      modifier = ability_value(character, "Accuracy")
-      trunc(agi * (1 + modifier / 100))
+      agi = trunc(agility + charm / 10)
+      ability_value(character, "AttackRating") + 5 * agi
     end
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
@@ -2014,9 +2001,11 @@ defmodule ApathyDrive.Character do
     def dodge_at_level(character, level, _room) do
       agi = attribute_at_level(character, :agility, level)
       cha = attribute_at_level(character, :charm, level)
-      base = agi + cha / 10
+      base = trunc(agi + cha / 10)
 
-      trunc(base + ability_value(character, "Dodge"))
+      bonus = div(base, 4)
+
+      trunc(bonus + defense_rating(character) + ability_value(character, "Dodge"))
     end
 
     def enough_mana_for_ability?(character, %Ability{} = ability) do
@@ -2228,10 +2217,9 @@ defmodule ApathyDrive.Character do
 
     def magical_resistance_at_level(character, level) do
       willpower = attribute_at_level(character, :willpower, level)
+      willpower_bonus = div(willpower, 4)
 
-      mr = ability_value(character, "MR")
-
-      trunc(max(max(willpower - 50, 0) + mr, 0))
+      willpower_bonus + defense_rating(character)
     end
 
     def max_hp_at_level(mobile, level) do
@@ -2279,13 +2267,19 @@ defmodule ApathyDrive.Character do
       trunc(base * (1 - light_modifier / 100))
     end
 
+    def attack_rating(character) do
+      ability_value(character, "AttackRating")
+    end
+
+    def defense_rating(character) do
+      ability_value(character, "Defense")
+    end
+
     def physical_resistance_at_level(character, level) do
       strength = attribute_at_level(character, :strength, level)
       strength_bonus = div(strength, 4)
 
-      ac = ability_value(character, "AC")
-
-      ac + strength_bonus
+      strength_bonus + defense_rating(character)
     end
 
     def power_at_level(%Character{} = character, level) do

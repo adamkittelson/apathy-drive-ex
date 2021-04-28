@@ -414,7 +414,7 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def defense(item) do
-    value = Systems.Effect.effect_bonus(item, "AC")
+    value = Systems.Effect.effect_bonus(item, "Defense")
 
     cond do
       value > item.ac ->
@@ -585,15 +585,15 @@ defmodule ApathyDrive.Commands.Look do
       |> Map.values()
       |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
       |> Ability.process_duration_traits(character, character, nil)
-      |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &trunc(&1 * modifier))
+      |> Map.put_new("Defense", 0)
+      |> update_in(["Defense"], &trunc(&1 * modifier))
       |> Map.put_new("MR", 0)
       |> update_in(["MR"], &trunc(&1 * modifier))
 
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end
 
-  def display_trait(_character, _item, {"AC", 0}, _indent), do: :noop
+  def display_trait(_character, _item, {"Defense", 0}, _indent), do: :noop
   def display_trait(_character, _item, {"MR", 0}, _indent), do: :noop
   def display_trait(_character, _item, {"RemoveMessage", _msg}, _indent), do: :noop
   def display_trait(_character, _item, {"stack_count", _msg}, _indent), do: :noop
@@ -658,7 +658,7 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
-  def display_trait(character, _item, {"AC%", value}, indent) do
+  def display_trait(character, _item, {"Defense%", value}, indent) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(value)
 
     Mobile.send_scroll(

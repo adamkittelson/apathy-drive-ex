@@ -5,9 +5,9 @@
 </script>
 
 <div class="score">
-  <span class="dark-green">Name:</span> <span id="score-name" class="dark-cyan"></span> <span class="dark-green">Level:</span> <span id="score-level" class="dark-cyan"></span> <span class="dark-green">Accuracy:</span>  <span id="score-accuracy" class="dark-cyan"></span>
-  <span class="dark-green">Race:</span> <span id="score-race" class="dark-cyan"></span> <span class="dark-green">Combat:</span> <span id="score-combat" class="dark-cyan"></span> <span class="dark-green">Dodge:</span>     <span id="score-dodge" class="dark-cyan"></span>
-  <span class="dark-green">Alignment:</span> <span id="score-alignment" class="dark-cyan"></span> <span class="dark-green">AC/MR:</span> <span id="score-acmr" class="dark-cyan"></span> <span class="dark-green">Percep:</span>    <span id="score-perception" class="dark-cyan"></span>
+  <span class="dark-green">Name:</span> <span id="score-name" class="dark-cyan"></span> <span class="dark-green">Level:</span> <span id="score-level" class="dark-cyan"></span> <span class="dark-green">Attack:</span>    <span id="score-attack" class="dark-cyan"></span>
+  <span class="dark-green">Race:</span> <span id="score-race" class="dark-cyan"></span> <span class="dark-green">Combat:</span> <span id="score-combat" class="dark-cyan"></span> <span class="dark-green">Defense:</span>   <span id="score-defense" class="dark-cyan"></span>
+  <span class="dark-green">Alignment:</span> <span id="score-alignment" class="dark-cyan"></span>                    <span class="dark-green">Percep:</span>    <span id="score-perception" class="dark-cyan"></span>
   <span class="dark-green">Hits:</span> <span id="score-hp" class="dark-cyan"></span> <span class="dark-green">Mana:</span>  <span id="score-mana" class="dark-cyan"></span> <span class="dark-green">Stealth:</span>   <span id="score-stealth" class="dark-cyan"></span>
   <span class="dark-green">HP/30:</span> <span id="score-hp-regen" class="dark-cyan"></span> <span class="dark-green">MP/30:</span>  <span id="score-mana-regen" class="dark-cyan"></span> <span class="dark-green">Crit%:</span>     <span id="score-crits" class="dark-cyan"></span>
   <div class="progress-bar experience"><div class="dark-cyan"></div></div><span class="dark-green">Casting:</span>   <span id="score-spellcasting" class="dark-cyan"></span>

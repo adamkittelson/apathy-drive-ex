@@ -12,7 +12,6 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemInstanceAffixTrait,
     ItemRace,
-    ItemTrait,
     Match,
     PubSub,
     Regeneration,
@@ -524,7 +523,7 @@ defmodule ApathyDrive.Item do
       when type in ["Armour", "Shield"] do
     unless item in character.equipment do
       item_traits = traits(item)
-      item_ac = item_traits["AC"] || 0
+      item_ac = item_traits["Defense"] || 0
       item_mr = item_traits["MR"] || 0
       item_prot = item_ac + item_mr
 
@@ -547,7 +546,7 @@ defmodule ApathyDrive.Item do
           Enum.any?(items, fn worn_item ->
             worn_item_traits = traits(worn_item)
 
-            worn_ac = worn_item_traits["AC"] || 0
+            worn_ac = worn_item_traits["Defense"] || 0
             worn_mr = worn_item_traits["MR"] || 0
             worn_prot = worn_ac + worn_mr
 

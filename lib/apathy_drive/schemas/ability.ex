@@ -123,9 +123,9 @@ defmodule ApathyDrive.Ability do
   ]
 
   @duration_traits [
-    "AC",
-    "AC%",
-    "Accuracy",
+    "Defense",
+    "Defense%",
+    "AttackRating",
     "Agility",
     "Alignment",
     "Beacon",
@@ -1278,18 +1278,16 @@ defmodule ApathyDrive.Ability do
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
-    modifier = Mobile.ability_value(target, "Dodge")
-
-    dodge = dodge + modifier
-
-    difference = dodge - accuracy
+    chance =
+      100 -
+        trunc(
+          100 * accuracy / (accuracy + dodge) * 2 * caster.level / (caster.level + target.level)
+        )
 
     chance =
-      if difference > 0 do
-        30 + difference * 0.3
-      else
-        30 + difference * 0.7
-      end
+      chance
+      |> min(95)
+      |> max(5)
 
     :rand.uniform(100) < chance
   end
@@ -2808,12 +2806,12 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def process_duration_trait({"AC%", percent}, effects, _target, _caster, _duration) do
+  def process_duration_trait({"Defense%", percent}, effects, _target, _caster, _duration) do
     ac_from_percent = ac_for_mitigation_at_level(percent)
 
     effects
-    |> Map.put("AC", ac_from_percent)
-    |> Map.delete("AC%")
+    |> Map.put("Defense", ac_from_percent)
+    |> Map.delete("Defense%")
   end
 
   def process_duration_trait({"MR%", percent}, effects, _target, _caster, _duration) do

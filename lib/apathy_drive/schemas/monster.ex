@@ -424,8 +424,6 @@ defmodule ApathyDrive.Monster do
 
     drop_random_loot_for_character(room, monster.level, character)
 
-    IO.puts("monster level #{monster.level} killed")
-
     room
     |> Room.load_items()
   end
@@ -440,13 +438,11 @@ defmodule ApathyDrive.Monster do
 
     roll = :rand.uniform(100)
 
-    if Enum.any?(items) and (quality || roll <= 75) do
+    if Enum.any?(items) and (quality || roll <= 40) do
       item = Enum.random(items)
       Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
       quality = quality || determine_item_quality(character, monster_level, item)
-
-      IO.puts("quality: #{quality}")
 
       ac = ac_for_item(item, quality)
 
@@ -708,8 +704,6 @@ defmodule ApathyDrive.Monster do
   def determine_item_quality(character, monster_level, item) do
     magic_find = Mobile.ability_value(character, "MagicFind")
 
-    IO.puts("magic_find = #{magic_find}")
-
     cond do
       unique?(monster_level, item.quality_level, magic_find) ->
         "unique"
@@ -738,48 +732,42 @@ defmodule ApathyDrive.Monster do
     chance = (400 - (monster_level - quality_level) / 1) * 128
 
     chance = max(6400, trunc(chance * 100 / (100 + magic_find)))
-    IO.puts("unique chance: #{chance}")
-    IO.inspect(:rand.uniform(chance)) < 128
+    :rand.uniform(chance) < 128
   end
 
   def set?(monster_level, quality_level, magic_find) do
     chance = (160 - (monster_level - quality_level) / 2) * 128
 
     chance = max(5600, trunc(chance * 100 / (100 + magic_find)))
-    IO.puts("set chance: #{chance}")
-    IO.inspect(:rand.uniform(chance)) < 128
+    :rand.uniform(chance) < 128
   end
 
   def rare?(monster_level, quality_level, magic_find) do
     chance = (100 - (monster_level - quality_level) / 2) * 128
 
     chance = max(3200, trunc(chance * 100 / (100 + magic_find)))
-    IO.puts("rare chance: #{chance}")
-    IO.inspect(:rand.uniform(chance)) < 128
+    :rand.uniform(chance) < 128
   end
 
   def magic?(monster_level, quality_level, magic_find) do
     chance = (34 - (monster_level - quality_level) / 3) * 128
 
     chance = max(192, trunc(chance * 100 / (100 + magic_find)))
-    IO.puts("magic chance: #{chance}")
-    IO.inspect(:rand.uniform(chance)) < 128
+    :rand.uniform(chance) < 128
   end
 
   def high?(monster_level, quality_level, magic_find) do
     chance = (12 - (monster_level - quality_level) / 8) * 128
 
     chance = trunc(chance * 100 / (100 + magic_find))
-    IO.puts("high chance: #{chance}")
-    IO.inspect(:rand.uniform(chance)) < 128
+    :rand.uniform(chance) < 128
   end
 
   def normal?(monster_level, quality_level, magic_find) do
     chance = (2 - (monster_level - quality_level) / 2) * 128
 
     chance = trunc(chance * 100 / (100 + magic_find))
-    IO.puts("normal chance: #{chance}")
-    IO.inspect(:rand.uniform(chance)) < 128
+    :rand.uniform(chance) < 128
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do
@@ -787,12 +775,8 @@ defmodule ApathyDrive.Monster do
       Trait.get_cached(monster, ability)
     end
 
-    def accuracy_at_level(monster, level, _room) do
-      agi = attribute_at_level(monster, :agility, level)
-      cha = attribute_at_level(monster, :charm, level)
-      agi = agi + cha / 10
-      modifier = ability_value(monster, "Accuracy")
-      trunc(agi * (1 + modifier / 100))
+    def accuracy_at_level(monster, _level, _room) do
+      attack_rating(monster)
     end
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
@@ -832,6 +816,10 @@ defmodule ApathyDrive.Monster do
           |> Map.put(:kind, "attack")
           |> Map.put(:ignores_round_cooldown?, true)
       end
+    end
+
+    def attack_rating(monster) do
+      (8 + (monster.level - 1) * 0.3245) * monster.level
     end
 
     def auto_attack_target(%Monster{} = monster, room) do
@@ -1007,11 +995,8 @@ defmodule ApathyDrive.Monster do
       room
     end
 
-    def dodge_at_level(monster, level, _room) do
-      agi = attribute_at_level(monster, :agility, level)
-      cha = attribute_at_level(monster, :charm, level)
-      base = agi + cha / 10
-      trunc(base + ability_value(monster, "Dodge"))
+    def dodge_at_level(monster, _level, _room) do
+      trunc(defense_rating(monster) + ability_value(monster, "Dodge"))
     end
 
     def enough_mana_for_ability?(monster, %Ability{mana: cost}) do
@@ -1083,16 +1068,8 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def magical_resistance_at_level(monster, level) do
-      willpower = attribute_at_level(monster, :willpower, level)
-
-      mr_percent = ability_value(monster, "MR%")
-
-      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent)
-
-      mr = ability_value(monster, "MR")
-
-      max(willpower - 50 + mr + mr_from_percent, 0)
+    def magical_resistance_at_level(monster, _level) do
+      defense_rating(monster)
     end
 
     def max_hp_at_level(%Monster{} = monster, level) do
@@ -1130,11 +1107,12 @@ defmodule ApathyDrive.Monster do
       trunc(int * (1 + modifier / 100))
     end
 
-    def physical_resistance_at_level(monster, level) do
-      ac = (6 + (level - 1) * 0.105) * level
-      protection = ApathyDrive.Commands.Protection.percent_for_ac_mr(ac, level)
-      IO.puts("#{monster.name} has #{ac} AC at level #{level} (#{1 - protection}%)")
-      ac
+    def defense_rating(monster) do
+      (6 + (monster.level - 1) * 0.105) * monster.level
+    end
+
+    def physical_resistance_at_level(monster, _level) do
+      defense_rating(monster)
     end
 
     def power_at_level(%Monster{} = monster, level) do

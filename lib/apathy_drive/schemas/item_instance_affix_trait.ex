@@ -27,17 +27,18 @@ defmodule ApathyDrive.ItemInstanceAffixTrait do
     |> preload(affix_trait: [:trait])
     |> Repo.all()
     |> Enum.reduce(%{}, fn
-      %ItemInstanceAffixTrait{value: value, affix_trait: %{trait: %{name: "AC%"}}}, abilities ->
+      %ItemInstanceAffixTrait{value: value, affix_trait: %{trait: %{name: "Defense%"}}},
+      abilities ->
         bonus = trunc(max(1, item.ac * (value / 100)))
 
-        trait = %{"AC" => item.ac + bonus}
+        trait = %{"Defense" => item.ac + bonus}
         Trait.merge_traits(abilities, trait)
 
       %ItemInstanceAffixTrait{value: value, affix_trait: %{trait: %{name: name}}}, abilities ->
         trait = %{name => value}
         Trait.merge_traits(abilities, trait)
     end)
-    |> Map.put_new("AC", item.ac)
+    |> Map.put_new("Defense", item.ac)
     |> Map.put("stack_key", "traits")
     |> Map.put("stack_count", 1)
   end
