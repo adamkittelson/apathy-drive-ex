@@ -34,6 +34,11 @@ defmodule ApathyDrive.ItemInstanceAffixTrait do
         trait = %{"Defense" => item.ac + bonus}
         Trait.merge_traits(abilities, trait)
 
+      %ItemInstanceAffixTrait{value: value, affix_trait: %{trait: %{name: "Defense"}}},
+      abilities ->
+        trait = %{"Defense" => item.ac + value}
+        Trait.merge_traits(abilities, trait)
+
       %ItemInstanceAffixTrait{value: value, affix_trait: %{trait: %{name: name}}}, abilities ->
         trait = %{name => value}
         Trait.merge_traits(abilities, trait)

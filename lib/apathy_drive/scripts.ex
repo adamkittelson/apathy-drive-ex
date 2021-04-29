@@ -56,7 +56,7 @@ defmodule ApathyDrive.Scripts do
 
   def random_item(%Room{} = room, mobile_ref, level, quality) do
     Room.update_mobile(room, mobile_ref, fn room, character ->
-      Monster.drop_random_loot_for_character(room, level, character, quality)
+      Monster.drop_random_loot_for_character(room, %Monster{level: level}, character, quality)
     end)
   end
 

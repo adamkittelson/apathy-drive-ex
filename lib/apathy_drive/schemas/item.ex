@@ -511,17 +511,17 @@ defmodule ApathyDrive.Item do
     |> Enum.filter(&(&1.type == "Weapon"))
   end
 
-  def traits(%Item{} = item) do
+  def traits(%Item{} = item, character) do
     item.effects
     |> Map.values()
     |> Enum.find(%{}, &(&1["stack_key"] == "traits"))
-    |> Ability.process_duration_traits(%{}, %{}, nil)
+    |> Ability.process_duration_traits(character, character, nil)
   end
 
   def upgrade_for_character?(%Item{type: type} = item, %Character{} = character)
       when type in ["Armour", "Shield"] do
     unless item in character.equipment do
-      item_traits = traits(item)
+      item_traits = traits(item, character)
       item_ac = item_traits["Defense"] || 0
       item_mr = item_traits["MR"] || 0
       item_prot = item_ac + item_mr
@@ -543,7 +543,7 @@ defmodule ApathyDrive.Item do
 
         items ->
           Enum.any?(items, fn worn_item ->
-            worn_item_traits = traits(worn_item)
+            worn_item_traits = traits(worn_item, character)
 
             worn_ac = worn_item_traits["Defense"] || 0
             worn_mr = worn_item_traits["MR"] || 0

@@ -396,15 +396,30 @@ defmodule ApathyDrive.Commands.Look do
     %{dps: dps, min_damage: min_damage, max_damage: max_damage, ability: ability}
   end
 
-  def affix_trait_descriptions(item) do
+  def affix_trait_descriptions(item, character) do
     item.affix_traits
-    |> Enum.map(& &1.description)
-    |> Enum.reject(&is_nil/1)
+    |> Enum.reject(&is_nil(&1.description))
+    |> Enum.map(fn instance_affix_trait ->
+      affix_description(
+        character,
+        instance_affix_trait.affix_trait.trait.name,
+        instance_affix_trait.description,
+        instance_affix_trait.value
+      )
+    end)
     |> Enum.join("\n")
   end
 
-  def defense(item) do
-    value = Systems.Effect.effect_bonus(item, "Defense")
+  def affix_description(character, "DefensePerLevel", description, val) do
+    ApathyDrive.Text.interpolate(description, %{"amount" => val * character.level})
+  end
+
+  def affix_description(_character, _trait, description, _val), do: description
+
+  def defense(item, character) do
+    value =
+      Systems.Effect.effect_bonus(item, "Defense") +
+        Systems.Effect.effect_bonus(item, "DefensePerLevel") * character.level
 
     cond do
       value > item.ac ->
@@ -422,8 +437,8 @@ defmodule ApathyDrive.Commands.Look do
     item = """
     <p class='item'>
       #{Item.colored_name(item, titleize: true)}
-      Defense: #{defense(item)}
-      <span style='color: #4850B8'>#{affix_trait_descriptions(item)}</span>
+      Defense: #{defense(item, character)}
+      <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
     </p>
     """
 

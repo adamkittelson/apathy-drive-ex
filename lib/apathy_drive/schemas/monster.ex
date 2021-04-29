@@ -395,7 +395,7 @@ defmodule ApathyDrive.Monster do
         room
       end)
 
-    drop_random_loot_for_character(room, monster.level, character)
+    drop_random_loot_for_character(room, monster, character)
 
     room
     |> Room.load_items()
@@ -403,61 +403,66 @@ defmodule ApathyDrive.Monster do
 
   def drop_random_loot_for_character(
         %Room{} = room,
-        monster_level,
+        %Monster{} = monster,
         %Character{} = character,
         quality \\ nil
       ) do
-    items = Item.of_quality_level(monster_level)
+    level = (div(monster.level, 3) + 1) * 3
 
-    roll = :rand.uniform(100)
+    items = Item.of_quality_level(level)
 
-    if Enum.any?(items) and (quality || roll <= 40) do
-      item = Enum.random(items)
-      Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+    picks = if monster.game_limit == 1, do: 5, else: 1
 
-      quality = quality || determine_item_quality(character, monster_level, item)
+    Enum.each(1..picks, fn _pick ->
+      roll = :rand.uniform(100)
 
-      ac = ac_for_item(item, quality)
+      chance = if monster.game_limit == 1, do: 80, else: 40
 
-      item_instance =
-        %ItemInstance{
-          item_id: item.id,
-          room_id: room.id,
-          character_id: nil,
-          equipped: false,
-          hidden: false,
-          ac: ac,
-          name: item.name,
-          quality: quality,
-          level: max(1, monster_level),
-          delete_at: Item.delete_at(item.quality)
-        }
-        |> Repo.insert!()
-        |> Repo.preload(:item)
+      if Enum.any?(items) and (quality || roll <= chance) do
+        item = Enum.random(items)
+        Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
-      # magic_level 0 for now
-      affix_level = affix_level(item.quality_level, monster_level, 0)
+        quality = quality || determine_item_quality(character, monster, item)
 
-      {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+        ac = ac_for_item(item, quality)
 
-      name = item_name(item_instance, prefixes, suffixes)
+        item_instance =
+          %ItemInstance{
+            item_id: item.id,
+            room_id: room.id,
+            character_id: nil,
+            equipped: false,
+            hidden: false,
+            ac: ac,
+            name: item.name,
+            quality: quality,
+            level: max(1, monster.level),
+            delete_at: Item.delete_at(item.quality)
+          }
+          |> Repo.insert!()
+          |> Repo.preload(:item)
 
-      item_instance =
-        item_instance
-        |> Ecto.Changeset.change(%{name: name})
-        |> Repo.update!()
+        affix_level = affix_level(item.quality_level, monster.level, 0)
 
-      item =
-        item_instance
-        |> Item.from_assoc()
+        {prefixes, suffixes} = item_affixes(item_instance, affix_level)
 
-      Mobile.send_scroll(
-        character,
-        "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
-      )
-    else
-      room
-    end
+        name = item_name(item_instance, prefixes, suffixes)
+
+        item_instance =
+          item_instance
+          |> Ecto.Changeset.change(%{name: name})
+          |> Repo.update!()
+
+        item =
+          item_instance
+          |> Item.from_assoc()
+
+        Mobile.send_scroll(
+          character,
+          "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+        )
+      end
+    end)
   end
 
   def ac_for_item(item, "low") do
@@ -505,7 +510,7 @@ defmodule ApathyDrive.Monster do
         affix_trait_id: at.id,
         item_instance_id: item_instance.id,
         value: val,
-        description: affix_description(at.description, val)
+        description: affix_description(at.trait.name, at.description, val)
       }
       |> Repo.insert!()
     end)
@@ -572,7 +577,7 @@ defmodule ApathyDrive.Monster do
           affix_trait_id: at.id,
           item_instance_id: item_instance.id,
           value: val,
-          description: affix_description(at.description, val)
+          description: affix_description(at.trait.name, at.description, val)
         }
         |> Repo.insert!()
       end)
@@ -598,7 +603,7 @@ defmodule ApathyDrive.Monster do
           affix_trait_id: at.id,
           item_instance_id: item_instance.id,
           value: val,
-          description: affix_description(at.description, val)
+          description: affix_description(at.trait.name, at.description, val)
         }
         |> Repo.insert!()
       end)
@@ -607,11 +612,15 @@ defmodule ApathyDrive.Monster do
     end
   end
 
-  def affix_description(description, [val]) do
+  def affix_description("DefensePerLevel", description, _val) do
+    description
+  end
+
+  def affix_description(_trait_name, description, [val]) do
     ApathyDrive.Text.interpolate(description, val)
   end
 
-  def affix_description(description, val) when is_integer(val) do
+  def affix_description(_trait_name, description, val) when is_integer(val) do
     ApathyDrive.Text.interpolate(description, %{"amount" => val})
   end
 
@@ -674,26 +683,34 @@ defmodule ApathyDrive.Monster do
     item.name
   end
 
-  def determine_item_quality(character, monster_level, item) do
-    magic_find = Mobile.ability_value(character, "MagicFind")
+  def determine_item_quality(character, monster, item) do
+    magic_find = Mobile.ability_value(character, "MagicFind") + (200 - character.level * 2)
+
+    magic_find = if monster.game_limit == 1, do: 400 + magic_find * 2, else: magic_find
 
     cond do
-      unique?(monster_level, item.quality_level, magic_find) ->
+      unique?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped unique!")
         "unique"
 
-      set?(monster_level, item.quality_level, magic_find) ->
+      set?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped set!")
         "set"
 
-      rare?(monster_level, item.quality_level, magic_find) ->
+      rare?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped rare!")
         "rare"
 
-      magic?(monster_level, item.quality_level, magic_find) ->
+      magic?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped magic!")
         "magic"
 
-      high?(monster_level, item.quality_level, magic_find) ->
+      high?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped superior!")
         "superior"
 
-      normal?(monster_level, item.quality_level, magic_find) ->
+      normal?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped normal!")
         "normal"
 
       :else ->
@@ -705,6 +722,8 @@ defmodule ApathyDrive.Monster do
     chance = (400 - (monster_level - quality_level) / 1) * 128
 
     chance = max(6400, trunc(chance * 100 / (100 + magic_find)))
+
+    IO.puts("unique chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
@@ -712,6 +731,7 @@ defmodule ApathyDrive.Monster do
     chance = (160 - (monster_level - quality_level) / 2) * 128
 
     chance = max(5600, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("set chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
@@ -719,6 +739,7 @@ defmodule ApathyDrive.Monster do
     chance = (100 - (monster_level - quality_level) / 2) * 128
 
     chance = max(3200, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("rare chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
@@ -726,6 +747,7 @@ defmodule ApathyDrive.Monster do
     chance = (34 - (monster_level - quality_level) / 3) * 128
 
     chance = max(192, trunc(chance * 100 / (100 + magic_find)))
+    IO.puts("magic chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
@@ -733,6 +755,7 @@ defmodule ApathyDrive.Monster do
     chance = (12 - (monster_level - quality_level) / 8) * 128
 
     chance = trunc(chance * 100 / (100 + magic_find))
+    IO.puts("superior chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
@@ -740,6 +763,7 @@ defmodule ApathyDrive.Monster do
     chance = (2 - (monster_level - quality_level) / 2) * 128
 
     chance = trunc(chance * 100 / (100 + magic_find))
+    IO.puts("normal chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 

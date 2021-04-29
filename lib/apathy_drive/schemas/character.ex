@@ -768,6 +768,7 @@ defmodule ApathyDrive.Character do
       attributes: ["agility", "strength"],
       mana: 0,
       spell?: false,
+      weapon?: true,
       user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
       target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
       spectator_message:

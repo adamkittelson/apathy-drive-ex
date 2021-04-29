@@ -48,6 +48,7 @@ defmodule ApathyDrive.Ability do
     field(:level, :integer)
     field(:letter, :string)
 
+    field(:weapon?, :boolean, virtual: true, default: false)
     field(:damage_shield, :any, virtual: true)
     field(:caster, :any, virtual: true)
     field(:traits, :map, virtual: true, default: %{})
@@ -124,6 +125,7 @@ defmodule ApathyDrive.Ability do
     "Defense",
     "Defense%",
     "AttackRating",
+    "AttackRatingVsUndead",
     "Agility",
     "Alignment",
     "Beacon",
@@ -143,9 +145,11 @@ defmodule ApathyDrive.Ability do
     "DamageShieldUserMessage",
     "DamageShieldTargetMessage",
     "DamageShieldSpectatorMessage",
+    "Damage%VsUndead",
     "DarkVision",
     "DeusExMachina",
     "Dodge",
+    "DefensePerLevel",
     "Encumbrance",
     "EndCast",
     "EndCast%",
@@ -1270,8 +1274,26 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def dodged?(%{} = caster, %{} = target, _ability, room) do
+  def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+    accuracy =
+      if ability.weapon? do
+        cond do
+          Mobile.has_ability?(target, "Undead") ->
+            accuracy + Mobile.ability_value(caster, "AttackRatingVsUndead")
+
+          Mobile.has_ability?(target, "Demon") ->
+            accuracy + Mobile.ability_value(caster, "AttackRatingVsDemons")
+
+          :else ->
+            accuracy
+        end
+      else
+        accuracy
+      end
+
+    if caster.name == "Cole", do: IO.puts("accuracy: #{accuracy}")
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
@@ -2203,6 +2225,24 @@ defmodule ApathyDrive.Ability do
             {caster, damage_percent + percent, target}
         end)
 
+      damage_percent =
+        if ability.weapon? do
+          cond do
+            Mobile.has_ability?(target, "Undead") ->
+              modifier = 1 + Mobile.ability_value(caster, "Damage%VsUndead") / 100
+              damage_percent * modifier
+
+            Mobile.has_ability?(target, "Demon") ->
+              modifier = 1 + Mobile.ability_value(caster, "Damage%VsDemons") / 100
+              damage_percent * modifier
+
+            :else ->
+              damage_percent
+          end
+        else
+          damage_percent
+        end
+
       target =
         target
         |> Map.put(:ability_special, :normal)
@@ -2550,6 +2590,12 @@ defmodule ApathyDrive.Ability do
     effects
     |> Map.put("Defense", ac_from_percent)
     |> Map.delete("Defense%")
+  end
+
+  def process_duration_trait({"DefensePerLevel", defense}, effects, target, _caster, _duration) do
+    effects
+    |> Map.put("Defense", target.level * defense)
+    |> Map.delete("DefensePerLevel")
   end
 
   def process_duration_trait({"MR%", percent}, effects, _target, _caster, _duration) do
