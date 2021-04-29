@@ -133,8 +133,6 @@ defmodule ApathyDrive.Commands.Wear do
               )
           end
 
-        character = Character.assign_limbs_to_equipment(character)
-
         room = put_in(room.mobiles[character.ref], character)
         Room.update_hp_bar(room, character.ref)
         Room.update_mana_bar(room, character.ref)
@@ -142,27 +140,11 @@ defmodule ApathyDrive.Commands.Wear do
     end
   end
 
-  def limbs_for_slot(character, slot) do
-    character.limbs
-    |> Map.keys()
-    |> Enum.filter(&(slot in character.limbs[&1].slots))
-  end
-
   def worn_on_max(%{worn_on: slot})
-      when slot in ["Finger", "Wrist", "Foot", "Arm", "Hand", "Held"],
+      when slot in ["Finger", "Wrist", "Arm", "Held"],
       do: 2
 
   def worn_on_max(%{worn_on: _}), do: 1
-
-  def worn_on_max(%Character{} = character, %Item{} = item) do
-    missing_limbs =
-      character
-      |> limbs_for_slot(item.worn_on)
-      |> Enum.filter(&(&1 in character.missing_limbs))
-      |> length
-
-    worn_on_max(item) - missing_limbs
-  end
 
   def equip_item(%Character{} = character, %{worn_on: worn_on} = item, persist \\ true) do
     %{inventory: inventory, equipment: equipment} = character
@@ -182,7 +164,7 @@ defmodule ApathyDrive.Commands.Wear do
 
       :else ->
         cond do
-          Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(character, item) ->
+          Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
             item_to_remove =
               equipment
               |> Enum.find(&(&1.worn_on == worn_on))

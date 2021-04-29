@@ -239,17 +239,7 @@ defmodule ApathyDrive.Commands.Look do
           if item.type == "Light" do
             String.pad_trailing("(Readied/#{item.uses})", 15)
           else
-            if ApathyDrive.Commands.Wear.worn_on_max(item) > 1 do
-              worn_on =
-                item.limb
-                |> String.split(" ")
-                |> Enum.map(&String.capitalize/1)
-                |> Enum.join(" ")
-
-              String.pad_trailing("(#{worn_on})", 15)
-            else
-              String.pad_trailing("(#{item.worn_on})", 15)
-            end
+            String.pad_trailing("(#{item.worn_on})", 15)
           end
 
         Mobile.send_scroll(

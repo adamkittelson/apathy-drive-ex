@@ -24,7 +24,6 @@ defmodule ApathyDrive.Character do
     Regeneration,
     Item,
     Level,
-    LimbSet,
     Monster,
     Mobile,
     Party,
@@ -74,7 +73,6 @@ defmodule ApathyDrive.Character do
     field(:auto_attack, :boolean)
     field(:auto_pet_casting, :boolean, default: true)
     field(:evil_points, :float)
-    field(:missing_limbs, {:array, :string}, default: [])
     field(:attack_color, :string, default: "red")
     field(:target_color, :string, default: "red")
     field(:spectator_color, :string, default: "red")
@@ -133,8 +131,6 @@ defmodule ApathyDrive.Character do
     field(:kill_counts, :map, virtual: true, default: %{})
     field(:materials, :map, virtual: true, default: %{})
     field(:death_race_id, :integer, virtual: true)
-    field(:limbs, :map, virtual: true, default: %{})
-
     belongs_to(:room, Room)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
@@ -604,25 +600,6 @@ defmodule ApathyDrive.Character do
     |> Systems.Effect.add(effect)
   end
 
-  def load_limbs(%Character{race: %{race: race}} = character) do
-    limbs = LimbSet.load_limbs(character, race.limb_set_id)
-
-    limbs
-    |> Enum.reduce(character, fn {limb_name, limb}, character ->
-      if limb.health == 0 do
-        effect = %{
-          "StatusMessage" => "Your #{limb_name} is severed!",
-          "stack_key" => {:severed, limb_name}
-        }
-
-        Systems.Effect.add(character, effect)
-      else
-        character
-      end
-    end)
-    |> Map.put(:limbs, limbs)
-  end
-
   def load_materials(%Character{} = character) do
     CharacterMaterial.load_for_character(character)
   end
@@ -634,7 +611,6 @@ defmodule ApathyDrive.Character do
       character
       |> Map.put(:inventory, Enum.reject(items, & &1.equipped))
       |> Map.put(:equipment, Enum.filter(items, & &1.equipped))
-      |> assign_limbs_to_equipment()
       |> add_equipped_items_effects()
       |> load_abilities()
       |> TimerManager.send_after(
@@ -642,38 +618,6 @@ defmodule ApathyDrive.Character do
       )
 
     character
-  end
-
-  def assign_limbs_to_equipment(%Character{} = character) do
-    Enum.reduce(character.equipment, character, fn item, character ->
-      if is_nil(item.limb) do
-        limbs = ApathyDrive.Commands.Wear.limbs_for_slot(character, item.worn_on)
-
-        limb =
-          Enum.find(limbs, fn limb ->
-            if character.limbs[limb].health <= 0 do
-              false
-            else
-              items_for_slot =
-                character.equipment
-                |> Enum.filter(&(&1.worn_on == item.worn_on))
-                |> Enum.reject(&(&1 == item))
-
-              Enum.all?(items_for_slot, &(&1.limb != limb))
-            end
-          end)
-
-        equipment = List.delete(character.equipment, item)
-
-        item = Map.put(item, :limb, limb)
-
-        equipment = [item | equipment]
-
-        put_in(character.equipment, equipment)
-      else
-        character
-      end
-    end)
   end
 
   def add_equipped_items_effects(%Character{} = character) do
@@ -806,11 +750,8 @@ defmodule ApathyDrive.Character do
       type: "Weapon",
       name: name,
       hit_verbs: hit_verbs,
-      miss_verbs: [singular_miss, plural_miss],
-      limb: limb
+      miss_verbs: [singular_miss, plural_miss]
     } = weapon
-
-    limbs = if limb, do: [limb], else: ["left hand", "right hand"]
 
     bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
 
@@ -853,7 +794,6 @@ defmodule ApathyDrive.Character do
         "PhysicalPenetration" => Systems.Effect.effect_bonus(weapon, "PhysicalPenetration"),
         "MagicalPenetration" => Systems.Effect.effect_bonus(weapon, "MagicalPenetration")
       },
-      limbs: limbs,
       skills: [weapon.weapon_type]
     }
 
@@ -1882,12 +1822,7 @@ defmodule ApathyDrive.Character do
     def die?(character) do
       hp = Character.hp_at_level(character, character.level)
 
-      missing_fatal_limb =
-        character.limbs
-        |> Map.values()
-        |> Enum.any?(&(&1.fatal && &1.health <= 0))
-
-      hp <= 0 or missing_fatal_limb
+      hp <= 0
     end
 
     def die(character, room) do
@@ -1917,30 +1852,18 @@ defmodule ApathyDrive.Character do
               |> Map.put(:energy, character.max_energy)
               |> Systems.Effect.remove_all_stacks(:holy_mission_damage)
 
-            character =
-              character.effects
-              |> Enum.filter(fn {_key, effect} ->
-                Map.has_key?(effect, "DeusExMachina")
-              end)
-              |> Enum.map(fn {key, _effect} -> key end)
-              |> Enum.reduce(
-                character,
-                &Systems.Effect.remove(&2, &1,
-                  fire_after_cast: true,
-                  show_expiration_message: true
-                )
-              )
-
-            character.limbs
-            |> Enum.reduce(character, fn {limb_name, _limb}, character ->
-              character
-              |> Systems.Effect.remove_oldest_stack({:severed, limb_name})
+            character.effects
+            |> Enum.filter(fn {_key, effect} ->
+              Map.has_key?(effect, "DeusExMachina")
             end)
-            |> Ecto.Changeset.change(%{
-              missing_limbs: []
-            })
-            |> Repo.update!()
-            |> Character.load_limbs()
+            |> Enum.map(fn {key, _effect} -> key end)
+            |> Enum.reduce(
+              character,
+              &Systems.Effect.remove(&2, &1,
+                fire_after_cast: true,
+                show_expiration_message: true
+              )
+            )
           end)
 
         Room.update_moblist(room)
@@ -1966,11 +1889,9 @@ defmodule ApathyDrive.Character do
           |> Map.put(:timers, %{})
           |> Character.load_race()
           |> Ecto.Changeset.change(%{
-            missing_limbs: [],
             exp_buffer: div(character.exp_buffer, 2)
           })
           |> Repo.update!()
-          |> Character.load_limbs()
           |> Character.load_traits()
           |> Character.set_attribute_levels()
           |> Character.add_equipped_items_effects()
@@ -2066,19 +1987,15 @@ defmodule ApathyDrive.Character do
     end
 
     def hp_regen_per_30(%Character{hp: hp} = character) when hp >= 0 do
-      if Enum.any?(character.limbs, fn {_name, limb} -> limb.health < 0 end) do
-        0.0001
+      regen =
+        (character.level + 20) * attribute_at_level(character, :health, character.level) / 750
+
+      modified_hp_regen = regen * (1 + ability_value(character, "HPRegen") / 100)
+
+      if character.resting do
+        modified_hp_regen * 10
       else
-        regen =
-          (character.level + 20) * attribute_at_level(character, :health, character.level) / 750
-
-        modified_hp_regen = regen * (1 + ability_value(character, "HPRegen") / 100)
-
-        if character.resting do
-          modified_hp_regen * 10
-        else
-          modified_hp_regen
-        end
+        modified_hp_regen
       end
     end
 

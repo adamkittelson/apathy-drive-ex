@@ -36,7 +36,6 @@ defmodule ApathyDrive.Scripts.BindGreaterDemon do
           "Defense%" => 15,
           "MR%" => 30,
           "DarkVision" => 225,
-          "RestoreLimbs" => true,
           "Encumbrance" => 20,
           # "Grant" => abilities,
           "RemoveMessage" =>

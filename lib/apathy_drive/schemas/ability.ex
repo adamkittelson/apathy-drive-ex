@@ -50,7 +50,6 @@ defmodule ApathyDrive.Ability do
 
     field(:damage_shield, :any, virtual: true)
     field(:caster, :any, virtual: true)
-    field(:limbs, :any, virtual: true, default: [])
     field(:traits, :map, virtual: true, default: %{})
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
     field(:result, :any, virtual: true)
@@ -116,7 +115,6 @@ defmodule ApathyDrive.Ability do
     "HealMana",
     "KillSpell",
     "RemoveSpells",
-    "RestoreLimbs",
     "Script",
     "Summon",
     "Teleport"
@@ -195,7 +193,6 @@ defmodule ApathyDrive.Ability do
     "ResistStrike",
     "ResistUnholy",
     "ResistVacuum",
-    "RestoreLimbs",
     "Root",
     "SeeHidden",
     "Shadowform",
@@ -1364,8 +1361,6 @@ defmodule ApathyDrive.Ability do
     caster = room.mobiles[caster.ref]
     target = room.mobiles[target.ref]
 
-    missing_target_limbs = target.missing_limbs
-
     {caster, target} =
       target
       |> apply_instant_traits(ability, caster, room)
@@ -1397,28 +1392,7 @@ defmodule ApathyDrive.Ability do
         |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
       end
 
-    if target = room.mobiles[target.ref] do
-      updated_missing_target_limbs = room.mobiles[target.ref].missing_limbs
-
-      restored_limbs = missing_target_limbs -- updated_missing_target_limbs
-
-      Enum.each(restored_limbs, fn limb ->
-        Mobile.send_scroll(
-          target,
-          "<p><span class='blue'>Your #{limb} has been restored!</span></p>"
-        )
-
-        Room.send_scroll(
-          room,
-          "<p><span class='blue'>#{target.name}'s #{limb} has been restored!</span></p>",
-          [target]
-        )
-      end)
-
-      room
-    else
-      room
-    end
+    room
   end
 
   def apply_ability(%Room{} = room, _caster, _target, _ability), do: room
@@ -1580,177 +1554,6 @@ defmodule ApathyDrive.Ability do
 
   def retaliate(room, _ability, _caster, _target), do: room
 
-  def damage_limb(room, target_ref, limb_name, percentage, bleeding \\ false)
-
-  def damage_limb(%Room{} = room, target_ref, limb_name, percentage, bleeding)
-      when percentage < 0 do
-    Room.update_mobile(room, target_ref, fn room, target ->
-      if map_size(target.limbs) == 1 or Mobile.ability_value(target, "Bubble") > 0 do
-        target
-      else
-        initial_limb_health = target.limbs[limb_name].health
-
-        updated_health = initial_limb_health + percentage
-
-        updated_health =
-          if updated_health <= 0 do
-            min(-0.25, updated_health)
-          else
-            updated_health
-          end
-
-        target = put_in(target.limbs[limb_name].health, updated_health)
-
-        limb = target.limbs[limb_name]
-
-        cond do
-          updated_health <= 0 ->
-            target =
-              if !is_nil(limb[:parent]) do
-                unless bleeding and limb[:fatal] do
-                  Mobile.send_scroll(target, "<p>Your #{limb_name} is severed!</p>")
-
-                  Room.send_scroll(
-                    room,
-                    "<p>#{Mobile.colored_name(target)}'s #{limb_name} is severed!</p>",
-                    [target]
-                  )
-                end
-
-                effect = %{
-                  "StatusMessage" => "Your #{limb_name} is severed!",
-                  "stack_key" => {:severed, limb_name}
-                }
-
-                target =
-                  target
-                  |> Systems.Effect.remove_oldest_stack({:crippled, limb_name})
-                  |> Systems.Effect.add(effect)
-
-                if Map.has_key?(target, :equipment) do
-                  target.equipment
-                  |> Enum.reduce(target, fn item_to_remove, target ->
-                    if item_to_remove.limb == limb_name do
-                      %ItemInstance{id: item_to_remove.instance_id}
-                      |> Ecto.Changeset.change(%{
-                        equipped: false,
-                        class_id: nil
-                      })
-                      |> Repo.update!()
-
-                      target = Character.load_items(target)
-
-                      Mobile.send_scroll(
-                        target,
-                        "<p>You unequip your #{
-                          Item.colored_name(item_to_remove, character: target)
-                        }.</p>"
-                      )
-
-                      Room.send_scroll(
-                        room,
-                        "<p>#{target.name} unequipped their #{
-                          Item.colored_name(item_to_remove, character: target)
-                        }.</p>",
-                        [target]
-                      )
-
-                      target
-                    else
-                      target
-                    end
-                  end)
-                else
-                  target
-                end
-              else
-                target
-              end
-
-            if limb.fatal do
-              if is_nil(limb[:parent]) and !bleeding do
-                Mobile.send_scroll(
-                  target,
-                  "<p>You are dealt a mortal blow to the #{limb_name}!</p>"
-                )
-
-                Room.send_scroll(
-                  room,
-                  "<p>#{Mobile.colored_name(target)} is dealt a mortal blow to the #{limb_name}!</p>",
-                  [target]
-                )
-              end
-
-              put_in(room.mobiles[target.ref], target)
-            else
-              target =
-                target
-                |> Ecto.Changeset.change(%{
-                  missing_limbs: [limb_name | target.missing_limbs]
-                })
-                |> Repo.update!()
-
-              room = put_in(room.mobiles[target.ref], target)
-
-              %ItemInstance{
-                item_id: 1,
-                room_id: room.id,
-                equipped: false,
-                hidden: false,
-                name: limb_name <> " of " <> target.name,
-                description: "This is the " <> limb_name <> " of " <> target.name <> ".",
-                delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
-              }
-              |> Repo.insert!()
-
-              room = Room.load_items(room)
-
-              Enum.reduce(target.limbs, room, fn {other_limb_name, other_limb}, room ->
-                if other_limb[:parent] == limb_name and other_limb.health > 0 do
-                  damage_limb(room, target_ref, other_limb_name, -other_limb.health)
-                else
-                  room
-                end
-              end)
-            end
-
-          initial_limb_health >= 0.5 and limb.health < 0.5 and !limb.fatal ->
-            Mobile.send_scroll(target, "<p>Your #{limb_name} is crippled!</p>")
-
-            Room.send_scroll(
-              room,
-              "<p>#{Mobile.colored_name(target)}'s #{limb_name} is crippled!</p>",
-              [target]
-            )
-
-            effect = %{
-              "StatusMessage" => "Your #{limb_name} is crippled!",
-              "stack_key" => {:crippled, limb_name}
-            }
-
-            target = Systems.Effect.add(target, effect)
-
-            room = put_in(room.mobiles[target.ref], target)
-
-            Enum.reduce(target.limbs, room, fn {other_limb_name, other_limb}, room ->
-              if other_limb[:parent] == limb_name and other_limb.health > limb.health do
-                amount = other_limb.health - limb.health
-
-                damage_limb(room, target_ref, other_limb_name, -amount)
-              else
-                room
-              end
-            end)
-
-          :else ->
-            target
-        end
-      end
-    end)
-  end
-
-  def damage_limb(%Room{} = room, _target_ref, _limb_name, _percentage, _bleeding), do: room
-
   def finish_ability(room, caster_ref, target_ref, ability, ability_shift) do
     room =
       Room.update_mobile(room, target_ref, fn room, target ->
@@ -1876,43 +1679,6 @@ defmodule ApathyDrive.Ability do
             )
           end)
         end
-      else
-        room
-      end
-
-    room =
-      if room.mobiles[target_ref] &&
-           (ability.traits["SeverLimb"] ||
-              ability.traits["CrippleLimb"]) do
-        limb = ability.traits["SeverLimb"] || ability.traits["CrippleLimb"]
-
-        limb
-        |> Enum.reduce(room, fn limb_type, room ->
-          target = room.mobiles[target_ref]
-
-          target.limbs
-          |> Enum.filter(fn {_limb_name, limb} ->
-            correct_limb_type =
-              if limb_type == "non_fatal" do
-                !limb.fatal
-              else
-                limb.type == limb_type
-              end
-
-            correct_limb_type and limb.health > 0
-          end)
-          |> case do
-            [] ->
-              room
-
-            limbs ->
-              {limb_name, limb} = Enum.random(limbs)
-
-              percentage = 0.0 - limb.health
-
-              damage_limb(room, target_ref, limb_name, percentage)
-          end
-        end)
       else
         room
       end
@@ -2133,36 +1899,6 @@ defmodule ApathyDrive.Ability do
       end)
 
     {caster, target}
-  end
-
-  def apply_instant_trait({"RestoreLimbs", _}, %{} = target, _ability, caster, room) do
-    if Enum.any?(target.missing_limbs) do
-      limb = Enum.random(target.missing_limbs)
-
-      parent = target.limbs[limb][:parent]
-
-      limb =
-        if parent && target.limbs[parent].health <= 0 do
-          parent
-        else
-          limb
-        end
-
-      target =
-        Room.update_mobile(room, target.ref, fn _room, target ->
-          target
-          |> Systems.Effect.remove_oldest_stack({:severed, limb})
-          |> put_in([:limbs, limb, :health], 1.0)
-          |> Ecto.Changeset.change(%{
-            missing_limbs: List.delete(target.missing_limbs, limb)
-          })
-          |> Repo.update!()
-        end).mobiles[target.ref]
-
-      {caster, target}
-    else
-      {caster, target}
-    end
   end
 
   def apply_instant_trait({"CurePoison", _args}, %{} = target, _ability, caster, _room) do

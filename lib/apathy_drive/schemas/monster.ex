@@ -14,7 +14,6 @@ defmodule ApathyDrive.Monster do
     Item,
     ItemInstance,
     KillCount,
-    LimbSet,
     LootPity,
     Mobile,
     Monster,
@@ -108,15 +107,12 @@ defmodule ApathyDrive.Monster do
     field(:drops, :any, virtual: true, default: [])
     field(:sneaking, :boolean, virtual: true, default: false)
     field(:delete_at, :any, virtual: true)
-    field(:limbs, :map, virtual: true, default: %{})
-    field(:missing_limbs, {:array, :string}, virtual: true, default: [])
     field(:lore, :any, virtual: true)
     field(:follow, :boolean, virtual: true)
 
     timestamps()
 
     belongs_to(:death_ability, ApathyDrive.Ability)
-    belongs_to(:limb_set, ApathyDrive.LimbSet)
 
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_rooms, through: [:lairs, :room])
@@ -212,7 +208,6 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:spawned_at, rm.spawned_at)
       |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
       |> Map.put(:delete_at, rm.delete_at)
-      |> Map.put(:missing_limbs, rm.missing_limbs)
       |> Map.put(:owner_id, rm.owner_id)
       |> Map.put(:lore, ApathyDrive.ElementalLores.lore(rm.lore))
 
@@ -222,7 +217,6 @@ defmodule ApathyDrive.Monster do
       monster
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
-      |> load_limbs()
       |> load_abilities()
       |> load_traits()
       |> load_drops()
@@ -245,7 +239,6 @@ defmodule ApathyDrive.Monster do
         :spawned_at,
         :room_spawned_at,
         :delete_at,
-        :missing_limbs,
         :owner_id
       ])
 
@@ -258,7 +251,6 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> Map.put(:base_name, monster.name)
-    |> load_limbs()
     |> load_abilities()
     |> load_traits()
     |> load_drops()
@@ -284,25 +276,6 @@ defmodule ApathyDrive.Monster do
 
   def load_abilities(%Monster{} = monster) do
     MonsterAbility.load_abilities(monster)
-  end
-
-  def load_limbs(%Monster{} = monster) do
-    limbs = LimbSet.load_limbs(monster, monster.limb_set_id)
-
-    limbs
-    |> Enum.reduce(monster, fn {limb_name, limb}, monster ->
-      if limb.health == 0 do
-        effect = %{
-          "StatusMessage" => "Your #{limb_name} is severed!",
-          "stack_key" => {:severed, limb_name}
-        }
-
-        Systems.Effect.add(monster, effect)
-      else
-        monster
-      end
-    end)
-    |> Map.put(:limbs, limbs)
   end
 
   def generate_monster_attributes(%Monster{level: level} = monster) do
@@ -893,12 +866,7 @@ defmodule ApathyDrive.Monster do
     def die?(monster) do
       max_hp = Mobile.max_hp_at_level(monster, monster.level)
 
-      missing_fatal_limb =
-        monster.limbs
-        |> Map.values()
-        |> Enum.any?(&(&1.fatal && &1.health <= 0))
-
-      max_hp <= 0 or monster.hp <= 0 or missing_fatal_limb
+      max_hp <= 0 or monster.hp <= 0
     end
 
     def die(monster, room) do

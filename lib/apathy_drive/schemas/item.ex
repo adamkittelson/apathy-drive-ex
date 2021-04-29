@@ -124,7 +124,6 @@ defmodule ApathyDrive.Item do
     field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
     field(:owner_id, :any, virtual: true)
-    field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
@@ -500,7 +499,7 @@ defmodule ApathyDrive.Item do
       when type in ["Armour", "Shield"] do
     worn_items = Enum.filter(character.equipment, &(&1.worn_on == item.worn_on))
 
-    if Enum.count(worn_items) >= ApathyDrive.Commands.Wear.worn_on_max(character, item) do
+    if Enum.count(worn_items) >= ApathyDrive.Commands.Wear.worn_on_max(item) do
       worn_items
     else
       []
