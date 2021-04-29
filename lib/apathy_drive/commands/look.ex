@@ -458,12 +458,24 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def item_tooltip(%Character{} = character, %Item{type: "Armour"} = item) do
+    value =
+      %Shop{cost_multiplier: 1}
+      |> Shop.sell_price(character, item)
+      |> Currency.set_value()
+      |> Currency.to_string()
+      |> case do
+        "" -> "FREE"
+        value -> value
+      end
+
     """
       <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>
       Defense: #{defense(item, character)}#{required_level(character, item)}#{
       required_strength(character, item)
     }
       <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
+
+      Sells For: #{value}
     """
   end
 

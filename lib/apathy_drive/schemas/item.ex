@@ -4,7 +4,6 @@ defmodule ApathyDrive.Item do
   alias ApathyDrive.{
     Ability,
     Character,
-    Currency,
     Enchantment,
     Item,
     ItemAbility,
@@ -675,14 +674,47 @@ defmodule ApathyDrive.Item do
     |> Enum.join(" ")
   end
 
-  def cost_in_copper(%Item{cost_currency: nil} = item) do
-    0 + Enchantment.copper_value(item)
-  end
-
   def cost_in_copper(%Item{} = item) do
-    value = item.cost_value * Currency.copper_value(item.cost_currency)
+    quality_level = item.quality_level || 0
 
-    value + Enchantment.copper_value(item)
+    quality_multiplier =
+      case item.quality do
+        "unique" ->
+          5000
+
+        "set" ->
+          2500
+
+        "crafted" ->
+          1000
+
+        "rare" ->
+          1000
+
+        "magic" ->
+          500
+
+        "superior" ->
+          100
+
+        "normal" ->
+          500
+
+        "low" ->
+          50
+
+        _ ->
+          0
+      end
+
+    affix_quality_levels =
+      item.affix_traits
+      |> Enum.map(& &1.affix_trait.affix.level)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sum()
+
+    Enum.max([1, quality_level]) * Enum.max([1, quality_multiplier]) *
+      Enum.max([1, affix_quality_levels])
   end
 
   def has_ability?(%Item{} = item, ability_name) do
