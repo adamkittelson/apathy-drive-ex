@@ -16,10 +16,26 @@ a.autolink {
 
 p.item, span.item {
   text-align: center;
-  width: 500px;
+  width: 450px;
   padding-right: 0px !important;
+  padding-top: 10px;
+  padding-bottom: 10px;
   font-family: 'exocet-blizzard-mixed-caps-medium', Helvetica, Arial, Verdana, sans-serif;
-  margin-top: -20px;
+  //border: 1px solid #ccc;
+  background-color: rgba(5, 5, 5, 0.9);
+  border-radius: 25px;
+}
+
+span.item-name span.tooltip{
+  visibility: hidden;
+  z-index: 1;
+  position: absolute;
+  top: 300px;
+  left: 500px;
+}
+
+span.item-name:hover span.tooltip {
+  visibility: visible;
 }
 
 #scroll-container {

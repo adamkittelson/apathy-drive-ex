@@ -287,7 +287,7 @@ defmodule ApathyDrive.Item do
   end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
-    ii = Repo.preload(ii, affix_traits: [affix_trait: [:trait]])
+    ii = Repo.preload(ii, affix_traits: [affix_trait: [:trait, :affix]])
 
     values =
       ii
@@ -454,8 +454,6 @@ defmodule ApathyDrive.Item do
     ei = Repo.insert!(ei)
     Map.put(item, :instance_id, ei.id)
   end
-
-  def price(%Item{}), do: 5
 
   def max_quality(%Item{level: level}) do
     min(div(level, 10) + 1, 5)
@@ -661,7 +659,13 @@ defmodule ApathyDrive.Item do
 
     name = if opts[:titleize], do: titleize(name), else: name
 
-    "<span style='color: #{color(item, opts)};'>#{name}</span>"
+    if opts[:character] && !opts[:no_tooltip] do
+      "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{
+        ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)
+      }</span></span>"
+    else
+      "<span style='color: #{color(item, opts)};'>#{name}</span>"
+    end
   end
 
   def titleize(string) do
@@ -744,6 +748,24 @@ defmodule ApathyDrive.Item do
     too_high_level_for_character?(character, item)
   end
 
+  def required_strength(%Item{} = item) do
+    modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
+    trunc((item.required_str || 0) * modifier)
+  end
+
+  def required_level(%Item{} = item) do
+    modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
+
+    level =
+      item.affix_traits
+      |> Enum.map(& &1.affix_trait.affix.required_level)
+      |> List.insert_at(0, Systems.Effect.effect_bonus(item, "MinLevel"))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.max(fn -> 0 end)
+
+    trunc(level * modifier)
+  end
+
   def too_high_level_for_character?(character, %Item{type: "Scroll"} = scroll) do
     ability = Systems.Effect.effect_bonus(scroll, "Learn")
 
@@ -762,13 +784,7 @@ defmodule ApathyDrive.Item do
   end
 
   def too_high_level_for_character?(character, item) do
-    case Systems.Effect.effect_bonus(item, "MinLevel") do
-      nil ->
-        false
-
-      min_level ->
-        character.level < min_level
-    end
+    character.level < required_level(item)
   end
 
   defp load_required_races_and_classes(%Item{} = item) do

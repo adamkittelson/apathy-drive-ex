@@ -433,16 +433,45 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_item(%Character{} = character, %Item{type: "Armour"} = item) do
-    item = """
-    <p class='item'>
-      #{Item.colored_name(item, titleize: true)}
-      Defense: #{defense(item, character)}
-      <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
-    </p>
-    """
+  def required_strength(character, %Item{} = item) do
+    if (strength = Item.required_strength(item)) > 0 do
+      if Mobile.attribute_at_level(character, :strength, character.level) >= strength do
+        "\nRequired Strength: #{strength}"
+      else
+        "\n<span class='red'>Required Strength: #{strength}</span>"
+      end
+    else
+      ""
+    end
+  end
 
-    Mobile.send_scroll(character, item)
+  def required_level(character, %Item{} = item) do
+    if (level = Item.required_level(item)) > 0 do
+      if character.level >= level do
+        "\nRequired Level: #{level}"
+      else
+        "\n<span class='red'>Required Level: #{level}</span>"
+      end
+    else
+      ""
+    end
+  end
+
+  def item_tooltip(%Character{} = character, %Item{type: "Armour"} = item) do
+    """
+      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>
+      Defense: #{defense(item, character)}#{required_level(character, item)}#{
+      required_strength(character, item)
+    }
+      <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
+    """
+  end
+
+  def item_tooltip(%Character{} = _character, _item), do: ""
+
+  def look_at_item(%Character{} = character, %Item{type: "Armour"} = item) do
+    item = item_tooltip(character, item)
+    Mobile.send_scroll(character, "<p class='item'>#{item}</span>")
   end
 
   def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
