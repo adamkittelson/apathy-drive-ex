@@ -8,14 +8,14 @@ defmodule ApathyDrive.Commands.Inventory do
     "Held",
     "Two Handed",
     "Arm",
-    "Hand",
+    "Hands",
     "Wrist",
     "Finger",
     "Torso",
     "Back",
     "Waist",
     "Legs",
-    "Foot"
+    "Feet"
   ]
 
   def keywords, do: ["i", "inv", "inventory"]

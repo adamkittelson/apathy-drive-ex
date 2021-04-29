@@ -1316,7 +1316,9 @@ defmodule ApathyDrive.Ability do
         Room.update_energy_bar(room, target.ref)
 
         room
-        |> apply_criticals(caster.ref, target.ref, ability)
+
+      # disable crits
+      # |> apply_criticals(caster.ref, target.ref, ability)
 
       true ->
         apply_ability(
@@ -1388,7 +1390,7 @@ defmodule ApathyDrive.Ability do
 
         room
         |> trigger_damage_shields(caster.ref, target.ref, ability)
-        |> apply_criticals(caster.ref, target.ref, ability)
+        # |> apply_criticals(caster.ref, target.ref, ability)
         |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
       end
 
