@@ -461,6 +461,52 @@ defmodule ApathyDrive.Monster do
           character,
           "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
         )
+      else
+        chance = if monster.game_limit == 1, do: 60, else: 30
+        # drop jewelry, runes, gems etc
+        if :rand.uniform(100) < chance do
+          item = Item.random_accessory()
+
+          Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+
+          quality = quality || determine_item_quality(character, monster, item)
+
+          item_instance =
+            %ItemInstance{
+              item_id: item.id,
+              room_id: room.id,
+              character_id: nil,
+              equipped: false,
+              hidden: false,
+              ac: 0,
+              name: item.name,
+              quality: quality,
+              level: max(1, monster.level),
+              delete_at: Item.delete_at(item.quality)
+            }
+            |> Repo.insert!()
+            |> Repo.preload(:item)
+
+          affix_level = affix_level(item.quality_level, monster.level, character.level)
+
+          {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+          name = item_name(item_instance, prefixes, suffixes)
+
+          item_instance =
+            item_instance
+            |> Ecto.Changeset.change(%{name: name})
+            |> Repo.update!()
+
+          item =
+            item_instance
+            |> Item.from_assoc()
+
+          Mobile.send_scroll(
+            character,
+            "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+          )
+        end
       end
     end)
   end
@@ -681,6 +727,29 @@ defmodule ApathyDrive.Monster do
 
   def item_name(%ItemInstance{quality: _} = item, _prefixes, _suffixes) do
     item.name
+  end
+
+  def determine_item_quality(character, monster, %Item{armour_type: "accessory"}) do
+    magic_find = Mobile.ability_value(character, "MagicFind") + (200 - character.level * 2)
+
+    magic_find = if monster.game_limit == 1, do: 400 + magic_find * 2, else: magic_find
+
+    cond do
+      unique?(monster.level, monster.level, magic_find) ->
+        IO.puts("dropped unique!")
+        "unique"
+
+      set?(monster.level, monster.level, magic_find) ->
+        IO.puts("dropped set!")
+        "set"
+
+      rare?(monster.level, monster.level, magic_find) ->
+        IO.puts("dropped rare!")
+        "rare"
+
+      :else ->
+        "magic"
+    end
   end
 
   def determine_item_quality(character, monster, item) do

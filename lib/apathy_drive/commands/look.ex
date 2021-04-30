@@ -422,14 +422,17 @@ defmodule ApathyDrive.Commands.Look do
         Systems.Effect.effect_bonus(item, "DefensePerLevel") * character.level
 
     cond do
+      value <= 0 ->
+        ""
+
       value > item.ac ->
-        "<span style='color: #4850B8'>#{value}</span>"
+        "\nDefense: <span style='color: #4850B8'>#{value}</span>"
 
       item.quality == "low" ->
-        "<span class='dark-red'>#{value}</span>"
+        "\nDefense: <span class='dark-red'>#{value}</span>"
 
       :else ->
-        value
+        "\nDefense: #{value}"
     end
   end
 
@@ -469,10 +472,9 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     """
-      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>
-      Defense: #{defense(item, character)}#{required_level(character, item)}#{
-      required_strength(character, item)
-    }
+      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{
+      defense(item, character)
+    }#{required_level(character, item)}#{required_strength(character, item)}
       <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
       Sells For: #{value}

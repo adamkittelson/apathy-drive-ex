@@ -1993,10 +1993,26 @@ defmodule ApathyDrive.Character do
 
       modified_hp_regen = regen * (1 + ability_value(character, "HPRegen") / 100)
 
+      regeneration_percent_per_round = ability_value(character, "Heal")
+
+      regeneration_per_round =
+        regeneration_percent_per_round * Mobile.max_hp_at_level(character, character.level)
+
+      regen_per_30 =
+        if regeneration_per_round > 0 do
+          round_length = Regeneration.round_length(character)
+
+          rounds = 30_000 / round_length
+
+          rounds / regeneration_per_round
+        else
+          0
+        end
+
       if character.resting do
-        modified_hp_regen * 10
+        modified_hp_regen * 10 + regen_per_30
       else
-        modified_hp_regen
+        modified_hp_regen + regen_per_30
       end
     end
 

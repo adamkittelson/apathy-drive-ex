@@ -156,6 +156,7 @@ defmodule ApathyDrive.Ability do
     "Enslave",
     "Fear",
     "Heal",
+    "Replenishment",
     "Health",
     "HolyMission",
     "HPRegen",
@@ -1292,8 +1293,6 @@ defmodule ApathyDrive.Ability do
       else
         accuracy
       end
-
-    if caster.name == "Cole", do: IO.puts("accuracy: #{accuracy}")
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
@@ -2606,13 +2605,40 @@ defmodule ApathyDrive.Ability do
     |> Map.delete("MR%")
   end
 
-  def process_duration_trait({"Heal", value}, effects, target, _caster, _duration) do
-    healing = (value["min"] + value["max"]) / 2
+  def process_duration_trait(
+        {"Heal", %{"min" => min, "max" => max}},
+        effects,
+        target,
+        _caster,
+        _duration
+      ) do
+    healing = (min + max) / 2
 
     percentage_healed = healing / Mobile.max_hp_at_level(target, target.level)
 
     effects
     |> Map.put("Heal", percentage_healed)
+  end
+
+  def process_duration_trait(
+        {"Replenishment", healing_per_10},
+        effects,
+        target,
+        _caster,
+        _duration
+      ) do
+    # replenishment is healing per 10 seconds, Heal is healing per round
+    round_length = Regeneration.round_length(target)
+
+    rounds = 10_000 / round_length
+
+    healing_per_round = healing_per_10 / rounds
+
+    percentage_healed = healing_per_round / Mobile.max_hp_at_level(target, target.level)
+
+    effects
+    |> Map.put("Heal", percentage_healed)
+    |> Map.delete("Replenishment")
   end
 
   def process_duration_trait({"HealMana", value}, effects, target, _caster, _duration) do

@@ -353,7 +353,10 @@ defmodule ApathyDrive.Item do
 
   def of_quality_level(level) do
     __MODULE__
-    |> Ecto.Query.where([i], i.quality_level <= ^level and i.quality_level >= ^level - 3)
+    |> Ecto.Query.where(
+      [i],
+      i.quality_level <= ^level and i.quality_level >= ^level - 3 and i.armour_type != "accessory"
+    )
     |> ApathyDrive.Repo.all()
     |> case do
       [] ->
@@ -362,6 +365,17 @@ defmodule ApathyDrive.Item do
       list ->
         list
     end
+  end
+
+  def random_accessory() do
+    __MODULE__
+    |> Ecto.Query.where([i], i.armour_type == "accessory")
+    |> ApathyDrive.Repo.all()
+    |> case do
+      list ->
+        list
+    end
+    |> Enum.random()
   end
 
   def match_by_name(name) do
