@@ -419,7 +419,11 @@ defmodule ApathyDrive.Monster do
       chance = if monster.game_limit == 1, do: 80, else: 40
 
       if Enum.any?(items) and (quality || roll <= chance) do
-        item = Enum.random(items)
+        item =
+          items
+          |> Enum.random()
+          |> Item.load_item_types()
+
         Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
         quality = quality || determine_item_quality(character, monster, item)
@@ -441,10 +445,14 @@ defmodule ApathyDrive.Monster do
           }
           |> Repo.insert!()
           |> Repo.preload(:item)
+          |> update_in([Access.key!(:item)], &Item.load_item_types/1)
 
         affix_level = affix_level(item.quality_level, monster.level, 0)
 
         {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+        prefixes = Enum.reject(prefixes, &is_nil/1)
+        suffixes = Enum.reject(suffixes, &is_nil/1)
 
         name = item_name(item_instance, prefixes, suffixes)
 
@@ -465,7 +473,9 @@ defmodule ApathyDrive.Monster do
         chance = if monster.game_limit == 1, do: 60, else: 30
         # drop jewelry, runes, gems etc
         if :rand.uniform(100) < chance do
-          item = Item.random_accessory()
+          item =
+            Item.random_accessory()
+            |> Item.load_item_types()
 
           Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
@@ -486,10 +496,14 @@ defmodule ApathyDrive.Monster do
             }
             |> Repo.insert!()
             |> Repo.preload(:item)
+            |> update_in([Access.key!(:item)], &Item.load_item_types/1)
 
           affix_level = affix_level(item.quality_level, monster.level, character.level)
 
           {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+          prefixes = Enum.reject(prefixes, &is_nil/1)
+          suffixes = Enum.reject(suffixes, &is_nil/1)
 
           name = item_name(item_instance, prefixes, suffixes)
 
@@ -610,25 +624,30 @@ defmodule ApathyDrive.Monster do
     prefix =
       affix_level
       |> Affix.prefix_for_level(item_instance)
-      |> Repo.preload(affixes_traits: [:trait])
 
-    if prefix.affixes_traits == [] do
-      generate_prefix(item_instance, affix_level)
-    else
-      prefix.affixes_traits
-      |> Enum.each(fn at ->
-        val = affix_value(at.value, at.trait.merge_by)
+    if prefix do
+      prefix =
+        prefix
+        |> Repo.preload(affixes_traits: [:trait])
 
-        %ApathyDrive.ItemInstanceAffixTrait{
-          affix_trait_id: at.id,
-          item_instance_id: item_instance.id,
-          value: val,
-          description: affix_description(at.trait.name, at.description, val)
-        }
-        |> Repo.insert!()
-      end)
+      if prefix.affixes_traits == [] do
+        generate_prefix(item_instance, affix_level)
+      else
+        prefix.affixes_traits
+        |> Enum.each(fn at ->
+          val = affix_value(at.value, at.trait.merge_by)
 
-      prefix.name
+          %ApathyDrive.ItemInstanceAffixTrait{
+            affix_trait_id: at.id,
+            item_instance_id: item_instance.id,
+            value: val,
+            description: affix_description(at.trait.name, at.description, val)
+          }
+          |> Repo.insert!()
+        end)
+
+        prefix.name
+      end
     end
   end
 
@@ -636,25 +655,30 @@ defmodule ApathyDrive.Monster do
     suffix =
       affix_level
       |> Affix.suffix_for_level(item_instance)
-      |> Repo.preload(affixes_traits: [:trait])
 
-    if suffix.affixes_traits == [] do
-      generate_suffix(item_instance, affix_level)
-    else
-      suffix.affixes_traits
-      |> Enum.each(fn at ->
-        val = affix_value(at.value, at.trait.merge_by)
+    if suffix do
+      suffix =
+        suffix
+        |> Repo.preload(affixes_traits: [:trait])
 
-        %ApathyDrive.ItemInstanceAffixTrait{
-          affix_trait_id: at.id,
-          item_instance_id: item_instance.id,
-          value: val,
-          description: affix_description(at.trait.name, at.description, val)
-        }
-        |> Repo.insert!()
-      end)
+      if suffix.affixes_traits == [] do
+        generate_suffix(item_instance, affix_level)
+      else
+        suffix.affixes_traits
+        |> Enum.each(fn at ->
+          val = affix_value(at.value, at.trait.merge_by)
 
-      suffix.name
+          %ApathyDrive.ItemInstanceAffixTrait{
+            affix_trait_id: at.id,
+            item_instance_id: item_instance.id,
+            value: val,
+            description: affix_description(at.trait.name, at.description, val)
+          }
+          |> Repo.insert!()
+        end)
+
+        suffix.name
+      end
     end
   end
 
@@ -729,29 +753,6 @@ defmodule ApathyDrive.Monster do
     item.name
   end
 
-  def determine_item_quality(character, monster, %Item{armour_type: "accessory"}) do
-    magic_find = Mobile.ability_value(character, "MagicFind") + (200 - character.level * 2)
-
-    magic_find = if monster.game_limit == 1, do: 400 + magic_find * 2, else: magic_find
-
-    cond do
-      unique?(monster.level, monster.level, magic_find) ->
-        IO.puts("dropped unique!")
-        "unique"
-
-      set?(monster.level, monster.level, magic_find) ->
-        IO.puts("dropped set!")
-        "set"
-
-      rare?(monster.level, monster.level, magic_find) ->
-        IO.puts("dropped rare!")
-        "rare"
-
-      :else ->
-        "magic"
-    end
-  end
-
   def determine_item_quality(character, monster, item) do
     magic_find = Mobile.ability_value(character, "MagicFind") + (200 - character.level * 2)
 
@@ -760,17 +761,17 @@ defmodule ApathyDrive.Monster do
     cond do
       unique?(monster.level, item.quality_level, magic_find) ->
         IO.puts("dropped unique!")
-        "unique"
+        "rare"
 
       set?(monster.level, item.quality_level, magic_find) ->
         IO.puts("dropped set!")
-        "set"
+        "rare"
 
       rare?(monster.level, item.quality_level, magic_find) ->
         IO.puts("dropped rare!")
         "rare"
 
-      magic?(monster.level, item.quality_level, magic_find) ->
+      magic?(monster.level, item, magic_find) ->
         IO.puts("dropped magic!")
         "magic"
 
@@ -790,7 +791,7 @@ defmodule ApathyDrive.Monster do
   def unique?(monster_level, quality_level, magic_find) do
     chance = (400 - (monster_level - quality_level) / 1) * 128
 
-    chance = max(6400, trunc(chance * 100 / (100 + magic_find)))
+    chance = max(6400, trunc(chance * 100 / (100 + magic_find))) |> max(1)
 
     IO.puts("unique chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
@@ -799,7 +800,7 @@ defmodule ApathyDrive.Monster do
   def set?(monster_level, quality_level, magic_find) do
     chance = (160 - (monster_level - quality_level) / 2) * 128
 
-    chance = max(5600, trunc(chance * 100 / (100 + magic_find)))
+    chance = max(5600, trunc(chance * 100 / (100 + magic_find))) |> max(1)
     IO.puts("set chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
@@ -807,31 +808,40 @@ defmodule ApathyDrive.Monster do
   def rare?(monster_level, quality_level, magic_find) do
     chance = (100 - (monster_level - quality_level) / 2) * 128
 
-    chance = max(3200, trunc(chance * 100 / (100 + magic_find)))
+    chance = max(3200, trunc(chance * 100 / (100 + magic_find))) |> max(1)
     IO.puts("rare chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
-  def magic?(monster_level, quality_level, magic_find) do
-    chance = (34 - (monster_level - quality_level) / 3) * 128
+  def magic?(monster_level, %Item{quality_level: quality_level} = item, magic_find) do
+    item_types = Enum.map(item.item_types, & &1.name)
 
-    chance = max(192, trunc(chance * 100 / (100 + magic_find)))
-    IO.puts("magic chance: #{128 / chance * 100}%")
-    :rand.uniform(chance) < 128
+    if "Ring" in item_types or "Amulet" in item_types do
+      true
+    else
+      chance = (34 - (monster_level - quality_level) / 3) * 128
+
+      chance = max(192, trunc(chance * 100 / (100 + magic_find))) |> max(1)
+      IO.puts("magic chance: #{128 / chance * 100}%")
+      :rand.uniform(chance) < 128
+    end
   end
 
   def high?(monster_level, quality_level, magic_find) do
     chance = (12 - (monster_level - quality_level) / 8) * 128
 
-    chance = trunc(chance * 100 / (100 + magic_find))
+    chance = trunc(chance * 100 / (100 + magic_find)) |> max(1)
     IO.puts("superior chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end
 
   def normal?(monster_level, quality_level, magic_find) do
     chance = (2 - (monster_level - quality_level) / 2) * 128
+    IO.puts("monster_level: #{monster_level}, quality_level: #{quality_level}")
+    IO.puts("chance: #{chance}")
 
-    chance = trunc(chance * 100 / (100 + magic_find))
+    chance = trunc(chance * 100 / (100 + magic_find)) |> max(1)
+    IO.puts("chance: #{chance}")
     IO.puts("normal chance: #{128 / chance * 100}%")
     :rand.uniform(chance) < 128
   end

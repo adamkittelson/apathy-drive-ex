@@ -10,6 +10,8 @@ defmodule ApathyDrive.Item do
     ItemClass,
     ItemInstance,
     ItemInstanceAffixTrait,
+    ItemType,
+    ItemTypeParent,
     ItemRace,
     Match,
     PubSub,
@@ -117,7 +119,10 @@ defmodule ApathyDrive.Item do
     field(:max_sockets, :integer)
     field(:required_str, :integer)
     field(:magic_level, :integer)
+    field(:type_id, :integer)
 
+    field(:item_type_ids, :any, virtual: true, default: [])
+    field(:item_types, :any, virtual: true, default: [])
     field(:affix_traits, :any, virtual: true, default: [])
     field(:quality, :any, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
@@ -323,6 +328,7 @@ defmodule ApathyDrive.Item do
     |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
     |> load_required_races_and_classes()
     |> load_item_abilities()
+    |> load_item_types()
   end
 
   def from_assoc(%ShopItem{item: item}) do
@@ -330,6 +336,33 @@ defmodule ApathyDrive.Item do
     |> with_traits()
     |> load_required_races_and_classes()
     |> load_item_abilities()
+  end
+
+  def load_item_types(%Item{type_id: type_id} = item) do
+    item_types = item_types(type_id)
+
+    item
+    |> Map.put(:item_types, item_types)
+  end
+
+  def item_types(nil), do: []
+
+  def item_types(type_id) do
+    ItemTypeParent
+    |> Ecto.Query.where(item_type_id: ^type_id)
+    |> Ecto.Query.preload([:item_type])
+    |> Repo.all()
+    |> case do
+      [] ->
+        [Repo.get(ItemType, type_id)]
+
+      parents ->
+        Enum.reduce(parents, [Repo.get(ItemType, type_id)], fn parent, item_types ->
+          item_types ++ item_types(parent.parent_id)
+        end)
+    end
+    |> List.flatten()
+    |> Enum.uniq()
   end
 
   def delete_at(quality) when quality in ["unique", "set", "rare", "crafted"],
@@ -352,10 +385,13 @@ defmodule ApathyDrive.Item do
   end
 
   def of_quality_level(level) do
+    accessory_ids = accessory_ids()
+
     __MODULE__
     |> Ecto.Query.where(
       [i],
-      i.quality_level <= ^level and i.quality_level >= ^level - 3 and i.armour_type != "accessory"
+      i.quality_level <= ^level and i.quality_level >= ^level - 3 and
+        i.type_id not in ^accessory_ids
     )
     |> ApathyDrive.Repo.all()
     |> case do
@@ -367,9 +403,23 @@ defmodule ApathyDrive.Item do
     end
   end
 
+  def accessory_ids() do
+    misc_id =
+      ItemType
+      |> Repo.get_by(name: "Miscellaneous")
+      |> Map.get(:id)
+
+    ItemTypeParent
+    |> Ecto.Query.where(parent_id: ^misc_id)
+    |> Repo.all()
+    |> Enum.map(& &1.item_type_id)
+  end
+
   def random_accessory() do
+    item_types = accessory_ids()
+
     __MODULE__
-    |> Ecto.Query.where([i], i.armour_type == "accessory")
+    |> Ecto.Query.where([i], i.type_id in ^item_types)
     |> ApathyDrive.Repo.all()
     |> case do
       list ->

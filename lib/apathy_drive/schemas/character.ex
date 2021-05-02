@@ -2004,7 +2004,7 @@ defmodule ApathyDrive.Character do
 
           rounds = 30_000 / round_length
 
-          rounds / regeneration_per_round
+          rounds * regeneration_per_round
         else
           0
         end
