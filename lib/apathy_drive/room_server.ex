@@ -1163,7 +1163,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    if ability.energy <= mobile.energy do
+    if mobile.energy >= mobile.max_energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
       Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
@@ -1172,8 +1172,8 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  def execute_casting_ability(%{casting: {script, target, energy_req}} = mobile, room) do
-    if energy_req <= mobile.energy do
+  def execute_casting_ability(%{casting: {script, target, _energy_req}} = mobile, room) do
+    if mobile.energy >= mobile.max_energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
       script.execute(room, mobile.ref, target)
