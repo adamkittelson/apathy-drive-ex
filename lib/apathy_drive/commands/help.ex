@@ -471,20 +471,6 @@ defmodule ApathyDrive.Commands.Help do
     ability =
       Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
 
-    chance =
-      if ability.difficulty do
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Attributes:</span> <span class='dark-cyan'>#{
-            Enum.join(ability.attributes, ", ")
-          }</span></p>"
-        )
-
-        Mobile.spellcasting_at_level(character, character.level, ability) + ability.difficulty
-      else
-        100
-      end
-
     if ability.duration && ability.kind != "passive" do
       cond do
         ability.duration > 0 ->
@@ -510,15 +496,6 @@ defmodule ApathyDrive.Commands.Help do
       Mobile.send_scroll(
         character,
         "<p><span class='dark-green'>Energy:</span> <span class='dark-cyan'>#{ability.energy}</span></p>"
-      )
-    end
-
-    if ability.kind != "passive" do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{
-          min(100, chance)
-        }%</span></p>"
       )
     end
 

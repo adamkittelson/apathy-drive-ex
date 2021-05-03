@@ -120,6 +120,7 @@ defmodule ApathyDrive.Item do
     field(:required_str, :integer)
     field(:magic_level, :integer)
     field(:type_id, :integer)
+    field(:block_chance, :integer)
 
     field(:item_type_ids, :any, virtual: true, default: [])
     field(:item_types, :any, virtual: true, default: [])

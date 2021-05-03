@@ -226,6 +226,12 @@ defmodule ApathyDrive.Ability do
     spectator: "{{target}}'s armour deflects {{user}}'s feeble attack!"
   }
 
+  @block_message %{
+    user: "{{target}} blocks your attack with {{target:his/her/their}} {{shield}}!",
+    target: "You block {{user}}'s attack with your {{shield}}!",
+    spectator: "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} {{shield}}!!"
+  }
+
   @doc """
   Creates a changeset based on the `model` and `params`.
 
@@ -793,9 +799,6 @@ defmodule ApathyDrive.Ability do
           mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
             mobile
 
-          casting_failed?(caster, ability) ->
-            casting_failed(room, caster_ref, ability)
-
           can_execute?(room, caster, ability) ->
             display_pre_cast_message(room, caster, item, ability)
 
@@ -879,9 +882,6 @@ defmodule ApathyDrive.Ability do
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, item)) ->
           mobile
-
-        casting_failed?(caster, ability) ->
-          casting_failed(room, caster_ref, ability)
 
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, item, ability)
@@ -1052,9 +1052,6 @@ defmodule ApathyDrive.Ability do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
           mobile
 
-        casting_failed?(caster, ability) ->
-          casting_failed(room, caster_ref, ability)
-
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, targets, ability)
 
@@ -1195,9 +1192,6 @@ defmodule ApathyDrive.Ability do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
           mobile
 
-        casting_failed?(caster, ability) ->
-          casting_failed(room, caster_ref, ability)
-
         can_execute?(room, caster, ability) ->
           display_pre_cast_message(room, caster, targets, ability)
 
@@ -1310,6 +1304,19 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < chance
   end
 
+  def blocked?(%{} = _caster, %{equipment: equipment} = _target, _ability, _room) do
+    shield = Enum.find(equipment, &(!!&1.block_chance))
+
+    if shield do
+      chance = Systems.Effect.effect_bonus(shield, "Block") + shield.block_chance
+      :rand.uniform(100) < chance
+    else
+      false
+    end
+  end
+
+  def blocked?(%{} = _caster, %{} = _target, _ability, _room), do: false
+
   def apply_ability(
         %Room{} = room,
         %{} = caster,
@@ -1331,6 +1338,32 @@ defmodule ApathyDrive.Ability do
             agility: 0.9,
             charm: 0.1
           })
+
+        room = put_in(room.mobiles[target.ref], target)
+
+        Room.update_energy_bar(room, target.ref)
+
+        room
+
+      blocked?(caster, target, ability, room) ->
+        room = add_evil_points(room, ability, caster, target)
+        caster = room.mobiles[caster.ref]
+        target = room.mobiles[target.ref]
+        Process.put(:ability_result, :blocked)
+        display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
+
+        IO.inspect(Mobile.ability_value(target, "BlockRate"))
+
+        block_energy = 500
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+          |> Character.add_attribute_experience(%{
+            agility: 0.75,
+            charm: 0.24
+          })
+          |> update_in([:energy], &(&1 - block_energy))
 
         room = put_in(room.mobiles[target.ref], target)
 
@@ -2809,6 +2842,24 @@ defmodule ApathyDrive.Ability do
   end
 
   def caster_cast_message(
+        %Ability{result: :blocked} = ability,
+        %{} = caster,
+        %{} = target,
+        mobile
+      ) do
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        @block_message.user
+        |> Text.interpolate(%{"target" => target, "shield" => shield_name(target)})
+        |> Text.capitalize_first()
+
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
+  end
+
+  def caster_cast_message(
         %Ability{result: :resisted} = ability,
         %{} = caster,
         %{} = target,
@@ -2971,6 +3022,24 @@ defmodule ApathyDrive.Ability do
   end
 
   def target_cast_message(
+        %Ability{result: :blocked} = ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    caster = ability.caster || caster
+
+    message =
+      @block_message.target
+      |> Text.interpolate(%{"user" => caster, "shield" => shield_name(target)})
+      |> Text.capitalize_first()
+
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
+  end
+
+  def target_cast_message(
         %Ability{} = ability,
         %{} = caster,
         %{ability_shift: nil} = target,
@@ -3069,6 +3138,24 @@ defmodule ApathyDrive.Ability do
 
     unless message == "" do
       "<p><span class='dark-red'>#{message}</span></p>"
+    end
+  end
+
+  def spectator_cast_message(
+        %Ability{result: :blocked} = ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    caster = ability.caster || caster
+
+    message =
+      @block_message.spectator
+      |> Text.interpolate(%{"user" => caster, "target" => target, "shield" => shield_name(target)})
+      |> Text.capitalize_first()
+
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
     end
   end
 
@@ -3613,37 +3700,7 @@ defmodule ApathyDrive.Ability do
 
   def mana_cost(%{} = _mobile, %Ability{mana: cost}), do: cost
 
-  def casting_failed?(%{} = _caster, %Ability{difficulty: nil}), do: false
-
-  def casting_failed?(%{} = caster, %Ability{difficulty: difficulty} = ability) do
-    spellcasting = Mobile.spellcasting_at_level(caster, caster.level, ability)
-    :rand.uniform(100) > spellcasting + difficulty
-  end
-
-  def casting_failed(room, caster_ref, ability) do
-    room =
-      Room.update_mobile(room, caster_ref, fn room, caster ->
-        Mobile.send_scroll(
-          caster,
-          "<p><span class='dark-cyan'>You attempt to cast #{ability.name}, but fail.</span></p>"
-        )
-
-        Room.send_scroll(
-          room,
-          "<p><span class='dark-cyan'>#{caster.name} attempts to cast #{ability.name}, but fails.</span></p>",
-          [caster]
-        )
-
-        ability = Map.put(ability, :mana, div(ability.mana, 2))
-
-        caster
-        |> Mobile.subtract_mana(ability)
-        |> Mobile.subtract_energy(ability)
-      end)
-
-    Room.update_energy_bar(room, caster_ref)
-    Room.update_mana_bar(room, caster_ref)
-
-    room
+  def shield_name(%Character{equipment: equipment}) do
+    Enum.find(equipment, &(!!&1.block_chance)).name
   end
 end

@@ -686,6 +686,10 @@ defmodule ApathyDrive.Monster do
     description
   end
 
+  def affix_description("HalfFreezeDuration", description, _val) do
+    description
+  end
+
   def affix_description(_trait_name, description, [val]) do
     ApathyDrive.Text.interpolate(description, val)
   end

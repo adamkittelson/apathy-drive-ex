@@ -436,6 +436,26 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def block_chance(%Item{block_chance: nil}, _character), do: ""
+
+  def block_chance(%Item{block_chance: chance} = item, character) do
+    value = Character.block_chance(character, item)
+
+    cond do
+      value <= 0 ->
+        ""
+
+      value >= 75 ->
+        "\nChance to Block: <span style='color: #908858'>#{value}%</span>"
+
+      value > chance ->
+        "\nChance to Block: <span style='color: #4850B8'>#{value}%</span>"
+
+      :else ->
+        "\nChance to Block: #{value}%"
+    end
+  end
+
   def required_strength(character, %Item{} = item) do
     if (strength = Item.required_strength(item)) > 0 do
       if Mobile.attribute_at_level(character, :strength, character.level) >= strength do
@@ -473,8 +493,10 @@ defmodule ApathyDrive.Commands.Look do
 
     """
       <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{
-      defense(item, character)
-    }#{required_level(character, item)}#{required_strength(character, item)}
+      block_chance(item, character)
+    }#{defense(item, character)}#{required_level(character, item)}#{
+      required_strength(character, item)
+    }
       <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
       Sells For: #{value}

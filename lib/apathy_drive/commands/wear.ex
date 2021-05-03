@@ -280,7 +280,8 @@ defmodule ApathyDrive.Commands.Wear do
 
   def conflicting_items(item, equipment) do
     Enum.filter(equipment, fn equipped_item ->
-      equipped_item.worn_on in conflicting_worn_on(item.worn_on)
+      equipped_item.worn_on in conflicting_worn_on(item.worn_on) or
+        (shield?(equipped_item) and shield?(item))
     end)
     |> case do
       [] ->
@@ -289,5 +290,9 @@ defmodule ApathyDrive.Commands.Wear do
       conflicts ->
         conflicts
     end
+  end
+
+  def shield?(%Item{} = item) do
+    Enum.any?(item.item_types, &(&1.name == "Any Shield"))
   end
 end
