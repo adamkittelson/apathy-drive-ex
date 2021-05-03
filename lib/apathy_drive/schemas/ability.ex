@@ -122,6 +122,7 @@ defmodule ApathyDrive.Ability do
   ]
 
   @duration_traits [
+    "BlockRate",
     "Defense",
     "Defense%",
     "AttackRating",
@@ -1352,9 +1353,11 @@ defmodule ApathyDrive.Ability do
         Process.put(:ability_result, :blocked)
         display_cast_message(room, caster, target, Map.put(ability, :result, :blocked))
 
-        IO.inspect(Mobile.ability_value(target, "BlockRate"))
+        block_rate = Mobile.ability_value(target, "BlockRate")
 
-        block_energy = 500
+        block_rate_multiplier = (100 - block_rate) / 100
+
+        block_energy = trunc(500 * block_rate_multiplier)
 
         target =
           target
