@@ -118,6 +118,7 @@ defmodule ApathyDrive.Item do
     field(:max_ac, :integer)
     field(:max_sockets, :integer)
     field(:required_str, :integer)
+    field(:required_agi, :integer)
     field(:magic_level, :integer)
     field(:type_id, :integer)
     field(:block_chance, :integer)
@@ -848,6 +849,11 @@ defmodule ApathyDrive.Item do
   def required_strength(%Item{} = item) do
     modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
     trunc((item.required_str || 0) * modifier)
+  end
+
+  def required_agility(%Item{} = item) do
+    modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
+    trunc((item.required_agi || 0) * modifier)
   end
 
   def required_level(%Item{} = item) do

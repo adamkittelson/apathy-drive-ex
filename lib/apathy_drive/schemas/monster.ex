@@ -530,6 +530,8 @@ defmodule ApathyDrive.Monster do
     trunc(ac * 0.75)
   end
 
+  def ac_for_item(%{min_ac: nil, max_ac: nil}, _quality), do: nil
+
   def ac_for_item(item, _quality) do
     Enum.random(item.min_ac..item.max_ac)
   end

@@ -705,7 +705,7 @@ defmodule ApathyDrive.Character do
           miss_verbs: ["throw a punch", "throws a punch"],
           min_damage: 2,
           max_damage: 7,
-          speed: 1150
+          speed: 500
         }
 
         if damage = Mobile.ability_value(character, "WeaponDamage") do
@@ -761,7 +761,9 @@ defmodule ApathyDrive.Character do
       type: "Weapon",
       name: name,
       hit_verbs: hit_verbs,
-      miss_verbs: [singular_miss, plural_miss]
+      miss_verbs: [singular_miss, plural_miss],
+      min_damage: min,
+      max_damage: max
     } = weapon
 
     bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
@@ -771,6 +773,23 @@ defmodule ApathyDrive.Character do
     table = verbs[singular_hit] || "Crushing"
 
     energy = Character.energy_per_swing(character, weapon)
+
+    modifier = (100 + (Mobile.ability_value(character, "Damage%") || 0)) / 100
+
+    {min_dam, max_dam} =
+      if modifier > 1 do
+        {max(min * modifier, min + 1), max(max * modifier, max + 1)}
+      else
+        {min, max}
+      end
+
+    min_dam =
+      min_dam + (Mobile.ability_value(character, "MinDamage") || 0) +
+        (Mobile.ability_value(character, "MinDamagePerLevel") || 0) * character.level
+
+    max_dam =
+      max_dam + (Mobile.ability_value(character, "MaxDamage") || 0) +
+        (Mobile.ability_value(character, "MaxDamagePerLevel") || 0) * character.level
 
     ability = %Ability{
       kind: "attack",
@@ -791,8 +810,8 @@ defmodule ApathyDrive.Character do
           %{
             kind: "physical",
             damage_type: table,
-            min: weapon.min_damage + Mobile.ability_value(character, "MinDamage"),
-            max: weapon.max_damage + Mobile.ability_value(character, "MaxDamage"),
+            min: min_dam,
+            max: max_dam,
             damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
           }
           | bonus_damage
@@ -1450,25 +1469,12 @@ defmodule ApathyDrive.Character do
 
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
-    level = Item.skill_for_character(character, weapon)
-    encumbrance = Character.encumbrance(character)
-    max_encumbrance = Character.max_encumbrance(character)
-    agility = Mobile.attribute_at_level(character, :agility, level)
 
-    combat_level = Character.combat_level(character)
+    ias = Mobile.ability_value(character, "IncreasedAttackSpeed")
 
-    cost =
-      weapon.speed * 1000 /
-        ((level * (combat_level + 2) + 45) * (agility + 150) *
-           1500 /
-           9000.0)
+    ias_multiplier = (100 - ias) / 100
 
-    energy =
-      trunc(
-        cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
-      )
-
-    min(energy, 1000)
+    max(200, min(1000, trunc(weapon.speed * ias_multiplier)))
   end
 
   def spell_energy_per_swing(character, weapon, ability) do

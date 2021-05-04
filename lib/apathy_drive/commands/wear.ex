@@ -164,6 +164,45 @@ defmodule ApathyDrive.Commands.Wear do
 
       :else ->
         cond do
+          items_to_remove = conflicting_items(item, equipment) ->
+            equipment = Enum.reject(equipment, &(&1 in items_to_remove))
+
+            inventory = List.delete(inventory, item)
+
+            if persist do
+              Enum.each(items_to_remove, fn item_to_remove ->
+                %ItemInstance{id: item_to_remove.instance_id}
+                |> Ecto.Changeset.change(%{equipped: false})
+                |> Repo.update!()
+              end)
+            end
+
+            inventory =
+              items_to_remove
+              |> Enum.reduce(inventory, fn item_to_remove, inv ->
+                item_to_remove = Map.put(item_to_remove, :equipped, false)
+                List.insert_at(inv, -1, item_to_remove)
+              end)
+
+            if persist do
+              %ItemInstance{id: item.instance_id}
+              |> Ecto.Changeset.change(%{equipped: true})
+              |> Repo.update!()
+            end
+
+            item = Map.put(item, :equipped, true)
+
+            equipment = List.insert_at(equipment, -1, item)
+
+            character =
+              character
+              |> Map.put(:inventory, inventory)
+              |> Map.put(:equipment, equipment)
+              |> Character.add_equipped_items_effects()
+              |> Character.load_abilities()
+
+            %{equipped: item, unequipped: items_to_remove, character: character}
+
           Enum.count(equipment, &(&1.worn_on == worn_on)) >= worn_on_max(item) ->
             item_to_remove =
               equipment
@@ -206,45 +245,6 @@ defmodule ApathyDrive.Commands.Wear do
               false
             end
 
-          items_to_remove = conflicting_items(item, equipment) ->
-            equipment = Enum.reject(equipment, &(&1 in items_to_remove))
-
-            inventory = List.delete(inventory, item)
-
-            if persist do
-              Enum.each(items_to_remove, fn item_to_remove ->
-                %ItemInstance{id: item_to_remove.instance_id}
-                |> Ecto.Changeset.change(%{equipped: false})
-                |> Repo.update!()
-              end)
-            end
-
-            inventory =
-              items_to_remove
-              |> Enum.reduce(inventory, fn item_to_remove, inv ->
-                item_to_remove = Map.put(item_to_remove, :equipped, false)
-                List.insert_at(inv, -1, item_to_remove)
-              end)
-
-            if persist do
-              %ItemInstance{id: item.instance_id}
-              |> Ecto.Changeset.change(%{equipped: true})
-              |> Repo.update!()
-            end
-
-            item = Map.put(item, :equipped, true)
-
-            equipment = List.insert_at(equipment, -1, item)
-
-            character =
-              character
-              |> Map.put(:inventory, inventory)
-              |> Map.put(:equipment, equipment)
-              |> Character.add_equipped_items_effects()
-              |> Character.load_abilities()
-
-            %{equipped: item, unequipped: items_to_remove, character: character}
-
           true ->
             inventory =
               inventory
@@ -281,7 +281,7 @@ defmodule ApathyDrive.Commands.Wear do
   def conflicting_items(item, equipment) do
     Enum.filter(equipment, fn equipped_item ->
       equipped_item.worn_on in conflicting_worn_on(item.worn_on) or
-        (shield?(equipped_item) and shield?(item))
+        (shield?(equipped_item) and shield?(item)) or (weapon?(equipped_item) and weapon?(item))
     end)
     |> case do
       [] ->
@@ -294,5 +294,9 @@ defmodule ApathyDrive.Commands.Wear do
 
   def shield?(%Item{} = item) do
     Enum.any?(item.item_types, &(&1.name == "Any Shield"))
+  end
+
+  def weapon?(%Item{} = item) do
+    Enum.any?(item.item_types, &(&1.name == "Weapon"))
   end
 end

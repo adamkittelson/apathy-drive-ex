@@ -10,6 +10,7 @@ defmodule ApathyDrive.Commands.Look do
     Doors,
     Regeneration,
     Item,
+    ItemType,
     Match,
     Mobile,
     Repo,
@@ -436,6 +437,43 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def damage(%{min_damage: nil, max_damage: nil}, _character), do: ""
+
+  def damage(%Item{min_damage: min, max_damage: max} = item, character) do
+    modifier = (100 + (Systems.Effect.effect_bonus(item, "Damage%") || 0)) / 100
+
+    {min_dam, max_dam} =
+      if modifier > 1 do
+        {max(min * modifier, min + 1), max(max * modifier, max + 1)}
+      else
+        {min, max}
+      end
+
+    min_dam =
+      min_dam + (Systems.Effect.effect_bonus(item, "MinDamage") || 0) +
+        (Systems.Effect.effect_bonus(item, "MinDamagePerLevel") || 0) * character.level
+
+    max_dam =
+      max_dam + (Systems.Effect.effect_bonus(item, "MaxDamage") || 0) +
+        (Systems.Effect.effect_bonus(item, "MaxDamagePerLevel") || 0) * character.level
+
+    min_dam =
+      if min_dam > min do
+        "<span style='color: #4850B8'>#{min_dam}</span>"
+      else
+        min
+      end
+
+    max_dam =
+      if max_dam > max do
+        "<span style='color: #4850B8'>#{max_dam}</span>"
+      else
+        max
+      end
+
+    "\nDamage: #{min_dam}-#{max_dam}"
+  end
+
   def block_chance(%Item{block_chance: nil}, _character), do: ""
 
   def block_chance(%Item{block_chance: chance} = item, character) do
@@ -468,6 +506,18 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def required_agility(character, %Item{} = item) do
+    if (agility = Item.required_agility(item)) > 0 do
+      if Mobile.attribute_at_level(character, :agility, character.level) >= agility do
+        "\nRequired Agility: #{agility}"
+      else
+        "\n<span class='red'>Required Agility: #{agility}</span>"
+      end
+    else
+      ""
+    end
+  end
+
   def required_level(character, %Item{} = item) do
     if (level = Item.required_level(item)) > 0 do
       if character.level >= level do
@@ -480,7 +530,34 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def item_tooltip(%Character{} = character, %Item{type: "Armour"} = item) do
+  def weapon_speed(%Item{speed: nil}), do: ""
+
+  def weapon_speed(%Item{speed: speed, type_id: type_id} = item) do
+    type = Repo.get(ItemType, type_id).name
+    desc = weapon_speeds(speed)
+
+    ias = Systems.Effect.effect_bonus(item, "IncreasedAttackSpeed") || 0
+
+    ias_multiplier = (100 - ias) / 100
+
+    ias_energy = trunc(speed * ias_multiplier)
+
+    enhanced_desc = weapon_speeds(ias_energy)
+
+    if enhanced_desc != desc do
+      "\n#{type} Class: <span style='color: #908858'>#{enhanced_desc} Attack Speed</span>"
+    else
+      "\n#{type} Class: #{enhanced_desc} Attack Speed"
+    end
+  end
+
+  def weapon_speeds(energy) when energy > 800, do: "Very Slow"
+  def weapon_speeds(energy) when energy > 500 and energy <= 800, do: "Slow"
+  def weapon_speeds(energy) when energy > 330 and energy <= 500, do: "Normal"
+  def weapon_speeds(energy) when energy > 250 and energy <= 330, do: "Fast"
+  def weapon_speeds(energy) when energy <= 250, do: "Very Fast"
+
+  def item_tooltip(%Character{} = character, %Item{} = item) do
     value =
       %Shop{cost_multiplier: 1}
       |> Shop.sell_price(character, item)
@@ -494,9 +571,9 @@ defmodule ApathyDrive.Commands.Look do
     """
       <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{
       block_chance(item, character)
-    }#{defense(item, character)}#{required_level(character, item)}#{
+    }#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{
       required_strength(character, item)
-    }
+    }#{required_agility(character, item)}#{weapon_speed(item)}
       <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
       Sells For: #{value}
@@ -504,62 +581,6 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def item_tooltip(%Character{} = _character, _item), do: ""
-
-  def look_at_item(%Character{} = character, %Item{type: "Armour"} = item) do
-    item = item_tooltip(character, item)
-    Mobile.send_scroll(character, "<p class='item'>#{item}</span>")
-  end
-
-  def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    ability = Character.ability_for_weapon(character, item)
-    damage = weapon_damage(character, ability)
-
-    value =
-      %Shop{cost_multiplier: 1}
-      |> Shop.sell_price(character, item)
-      |> Currency.set_value()
-      |> Currency.to_string()
-      |> case do
-        "" -> "FREE"
-        value -> value
-      end
-
-    Mobile.send_scroll(character, "<p>#{item.description}</p>")
-
-    item.effects
-    |> Map.values()
-    |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
-    |> Enum.map(& &1["StatusMessage"])
-    |> Enum.each(fn effect_message ->
-      Mobile.send_scroll(character, "<p>#{effect_message}</p>")
-    end)
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Kind:</span> <span class='dark-cyan'>#{item.weapon_type}</span></p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>DPS:</span> <span class='dark-cyan'>#{damage.dps} (#{
-        trunc(damage.min_damage)
-      }-#{trunc(damage.max_damage)} @ #{trunc(damage.ability.energy / 10)}% energy per swing)</span></p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Weight:</span> <span class='dark-cyan'>#{item.weight}</span></p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Value:</span> <span class='dark-cyan'>#{value}</span></p>"
-    )
-
-    display_traits(character, item)
-
-    display_enchantment(character, item)
-  end
 
   def look_at_item(%Character{} = character, %Item{type: "Sign"} = item) do
     Mobile.send_scroll(
@@ -575,7 +596,7 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def look_at_item(%Character{} = character, %Item{} = item) do
+  def look_at_item(%Character{} = character, %Item{worn_on: nil} = item) do
     value =
       %Shop{cost_multiplier: 1}
       |> Shop.sell_price(character, item)
@@ -624,6 +645,11 @@ defmodule ApathyDrive.Commands.Look do
     display_traits(character, item)
 
     display_enchantment(character, item)
+  end
+
+  def look_at_item(%Character{} = character, %Item{} = item) do
+    item = item_tooltip(character, item)
+    Mobile.send_scroll(character, "<p class='item'>#{item}</span>")
   end
 
   def look_at_item(mobile, %{description: description}) do
