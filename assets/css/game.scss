@@ -202,6 +202,12 @@ textarea.prompt {
   transition:1s;
 }
 
+.progress-bar.hp.poisoned {
+  background-image: linear-gradient(#00c000,#004000), linear-gradient(#8b008b, #360036), linear-gradient(#292929,#292929);
+  background-repeat:no-repeat;
+  transition:1s;
+}
+
 .progress-bar.mana {
   background-image: linear-gradient(#0000dd, #000066), linear-gradient(#292929,#292929);
   background-repeat:no-repeat;

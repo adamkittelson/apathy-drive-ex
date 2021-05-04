@@ -799,7 +799,9 @@ defmodule ApathyDrive.Character do
                                                            damage ->
         %{
           "Duration" => damage["Duration"] + duration,
-          "Amount" => damage["Amount"] + amount
+          "Amount" => damage["Amount"] + amount,
+          "StackCount" => 1,
+          "StackKey" => "WeaponPoison"
         }
       end)
 
@@ -1387,7 +1389,8 @@ defmodule ApathyDrive.Character do
          ref: mobile.ref,
          player: mobile.ref == character.ref,
          percentage: max(0, trunc(percent * 100)),
-         shield: Mobile.ability_value(mobile, "Bubble")
+         shield: Mobile.ability_value(mobile, "Bubble"),
+         poisoned: Mobile.has_ability?(mobile, "Poison")
        }}
     )
 

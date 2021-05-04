@@ -514,28 +514,7 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def energy_cost(%Character{} = character) do
-    current_encumbrance = Character.encumbrance(character)
-    max_encumbrance = Character.max_encumbrance(character)
-
-    encumbrance_percent = current_encumbrance / max_encumbrance
-
-    energy =
-      cond do
-        encumbrance_percent < 0.17 ->
-          # none
-          50
-
-        encumbrance_percent < 0.34 ->
-          # light
-          100
-
-        encumbrance_percent < 0.67 ->
-          # medium
-          200
-
-        :else ->
-          300
-      end
+    energy = 50
 
     if character.sneaking do
       modifier = max(1.0, 2 - Mobile.stealth_at_level(character, character.level) / 100)

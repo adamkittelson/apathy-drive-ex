@@ -168,6 +168,7 @@ defmodule ApathyDrive.Ability do
     "Intellect",
     "IncreasedAttackSpeed",
     "Light",
+    "MagicalDR",
     "MaxBubble",
     "MaxBubble%",
     "MaxDamage",
@@ -184,6 +185,7 @@ defmodule ApathyDrive.Ability do
     "MinDamagePerLevel",
     "ModifyDamage",
     "Perception",
+    "PhysicalDR",
     "Picklocks",
     "Poison",
     "PoisonImmunity",
@@ -2142,6 +2144,8 @@ defmodule ApathyDrive.Ability do
 
             ability_damage = Enum.random(min..max)
 
+            ability_damage = ability_damage - Mobile.ability_value(target, "PhysicalDR")
+
             resist = Mobile.physical_resistance_at_level(target, target.level)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
@@ -2167,6 +2171,8 @@ defmodule ApathyDrive.Ability do
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
+            dmg = dmg - Mobile.ability_value(target, "PhysicalDR")
+
             damage = dmg + bonus_damage
 
             damage = damage * resist_percent
@@ -2185,6 +2191,8 @@ defmodule ApathyDrive.Ability do
             max = trunc(max)
 
             ability_damage = Enum.random(min..max)
+
+            ability_damage = ability_damage - Mobile.ability_value(target, "MagicalDR")
 
             resist = Mobile.magical_resistance_at_level(target, target.level)
 
@@ -2214,6 +2222,8 @@ defmodule ApathyDrive.Ability do
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
+            damage = damage - Mobile.ability_value(target, "MagicalDR")
+
             damage = damage + bonus_damage
 
             damage = damage * resist_percent
@@ -2229,6 +2239,8 @@ defmodule ApathyDrive.Ability do
           %{kind: "drain", min: min, max: max, damage_type: type},
           {caster, damage_percent, target} ->
             damage = Enum.random(min..max)
+
+            damage = damage - Mobile.ability_value(target, "MagicalDR")
 
             damage = damage + bonus_damage
 
@@ -2428,15 +2440,22 @@ defmodule ApathyDrive.Ability do
 
     target =
       independent_duration_effects
-      |> Enum.reduce(target, fn {_key, value} = trait, target ->
-        duration = value["Duration"]
+      |> Enum.reduce(target, fn
+        {key, value} = trait, target ->
+          duration = value["Duration"]
 
-        effects =
-          trait
-          |> process_duration_trait(%{}, target, caster, duration)
-          |> Map.put("effect_ref", make_ref())
+          trait_map = %{key => value}
 
-        Systems.Effect.add(target, effects, :timer.seconds(duration))
+          effects =
+            trait
+            |> process_duration_trait(trait_map, target, caster, duration)
+            |> Map.put("effect_ref", make_ref())
+
+          if Map.has_key?(trait_map, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") do
+            target
+          else
+            Systems.Effect.add(target, effects, :timer.seconds(duration))
+          end
       end)
 
     if message = effects["StatusMessage"] do
@@ -2839,9 +2858,6 @@ defmodule ApathyDrive.Ability do
         false
 
       Ability.has_ability?(ability, "AffectsUndead") and !Mobile.has_ability?(target, "Undead") ->
-        false
-
-      Ability.has_ability?(ability, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") ->
         false
 
       true ->

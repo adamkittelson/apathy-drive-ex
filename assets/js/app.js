@@ -153,9 +153,21 @@ chan.on("update mana bar", function (data) {
 chan.on("update hp bar", function (data) {
   if (data.player) {
     progress($("#player-bars .hp"), data.percentage, data.shield)
+    if (data.poisoned) {
+      $("#player-bars .hp").addClass('poisoned')
+    }
+    else {
+      $("#player-bars .hp").removeClass('poisoned')
+    }
   }
 
   progress($("#" + data.ref + "-bars .hp"), data.percentage, data.shield)
+  if (data.poisoned) {
+    $("#" + data.ref + "-bars .hp").addClass('poisoned')
+  }
+  else {
+    $("#" + data.ref + "-bars .hp").removeClass('poisoned')
+  }
 })
 
 chan.on("update mob list", function (data) {
