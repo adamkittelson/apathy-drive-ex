@@ -768,6 +768,43 @@ defmodule ApathyDrive.Character do
 
     bonus_damage = Systems.Effect.effect_bonus(weapon, "WeaponDamage")
 
+    elemental_damage =
+      Enum.reduce(
+        ["ColdDamage", "ElectricityDamage", "FireDamage"],
+        [],
+        fn damage, damages ->
+          list = Mobile.ability_value(character, damage)
+
+          table = String.replace(damage, "Damage", "")
+
+          Enum.map(list, fn %{"min" => min, "max" => max} ->
+            %{
+              kind: "magical",
+              damage_type: table,
+              min: min,
+              max: max,
+              damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
+            }
+          end) ++ damages
+        end
+      )
+
+    poison_damage =
+      character
+      |> Mobile.ability_value("PoisonDamage")
+      |> Enum.reduce(%{"Amount" => 0, "Duration" => 0}, fn %{
+                                                             "amount" => amount,
+                                                             "duration" => duration
+                                                           },
+                                                           damage ->
+        %{
+          "Duration" => damage["Duration"] + duration,
+          "Amount" => damage["Amount"] + amount
+        }
+      end)
+
+    bonus_damage = bonus_damage ++ elemental_damage
+
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
 
     table = verbs[singular_hit] || "Crushing"
@@ -778,7 +815,7 @@ defmodule ApathyDrive.Character do
 
     {min_dam, max_dam} =
       if modifier > 1 do
-        {max(min * modifier, min + 1), max(max * modifier, max + 1)}
+        {max(trunc(min * modifier), min + 1), max(trunc(max * modifier), max + 1)}
       else
         {min, max}
       end
@@ -817,6 +854,7 @@ defmodule ApathyDrive.Character do
           | bonus_damage
         ],
         "Dodgeable" => true,
+        "Poison" => poison_damage,
         "DodgeUserMessage" =>
           "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",

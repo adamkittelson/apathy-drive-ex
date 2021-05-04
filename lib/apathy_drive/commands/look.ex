@@ -444,7 +444,7 @@ defmodule ApathyDrive.Commands.Look do
 
     {min_dam, max_dam} =
       if modifier > 1 do
-        {max(min * modifier, min + 1), max(max * modifier, max + 1)}
+        {max(trunc(min * modifier), min + 1), max(trunc(max * modifier), max + 1)}
       else
         {min, max}
       end
@@ -456,6 +456,20 @@ defmodule ApathyDrive.Commands.Look do
     max_dam =
       max_dam + (Systems.Effect.effect_bonus(item, "MaxDamage") || 0) +
         (Systems.Effect.effect_bonus(item, "MaxDamagePerLevel") || 0) * character.level
+
+    {min_dam, max_dam} =
+      Enum.reduce(
+        ["ColdDamage", "ElectricityDamage", "FireDamage"],
+        {min_dam, max_dam},
+        fn damage, {min_dam, max_dam} ->
+          list = Systems.Effect.effect_bonus(item, damage)
+
+          Enum.reduce(list, {min_dam, max_dam}, fn %{"max" => max, "min" => min},
+                                                   {min_dam, max_dam} ->
+            {min_dam + min, max_dam + max}
+          end)
+        end
+      )
 
     min_dam =
       if min_dam > min do

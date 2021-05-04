@@ -122,20 +122,19 @@ defmodule ApathyDrive.Ability do
   ]
 
   @duration_traits [
-    "BlockRate",
-    "Defense",
-    "Defense%",
     "AttackRating",
     "AttackRatingVsUndead",
     "Agility",
     "Alignment",
     "Beacon",
+    "BlockRate",
     "Bubble",
     "Bubble%",
     "BubbleRegen%PerSecond",
     "Charm",
     "Blind",
     "Charm",
+    "ColdDamage",
     "Confusion",
     "ConfusionMessage",
     "ConfusionSpectatorMessage",
@@ -149,13 +148,17 @@ defmodule ApathyDrive.Ability do
     "Damage%VsUndead",
     "DarkVision",
     "Damage%",
+    "Defense",
+    "Defense%",
     "DeusExMachina",
     "Dodge",
     "DefensePerLevel",
+    "ElectricityDamage",
     "Encumbrance",
     "EndCast",
     "EndCast%",
     "Enslave",
+    "FireDamage",
     "Fear",
     "Heal",
     "Replenishment",
@@ -184,6 +187,7 @@ defmodule ApathyDrive.Ability do
     "Picklocks",
     "Poison",
     "PoisonImmunity",
+    "PoisonDamage",
     "RemoveMessage",
     "ResistAether",
     "ResistCold",
@@ -2381,9 +2385,29 @@ defmodule ApathyDrive.Ability do
   def apply_duration_traits(%{} = target, %Ability{duration: duration} = ability, %{} = caster) do
     duration = if duration, do: duration, else: 0
 
+    independent_duration_effects =
+      ability
+      |> duration_traits()
+      |> Enum.filter(fn
+        {_key, %{} = value} ->
+          Map.has_key?(value, "Duration")
+
+        {_key, _value} ->
+          false
+      end)
+      |> Enum.into(%{})
+
     effects =
       ability
       |> duration_traits()
+      |> Enum.reject(fn
+        {_key, %{} = value} ->
+          Map.has_key?(value, "Duration")
+
+        {_key, _value} ->
+          false
+      end)
+      |> Enum.into(%{})
       |> Map.put("stack_key", ability.traits["StackKey"] || ability.id)
       |> Map.put("stack_count", ability.traits["StackCount"] || 1)
       |> process_duration_traits(target, caster, ability.duration)
@@ -2401,6 +2425,19 @@ defmodule ApathyDrive.Ability do
           |> Systems.Effect.add(effects, :timer.seconds(duration))
         end
       end
+
+    target =
+      independent_duration_effects
+      |> Enum.reduce(target, fn {_key, value} = trait, target ->
+        duration = value["Duration"]
+
+        effects =
+          trait
+          |> process_duration_trait(%{}, target, caster, duration)
+          |> Map.put("effect_ref", make_ref())
+
+        Systems.Effect.add(target, effects, :timer.seconds(duration))
+      end)
 
     if message = effects["StatusMessage"] do
       Mobile.send_scroll(
@@ -2490,17 +2527,23 @@ defmodule ApathyDrive.Ability do
     |> Map.put("StatusMessage", "You are taking damage!")
   end
 
-  def process_duration_trait({"Poison", damage_per_30}, effects, target, _caster, _duration) do
+  def process_duration_trait(
+        {"Poison", %{"Amount" => amount, "Duration" => duration}},
+        effects,
+        target,
+        _caster,
+        _duration
+      ) do
     if Mobile.has_ability?(target, "PoisonImmunity") do
       Map.put(effects, "Damage", 0)
     else
-      # modifier = Mobile.ability_value(target, "ResistPoison")
+      modifier = Mobile.ability_value(target, "ResistPoison")
 
-      # damage = damage * (1 - modifier / 100)
+      amount = amount * (1 - modifier / 100)
 
-      rounds = :timer.seconds(30) / Regeneration.round_length(target)
+      rounds = :timer.seconds(duration) / Regeneration.round_length(target)
 
-      percent = damage_per_30 / Mobile.max_hp_at_level(target, target.level)
+      percent = amount / Mobile.max_hp_at_level(target, target.level)
 
       percent = percent / rounds
 
