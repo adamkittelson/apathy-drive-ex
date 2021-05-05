@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Commands.System.Edit do
-  alias ApathyDrive.{Ability, Item, Mobile, Room, ShopItem, Skill, Trait}
+  alias ApathyDrive.{Ability, Item, Mobile, Room, ShopItem, Trait}
   alias ApathyDrive.Commands.Help
 
   def execute(%Room{} = room, character, args) do
@@ -14,9 +14,6 @@ defmodule ApathyDrive.Commands.System.Edit do
 
       trait = Trait.match_by_name(query) ->
         edit_trait(room, character, trait)
-
-      skill = Skill.match_by_name(query) ->
-        edit_skill(room, character, skill)
 
       :else ->
         Mobile.send_scroll(character, "<p>No object matched your query.</p>")
@@ -93,29 +90,6 @@ defmodule ApathyDrive.Commands.System.Edit do
     )
 
     Enum.each(traits, fn match ->
-      Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
-    end)
-
-    room
-  end
-
-  def edit_skill(room, character, %Skill{} = skill) do
-    Mobile.send_scroll(character, "<p>You are now editing #{skill.name}.</p>")
-
-    Room.update_mobile(room, character.ref, fn _room, character ->
-      character
-      |> Map.put(:editing, skill)
-      |> Mobile.update_prompt(room)
-    end)
-  end
-
-  def edit_skill(room, character, skills) do
-    Mobile.send_scroll(
-      character,
-      "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
-    )
-
-    Enum.each(skills, fn match ->
       Mobile.send_scroll(character, "<p>-- #{match.name}</p>")
     end)
 

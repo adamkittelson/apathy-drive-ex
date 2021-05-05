@@ -149,7 +149,6 @@ defmodule ApathyDrive.Room do
         Room.update_mobile(updated_room, ref, fn _updated_room, character ->
           character
           |> Character.load_items()
-          |> Character.set_skill_levels()
           |> Character.load_abilities()
         end)
 

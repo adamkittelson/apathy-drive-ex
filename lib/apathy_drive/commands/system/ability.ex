@@ -12,8 +12,6 @@ defmodule ApathyDrive.Commands.System.Ability do
     Mobile,
     Repo,
     Room,
-    Skill,
-    SkillAbility,
     Trait
   }
 
@@ -62,24 +60,6 @@ defmodule ApathyDrive.Commands.System.Ability do
         "class" | trait
       ]) do
     remove_class(room, character, trait)
-
-    room
-  end
-
-  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
-        "add",
-        "skill" | trait
-      ]) do
-    add_skill(room, character, trait)
-
-    room
-  end
-
-  def execute(%Room{} = room, %Character{editing: %Ability{}} = character, [
-        "remove",
-        "skill" | trait
-      ]) do
-    remove_skill(room, character, trait)
 
     room
   end
@@ -300,59 +280,6 @@ defmodule ApathyDrive.Commands.System.Ability do
       end
     else
       Mobile.send_scroll(character, "<p>No class by that name was found.</p>")
-    end
-  end
-
-  defp add_skill(room, character, [skill | level]) do
-    level =
-      level
-      |> Enum.join()
-      |> Integer.parse()
-      |> case do
-        {level, ""} ->
-          level
-
-        other ->
-          other
-      end
-
-    ability = character.editing
-
-    skill = Repo.get_by(Skill, name: skill)
-
-    cond do
-      is_nil(skill) ->
-        Mobile.send_scroll(character, "<p>No skill by that name was found.</p>")
-
-      is_integer(level) ->
-        on_conflict = [set: [level: level]]
-
-        %SkillAbility{ability_id: ability.id, skill_id: skill.id, level: level}
-        |> Repo.insert(on_conflict: on_conflict, conflict_target: [:ability_id, :skill_id])
-
-        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
-        Help.execute(room, character, [ability.name])
-
-      :else ->
-        Mobile.send_scroll(character, "<p>Must provide a valid level.</p>")
-    end
-  end
-
-  defp remove_skill(room, character, skill) do
-    skill = Enum.join(skill, " ")
-
-    ability = character.editing
-
-    if skill = Repo.get_by(Skill, name: skill) do
-      if ca = Repo.get_by(SkillAbility, skill_id: skill.id, ability_id: ability.id) do
-        Repo.delete!(ca)
-        ApathyDrive.PubSub.broadcast!("rooms", :reload_abilities)
-        Help.execute(room, character, [ability.name])
-      else
-        Mobile.send_scroll(character, "<p>#{skill.name} does not have #{ability.name}.</p>")
-      end
-    else
-      Mobile.send_scroll(character, "<p>No skill by that name was found.</p>")
     end
   end
 

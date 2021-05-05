@@ -198,10 +198,6 @@ defmodule ApathyDrive.Commands.System do
     System.Edit.execute(room, character, args)
   end
 
-  def system(%Room{} = room, character, ["skill" | args]) do
-    System.Skill.execute(room, character, args)
-  end
-
   def system(%Room{} = room, character, ["area" | args]) do
     System.Area.execute(room, character, args)
   end

@@ -7,7 +7,6 @@ defmodule ApathyDrive.Ability do
     AbilityTrait,
     Aggression,
     Character,
-    CraftingRecipe,
     Enchantment,
     Item,
     ItemInstance,
@@ -55,7 +54,6 @@ defmodule ApathyDrive.Ability do
     field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
     field(:result, :any, virtual: true)
     field(:cast_complete, :boolean, virtual: true, default: false)
-    field(:skills, :any, virtual: true, default: [])
     field(:target_list, :any, virtual: true)
     field(:attributes, :any, virtual: true)
     field(:max_stacks, :integer, virtual: true, default: 1)
@@ -65,7 +63,6 @@ defmodule ApathyDrive.Ability do
     field(:spell?, :boolean, virtual: true, default: true)
     field(:auto, :boolean, virtual: true, default: true)
     field(:class_id, :integer, virtual: true)
-    field(:skill_id, :integer, virtual: true)
 
     belongs_to(:crit_table, ApathyDrive.DamageType)
 
@@ -554,14 +551,7 @@ defmodule ApathyDrive.Ability do
       |> preload(:ability)
       |> Repo.all()
 
-    skill_ability_ids =
-      ApathyDrive.SkillAbility
-      |> select([:ability_id])
-      |> distinct(true)
-      |> preload(:ability)
-      |> Repo.all()
-
-    (class_ability_ids ++ scroll_ability_ids ++ skill_ability_ids)
+    (class_ability_ids ++ scroll_ability_ids)
     |> Enum.map(& &1.ability)
     |> Enum.uniq()
     |> Enum.reject(&(is_nil(&1.name) or &1.name == "" or &1.kind == "base-class"))
@@ -725,7 +715,6 @@ defmodule ApathyDrive.Ability do
           |> Repo.all()
           |> case do
             [%Enchantment{finished: false} = enchantment] ->
-              enchantment = Repo.preload(enchantment, :skill)
               enchantment = Repo.preload(enchantment, :items_instances)
               time = Enchantment.next_tick_time(caster, enchantment)
 
@@ -749,17 +738,13 @@ defmodule ApathyDrive.Ability do
               |> Map.put(:enchantment, enchantment)
 
             [] ->
-              recipe = CraftingRecipe.for_item(item)
-
               enchantment =
                 %Enchantment{
                   items_instances_id: item.instance_id,
-                  ability_id: nil,
-                  skill_id: recipe.skill_id
+                  ability_id: nil
                 }
                 |> Repo.insert!()
                 |> Repo.preload(:items_instances)
-                |> Repo.preload(:skill)
 
               time = Enchantment.next_tick_time(caster, enchantment)
               Mobile.send_scroll(caster, "<p><span class='cyan'>You begin work.</span></p>")

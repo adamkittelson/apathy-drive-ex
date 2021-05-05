@@ -13,10 +13,8 @@ defmodule ApathyDrive.Character do
     CharacterClass,
     CharacterMaterial,
     CharacterRace,
-    CharacterSkill,
     CharacterTrait,
     Class,
-    ClassSkill,
     Currency,
     Directory,
     ElementalLores,
@@ -30,7 +28,6 @@ defmodule ApathyDrive.Character do
     RaceTrait,
     Room,
     RoomServer,
-    Skill,
     Statix,
     Text,
     TimerManager,
@@ -261,8 +258,7 @@ defmodule ApathyDrive.Character do
   def encumbrance(%Character{} = character) do
     equipment_weight =
       Enum.reduce(character.equipment, 0, fn item, weight ->
-        skill_level = Item.skill_for_character(character, item)
-        multiplier = 1 - skill_level / 100
+        multiplier = 1 - character.level / 100
 
         weight + trunc(item.weight * multiplier)
       end)
@@ -336,13 +332,6 @@ defmodule ApathyDrive.Character do
         )
       end)
 
-    skill_abilities =
-      character.skills
-      |> Enum.map(fn {_name, %{skill_id: id, level: level}} ->
-        ApathyDrive.SkillAbility.abilities_at_level(id, level)
-      end)
-      |> List.flatten()
-
     granted_abilities =
       character
       |> Mobile.ability_value("Grant")
@@ -364,7 +353,7 @@ defmodule ApathyDrive.Character do
     class_abilities = Enum.reject(class_abilities, &(&1.ability.kind == "base-class"))
 
     character =
-      (class_abilities ++ skill_abilities ++ granted_abilities)
+      (class_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
@@ -516,51 +505,6 @@ defmodule ApathyDrive.Character do
 
       Character.update_attribute_bar(character, stat)
       character
-    end)
-  end
-
-  def set_skill_levels(%Character{} = character) do
-    character = put_in(character.skills, %{})
-
-    character =
-      character.classes
-      |> Enum.reduce(character, fn %{class_id: id, level: level}, character ->
-        id
-        |> ClassSkill.load_skills()
-        |> Enum.reduce(character, fn %{name: name} = skill, character ->
-          character
-          |> update_in([:skills], &Map.put_new(&1, name, Map.put(skill, :level, 0)))
-          |> update_in([:skills, name, :level], &min(max(&1, level), character.level))
-        end)
-      end)
-
-    Skill
-    |> Ecto.Query.where([s], s.universal == true)
-    |> Repo.all()
-    |> Enum.reduce(character, fn skill, character ->
-      case Repo.get_by(CharacterSkill, character_id: character.id, skill_id: skill.id) do
-        nil ->
-          character_skill =
-            %CharacterSkill{
-              character_id: character.id,
-              skill_id: skill.id,
-              exp_multiplier: skill.exp_multiplier,
-              experience: 0
-            }
-            |> Repo.insert!()
-
-          character_skill = Skill.set_level(character_skill)
-
-          put_in(character.skills[skill.name], character_skill)
-
-        %CharacterSkill{} = character_skill ->
-          character_skill =
-            character_skill
-            |> Map.put(:exp_multiplier, skill.exp_multiplier)
-            |> Skill.set_level()
-
-          put_in(character.skills[skill.name], character_skill)
-      end
     end)
   end
 
@@ -871,8 +815,7 @@ defmodule ApathyDrive.Character do
           "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!",
         "PhysicalPenetration" => Systems.Effect.effect_bonus(weapon, "PhysicalPenetration"),
         "MagicalPenetration" => Systems.Effect.effect_bonus(weapon, "MagicalPenetration")
-      },
-      skills: [weapon.weapon_type]
+      }
     }
 
     ability =
@@ -1052,57 +995,6 @@ defmodule ApathyDrive.Character do
   end
 
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
-
-  def add_skill_experience(%Character{} = character, skill_name, amount) do
-    old_abilities = Map.values(character.abilities)
-    skill_level = character.skills[skill_name].level
-
-    skill =
-      character.skills[skill_name]
-      |> Ecto.Changeset.change(%{
-        experience: character.skills[skill_name].experience + trunc(amount)
-      })
-      |> Repo.update!()
-      |> Skill.set_level()
-
-    character = put_in(character.skills[skill_name], skill)
-
-    new_skill_level = skill.level
-
-    if new_skill_level > skill_level do
-      message =
-        "<p><span class='yellow'>Your #{skill_name} skill increased to #{new_skill_level}!</span></p>"
-
-      Repo.insert!(%ChannelHistory{
-        character_id: character.id,
-        message: message
-      })
-
-      Character.send_chat(
-        character,
-        message
-      )
-
-      character = Character.load_abilities(character)
-
-      new_abilities = Map.values(character.abilities)
-
-      Enum.each(new_abilities, fn ability ->
-        unless ability in old_abilities do
-          Mobile.send_scroll(
-            character,
-            "<p>\nYou've learned the <span class='dark-cyan'>#{ability.name}</span> ability!</p>"
-          )
-
-          Mobile.send_scroll(character, "<p>     #{ability.description}</p>")
-        end
-      end)
-
-      character
-    else
-      character
-    end
-  end
 
   def exp_to_drain(%Character{exp_buffer: nil}), do: 0
   def exp_to_drain(%Character{exp_buffer: 0}), do: 0
@@ -2375,11 +2267,9 @@ defmodule ApathyDrive.Character do
           0
         end
 
-      skill = character.skills["stealth"]
-
       class_modifier =
-        if level > 0 && skill && skill.level > 0 do
-          skill.level / level * 0.6
+        if level > 0 do
+          level * 0.6
         else
           0
         end

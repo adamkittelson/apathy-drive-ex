@@ -3,10 +3,6 @@ defmodule ApathyDrive.Level do
     exp_at_level(current_level + 1) - current_exp
   end
 
-  def exp_to_next_skill_level(current_level, current_exp, multiplier) do
-    trunc(exp_to_next_level(current_level, current_exp) * multiplier)
-  end
-
   def exp_to_next_attribute_level(current_level, current_exp, multiplier) do
     trunc(exp_to_next_level(current_level, current_exp) * multiplier)
   end

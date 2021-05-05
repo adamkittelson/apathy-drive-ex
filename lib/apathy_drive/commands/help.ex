@@ -15,9 +15,7 @@ defmodule ApathyDrive.Commands.Help do
     Race,
     RaceTrait,
     Repo,
-    Room,
-    Skill,
-    SkillAbility
+    Room
   }
 
   require Ecto.Query
@@ -533,23 +531,6 @@ defmodule ApathyDrive.Commands.Help do
         character,
         "<p><span class='dark-green'>Classes: </span><span class='dark-cyan'>#{
           ApathyDrive.Commands.Inventory.to_sentence(classes)
-        }</span></p>"
-      )
-    end
-
-    skills =
-      SkillAbility
-      |> Ecto.Query.where(ability_id: ^ability.id)
-      |> Repo.all()
-      |> Enum.map(fn ca ->
-        Repo.get(Skill, ca.skill_id).name
-      end)
-
-    if Enum.any?(skills) do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Skills: </span><span class='dark-cyan'>#{
-          ApathyDrive.Commands.Inventory.to_sentence(skills)
         }</span></p>"
       )
     end

@@ -51,8 +51,6 @@ defmodule ApathyDrive.Command do
       Commands.Buy,
       Commands.Close,
       Commands.Cooldowns,
-      Commands.Craft,
-      Commands.Deconstruct,
       Commands.Drop,
       Commands.Emote,
       Commands.Experience,

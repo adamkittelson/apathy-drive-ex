@@ -6,7 +6,6 @@ defmodule ApathyDrive.Enchantment do
     AbilityDamageType,
     AbilityTrait,
     Character,
-    CraftingRecipe,
     DamageType,
     Enchantment,
     Item,
@@ -14,8 +13,6 @@ defmodule ApathyDrive.Enchantment do
     Match,
     Mobile,
     Room,
-    Skill,
-    SkillAttribute,
     TimerManager
   }
 
@@ -26,7 +23,6 @@ defmodule ApathyDrive.Enchantment do
 
     belongs_to(:items_instances, ItemInstance)
     belongs_to(:ability, Ability)
-    belongs_to(:skill, Skill)
   end
 
   # crafting an item
@@ -239,24 +235,6 @@ defmodule ApathyDrive.Enchantment do
       end)
 
     Room.load_items(room)
-  end
-
-  def add_enchantment_exp(enchanter, %{ability_id: nil} = enchantment) do
-    recipe = CraftingRecipe.for_item(enchantment.items_instances.item)
-
-    skill =
-      Skill
-      |> Repo.get(recipe.skill_id)
-      |> Map.put(:attributes, SkillAttribute.attributes(recipe.skill_id))
-
-    exp = enchantment_exp(enchanter, skill.name)
-
-    Enum.reduce(skill.attributes, enchanter, fn attribute, enchanter ->
-      Character.add_attribute_experience(enchanter, %{
-        attribute => 1 / length(skill.attributes)
-      })
-    end)
-    |> ApathyDrive.Character.add_experience_to_buffer(exp)
   end
 
   def add_enchantment_exp(enchanter, enchantment) do

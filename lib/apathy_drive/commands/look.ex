@@ -681,24 +681,13 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_traits(character, item, indent \\ 0) do
-    skill = Item.skill_for_character(character, item)
-
-    modifier =
-      if skill == 0 do
-        0.1
-      else
-        skill / character.level
-      end
-
     traits =
       item.effects
       |> Map.values()
       |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
       |> Ability.process_duration_traits(character, character, nil)
       |> Map.put_new("Defense", 0)
-      |> update_in(["Defense"], &trunc(&1 * modifier))
       |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &trunc(&1 * modifier))
 
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end

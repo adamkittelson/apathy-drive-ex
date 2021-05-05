@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Skill do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{CharacterSkill, Level, Match}
+  alias ApathyDrive.{CharacterSkill, Match}
 
   schema "skills" do
     field(:name, :string)
@@ -36,17 +36,5 @@ defmodule ApathyDrive.Skill do
     else
       Match.one(skills, :keyword_starts_with, name)
     end
-  end
-
-  def set_level(%CharacterSkill{experience: exp, exp_multiplier: multiplier} = skill)
-      when not is_nil(exp) do
-    skill =
-      skill
-      |> Ecto.Changeset.change(%{
-        experience: max(skill.experience, Level.exp_at_level(1))
-      })
-      |> Repo.update!()
-
-    put_in(skill.level, max(1, Level.level_at_exp(exp, multiplier)))
   end
 end
