@@ -235,6 +235,10 @@ defmodule ApathyDrive.Character do
     currency_value = Monster.loot_wealth_in_copper(monster)
 
     if currency_value > 0 do
+      modifier = (100 + Mobile.ability_value(character, "Gold%")) / 100
+
+      currency_value = trunc(currency_value * modifier)
+
       currency = Currency.set_value(currency_value)
 
       Mobile.send_scroll(character, "<p>You receive #{Currency.to_string(currency)}.</p>")
@@ -789,21 +793,27 @@ defmodule ApathyDrive.Character do
         end
       )
 
+    poison = Mobile.ability_value(character, "PoisonDamage")
+
+    poison_duration =
+      poison
+      |> Enum.map(& &1["duration"])
+      |> Room.average()
+
     poison_damage =
-      character
-      |> Mobile.ability_value("PoisonDamage")
-      |> Enum.reduce(%{"Amount" => 0, "Duration" => 0}, fn %{
-                                                             "amount" => amount,
-                                                             "duration" => duration
-                                                           },
-                                                           damage ->
+      poison
+      |> Enum.map(& &1["amount"])
+      |> Enum.sum()
+
+    poison =
+      if poison_duration > 0 and poison_damage > 0 do
         %{
-          "Duration" => damage["Duration"] + duration,
-          "Amount" => damage["Amount"] + amount,
+          "Duration" => poison_duration,
+          "Amount" => poison_damage,
           "StackCount" => 1,
           "StackKey" => "WeaponPoison"
         }
-      end)
+      end
 
     bonus_damage = bonus_damage ++ elemental_damage
 
@@ -822,9 +832,7 @@ defmodule ApathyDrive.Character do
         {min, max}
       end
 
-    min_dam =
-      min_dam + (Mobile.ability_value(character, "MinDamage") || 0) +
-        (Mobile.ability_value(character, "MinDamagePerLevel") || 0) * character.level
+    min_dam = min_dam + (Mobile.ability_value(character, "MinDamage") || 0)
 
     max_dam =
       max_dam + (Mobile.ability_value(character, "MaxDamage") || 0) +
@@ -856,7 +864,6 @@ defmodule ApathyDrive.Character do
           | bonus_damage
         ],
         "Dodgeable" => true,
-        "Poison" => poison_damage,
         "DodgeUserMessage" =>
           "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
         "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
@@ -867,6 +874,13 @@ defmodule ApathyDrive.Character do
       },
       skills: [weapon.weapon_type]
     }
+
+    ability =
+      if poison do
+        put_in(ability.traits["Poison"], poison)
+      else
+        ability
+      end
 
     if on_hit = Systems.Effect.effect_bonus(weapon, "OnHit") do
       # if on_hit.kind == "attack" do
@@ -2173,8 +2187,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def exhausted(%{energy: _energy} = character, _req \\ nil) do
-      if character.energy < character.max_energy do
+    def exhausted(%{energy: energy} = character, _req \\ nil) do
+      if character.energy < energy do
         true
       else
         false

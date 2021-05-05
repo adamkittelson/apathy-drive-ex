@@ -160,6 +160,7 @@ defmodule ApathyDrive.Ability do
     "Enslave",
     "FireDamage",
     "Fear",
+    "Gold%",
     "Heal",
     "Replenishment",
     "Health",
@@ -168,7 +169,7 @@ defmodule ApathyDrive.Ability do
     "Intellect",
     "IncreasedAttackSpeed",
     "Light",
-    "MagicalDR",
+    "MagicDR",
     "MaxBubble",
     "MaxBubble%",
     "MaxDamage",
@@ -182,7 +183,6 @@ defmodule ApathyDrive.Ability do
     "MaxHP",
     "MaxMana",
     "MinDamage",
-    "MinDamagePerLevel",
     "ModifyDamage",
     "Perception",
     "PhysicalDR",
@@ -2192,7 +2192,7 @@ defmodule ApathyDrive.Ability do
 
             ability_damage = Enum.random(min..max)
 
-            ability_damage = ability_damage - Mobile.ability_value(target, "MagicalDR")
+            ability_damage = ability_damage - Mobile.ability_value(target, "MagicDR")
 
             resist = Mobile.magical_resistance_at_level(target, target.level)
 
@@ -2222,7 +2222,7 @@ defmodule ApathyDrive.Ability do
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
-            damage = damage - Mobile.ability_value(target, "MagicalDR")
+            damage = damage - Mobile.ability_value(target, "MagicDR")
 
             damage = damage + bonus_damage
 
@@ -2240,7 +2240,7 @@ defmodule ApathyDrive.Ability do
           {caster, damage_percent, target} ->
             damage = Enum.random(min..max)
 
-            damage = damage - Mobile.ability_value(target, "MagicalDR")
+            damage = damage - Mobile.ability_value(target, "MagicDR")
 
             damage = damage + bonus_damage
 

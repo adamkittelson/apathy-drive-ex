@@ -449,9 +449,7 @@ defmodule ApathyDrive.Commands.Look do
         {min, max}
       end
 
-    min_dam =
-      min_dam + (Systems.Effect.effect_bonus(item, "MinDamage") || 0) +
-        (Systems.Effect.effect_bonus(item, "MinDamagePerLevel") || 0) * character.level
+    min_dam = min_dam + (Systems.Effect.effect_bonus(item, "MinDamage") || 0)
 
     max_dam =
       max_dam + (Systems.Effect.effect_bonus(item, "MaxDamage") || 0) +
@@ -545,6 +543,8 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def weapon_speed(%Item{speed: nil}), do: ""
+
+  def weapon_speed(%Item{speed: _speed, type_id: nil} = _item), do: ""
 
   def weapon_speed(%Item{speed: speed, type_id: type_id} = item) do
     type = Repo.get(ItemType, type_id).name
