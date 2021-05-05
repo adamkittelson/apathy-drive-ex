@@ -141,7 +141,7 @@ defmodule ApathyDrive.Commands.Wear do
   end
 
   def worn_on_max(%{worn_on: slot})
-      when slot in ["Finger", "Wrist", "Arm", "Held"],
+      when slot in ["Finger", "Wrist"],
       do: 2
 
   def worn_on_max(%{worn_on: _}), do: 1
@@ -274,8 +274,8 @@ defmodule ApathyDrive.Commands.Wear do
     end
   end
 
-  defp conflicting_worn_on("Held"), do: ["Two Handed"]
-  defp conflicting_worn_on("Two Handed"), do: ["Held"]
+  defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
+  defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
   defp conflicting_worn_on(_), do: []
 
   def conflicting_items(item, equipment) do

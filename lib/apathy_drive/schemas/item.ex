@@ -20,55 +20,6 @@ defmodule ApathyDrive.Item do
     ShopItem
   }
 
-  @weapon_type_modifier %{
-    "blunt" => 1.0,
-    "blade" => 1.1,
-    "two handed blunt" => 1.15,
-    "two handed blade" => 1.25
-  }
-
-  @armour_type_protection %{
-    "cloth armour" => 0.10,
-    "leather armour" => 0.15,
-    "chainmail armour" => 0.20,
-    "scalemail armour" => 0.25,
-    "platemail armour" => 0.30
-  }
-
-  @slot_physical_protection_modifier %{
-    "Head" => 0.15,
-    "Torso" => 0.15,
-    "Arm" => 0.1,
-    "Back" => 0.1,
-    "Feet" => 0.1,
-    "Hands" => 0.1,
-    "Legs" => 0.15,
-    "Held" => 0.1,
-    "Waist" => 0.05,
-    "Ears" => 0.0,
-    "Finger" => 0.0,
-    "Neck" => 0.0,
-    "Wrist" => 0.0,
-    "Worn" => 0.0
-  }
-
-  @slot_magical_protection_modifier %{
-    "Head" => 0.0,
-    "Torso" => 0.0,
-    "Arm" => 0.0,
-    "Back" => 0.0,
-    "Feet" => 0.0,
-    "Hands" => 0.0,
-    "Legs" => 0.0,
-    "Held" => 0.0,
-    "Waist" => 0.0,
-    "Ears" => 0.3,
-    "Finger" => 0.2,
-    "Neck" => 0.3,
-    "Wrist" => 0.2,
-    "Worn" => 0.0
-  }
-
   @types [
     "Armour",
     "Container",
@@ -209,17 +160,6 @@ defmodule ApathyDrive.Item do
     |> validate_required(:getable)
   end
 
-  def target_damage(0), do: 0
-  def target_damage(1), do: 6
-
-  def target_damage(level) do
-    trunc(round(target_damage(level - 1) + max(1, (level - 1) / 6)))
-  end
-
-  def target_damage(weapon_type, skill_level) do
-    trunc(target_damage(skill_level) * @weapon_type_modifier[weapon_type])
-  end
-
   def skill_for_character(%Character{} = character, %Item{type: type} = item)
       when type in ["Armour", "Shield"] do
     if owner_id = Systems.Effect.effect_bonus(item, "Claimed") do
@@ -279,18 +219,6 @@ defmodule ApathyDrive.Item do
   end
 
   def skill_for_character(_character, _item), do: 1
-
-  def ac(type, level, slot) do
-    mitigation = @armour_type_protection[type]
-    base = -(50 * level * mitigation / (mitigation - 1))
-    max(1, trunc(base * @slot_physical_protection_modifier[slot]))
-  end
-
-  def mr(type, level, slot) do
-    mitigation = @armour_type_protection[type]
-    base = -(50 * level * mitigation / (mitigation - 1))
-    max(1, trunc(base * @slot_magical_protection_modifier[slot]))
-  end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     ii = Repo.preload(ii, affix_traits: [affix_trait: [:trait, :affix]])
@@ -442,16 +370,13 @@ defmodule ApathyDrive.Item do
 
   def slots do
     [
-      "Arm",
-      "Arm",
+      "Arms",
       "Back",
       "Ears",
-      "Foot",
-      "Foot",
+      "Feet",
       "Finger",
       "Finger",
-      "Hand",
-      "Hand",
+      "Hands",
       "Head",
       "Two Handed",
       "Legs",

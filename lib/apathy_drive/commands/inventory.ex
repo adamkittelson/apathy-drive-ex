@@ -5,7 +5,8 @@ defmodule ApathyDrive.Commands.Inventory do
   @slot_order [
     "Head",
     "Neck",
-    "Held",
+    "Weapon Hand",
+    "Off-Hand",
     "Two Handed",
     "Arm",
     "Hands",

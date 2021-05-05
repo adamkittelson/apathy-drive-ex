@@ -1572,7 +1572,7 @@ defmodule ApathyDrive.Character do
 
     exp_to_level = Level.exp_at_level(level) - Level.exp_at_level(level - 1)
 
-    target_time = 20 * level
+    target_time = 5 * level
 
     max(exp_to_level / (target_time * 60), 1.0)
   end
