@@ -2060,6 +2060,8 @@ defmodule ApathyDrive.Character do
     end
 
     def hp_regen_per_30(%Character{hp: hp} = character) when hp >= 0 do
+      max_hp = Mobile.max_hp_at_level(character, character.level)
+
       regen =
         (character.level + 20) * attribute_at_level(character, :health, character.level) / 750
 
@@ -2067,8 +2069,7 @@ defmodule ApathyDrive.Character do
 
       regeneration_percent_per_round = ability_value(character, "Heal")
 
-      regeneration_per_round =
-        regeneration_percent_per_round * Mobile.max_hp_at_level(character, character.level)
+      regeneration_per_round = regeneration_percent_per_round * max_hp
 
       regen_per_30 =
         if regeneration_per_round > 0 do
@@ -2082,9 +2083,9 @@ defmodule ApathyDrive.Character do
         end
 
       if character.resting do
-        modified_hp_regen * 10 + regen_per_30
+        modified_hp_regen * 10 + regen_per_30 + 0.1 * max_hp
       else
-        modified_hp_regen + regen_per_30
+        modified_hp_regen + regen_per_30 + 0.1 * max_hp
       end
     end
 
@@ -2231,7 +2232,7 @@ defmodule ApathyDrive.Character do
 
       base = health / 2
       hp_per_level = ability_value(mobile, "HPPerLevel") * level
-      bonus = (health - 50) * level / 16
+      bonus = (health - 20) * level / 16
 
       max_hp_percent = ability_value(mobile, "MaxHP%")
 

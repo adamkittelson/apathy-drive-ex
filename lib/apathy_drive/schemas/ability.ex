@@ -2449,6 +2449,8 @@ defmodule ApathyDrive.Ability do
           effects =
             trait
             |> process_duration_trait(trait_map, target, caster, duration)
+            |> Map.put("stack_key", value["StackKey"] || key)
+            |> Map.put("stack_count", value["StackCount"] || 1)
             |> Map.put("effect_ref", make_ref())
 
           if Map.has_key?(trait_map, "Poison") and Mobile.has_ability?(target, "PoisonImmunity") do
