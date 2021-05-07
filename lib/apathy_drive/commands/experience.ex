@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Experience do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Class, Mobile, Level, Repo}
+  alias ApathyDrive.{Character, Mobile, Level}
 
   def keywords, do: ["exp", "experience"]
 
@@ -20,32 +20,6 @@ defmodule ApathyDrive.Commands.Experience do
         |> String.pad_trailing(12)
       }</span>"
     )
-
-    if Enum.any?(character.classes) do
-      Mobile.send_scroll(
-        character,
-        "\n<p><span class='white'>Classes:</span></p>"
-      )
-
-      Enum.each(character.classes, fn character_class ->
-        class = Repo.get(Class, character_class.class_id)
-
-        exp = max(0, trunc(ApathyDrive.Commands.Train.required_experience(character, class.id)))
-
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Class:</span> <span class='dark-cyan'>#{
-            String.pad_trailing(class.name, 12)
-          }</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
-            character_class.level
-            |> to_string
-            |> String.pad_trailing(3)
-          }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
-            exp
-          }</p>"
-        )
-      end)
-    end
 
     Mobile.send_scroll(
       character,

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Status do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Character, Level, Mobile}
 
   def keywords, do: ["st", "stat", "status"]
 
@@ -11,53 +11,19 @@ defmodule ApathyDrive.Commands.Status do
   end
 
   def status(character) do
-    max_level =
-      case character.classes do
-        [] ->
-          1
+    drain_rate = Character.drain_rate(character.level)
 
-        classes ->
-          classes
-          |> Enum.map(& &1.level)
-          |> Enum.max()
-      end
-
-    classes = character.classes
-
-    target_count = length(classes)
-
-    max_drain_rate = Character.drain_rate(max_level)
-
-    {exp, time_to_level} =
-      if Enum.any?(classes) do
-        classes
-        |> Enum.map(fn character_class ->
-          exp_to_level =
-            ApathyDrive.Commands.Train.required_experience(
-              character,
-              character_class.class_id,
-              character_class.level + 1
-            )
-
-          class_drain_rate = Character.drain_rate(character_class.level)
-
-          drain_rate = min(class_drain_rate, max_drain_rate / target_count)
-
-          {max(0, exp_to_level), max(0, trunc(exp_to_level / drain_rate))}
-        end)
-        |> Enum.min_by(fn {_exp_to_level, time_to_level} -> time_to_level end, fn -> {0, 0} end)
-      else
-        {0, 0}
-      end
+    exp_to_level = Level.exp_to_next_level(character.level, character.experience)
+    time_to_level = trunc(exp_to_level / drain_rate)
 
     ttl = ApathyDrive.Enchantment.formatted_time_left(time_to_level)
 
     buffer_time =
-      ApathyDrive.Enchantment.formatted_time_left(trunc(character.exp_buffer / max_drain_rate))
+      ApathyDrive.Enchantment.formatted_time_left(trunc(character.exp_buffer / drain_rate))
 
     Mobile.send_scroll(
       character,
-      "<p><span class='cyan'>experience:</span> <span class='white'>#{trunc(exp)} (#{ttl})</span> " <>
+      "<p><span class='cyan'>experience:</span> <span class='white'>#{trunc(exp_to_level)} (#{ttl})</span> " <>
         "<span class='cyan'>mind:</span> #{mind(character)}</span> <span class='white'>(#{
           buffer_time
         })</span>"

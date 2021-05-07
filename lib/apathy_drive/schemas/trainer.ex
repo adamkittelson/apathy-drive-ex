@@ -2,27 +2,24 @@ defmodule ApathyDrive.Trainer do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Mobile, Room, Trainer}
+  alias ApathyDrive.{Room, Skill, Trainer}
 
   schema "trainers" do
-    field(:cost_multiplier, :float)
-    field(:min_level, :integer)
-    field(:max_level, :integer)
-
-    has_many(:rooms, Room)
-    belongs_to(:class, Room)
+    belongs_to(:room, Room)
+    belongs_to(:skill, Skill)
   end
 
-  def trainer?(%Room{trainer: %Trainer{}}), do: true
-  def trainer?(%Room{}), do: false
+  def trainer?(%Room{trainable_skills: []}), do: false
+  def trainer?(%Room{}), do: true
 
-  def training_cost(%Trainer{}, %Character{level: 1}), do: 0
+  def load(%Room{id: id} = room) do
+    skills =
+      Trainer
+      |> Ecto.Query.where(room_id: ^id)
+      |> Ecto.Query.preload([:skill])
+      |> Repo.all()
+      |> Enum.map(& &1.skill)
 
-  def training_cost(%Trainer{} = trainer, %Character{level: level} = character) do
-    charm = Mobile.attribute_at_level(character, :charm, character.level)
-
-    next_level = level + 1
-    charm_mod = 1 - (trunc(charm / 5.0) - 10) / 100
-    trunc(next_level * 5 * (trainer.cost_multiplier + 1) * 10 * charm_mod)
+    Map.put(room, :trainable_skills, skills)
   end
 end

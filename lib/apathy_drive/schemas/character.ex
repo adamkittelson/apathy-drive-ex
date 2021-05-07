@@ -13,6 +13,7 @@ defmodule ApathyDrive.Character do
     CharacterClass,
     CharacterMaterial,
     CharacterRace,
+    CharacterSkill,
     CharacterTrait,
     Class,
     Currency,
@@ -28,6 +29,7 @@ defmodule ApathyDrive.Character do
     RaceTrait,
     Room,
     RoomServer,
+    Skill,
     Statix,
     Text,
     TimerManager,
@@ -77,7 +79,9 @@ defmodule ApathyDrive.Character do
     field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:exp_buffer_last_drained_at, :utc_datetime_usec)
     field(:chat_tab, :string)
+    field(:experience, :integer)
 
+    field(:level, :integer, virtual: true)
     field(:hate, :map, virtual: true, default: %{})
     field(:scry_target, :any, virtual: true)
     field(:bust_cache, :boolean, virtual: true, default: false)
@@ -89,7 +93,6 @@ defmodule ApathyDrive.Character do
     field(:resting, :boolean, virtual: true, default: false)
     field(:enchantment, :any, virtual: true)
     field(:lore, :any, virtual: true)
-    field(:level, :integer, virtual: true)
     field(:race, :any, virtual: true)
     field(:classes, :any, virtual: true)
     field(:monitor_ref, :any, virtual: true)
@@ -312,6 +315,26 @@ defmodule ApathyDrive.Character do
     |> validate_length(:name, min: 1, max: 12)
   end
 
+  def load_skills(%Character{id: id} = character) do
+    skills =
+      CharacterSkill
+      |> Ecto.Query.where(character_id: ^id)
+      |> Ecto.Query.preload([:skill])
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn %CharacterSkill{} = skill, skills ->
+        skill = %{
+          skill_id: skill.id,
+          name: skill.skill.name,
+          level: skill.level,
+          module: Skill.module(skill.skill.name)
+        }
+
+        Map.put(skills, skill.name, skill)
+      end)
+
+    put_in(character.skills, skills)
+  end
+
   def load_abilities(%Character{id: id} = character) do
     character =
       character
@@ -325,11 +348,9 @@ defmodule ApathyDrive.Character do
         Map.put(auto_abilities, auto_ability.ability_id, auto_ability.auto)
       end)
 
-    class_abilities =
-      Enum.reduce(character.classes, [], fn %{class_id: class_id, level: level}, abilities ->
-        Enum.uniq(
-          ApathyDrive.ClassAbility.abilities_at_level(character, class_id, level) ++ abilities
-        )
+    skill_abilities =
+      Enum.reduce(character.skills, [], fn {_name, %{module: module}}, abilities ->
+        [%{ability: module.ability(character), kind: "skill"} | abilities]
       end)
 
     granted_abilities =
@@ -346,15 +367,15 @@ defmodule ApathyDrive.Character do
         %{ability: ability}
       end)
 
-    base_class_abilities = Enum.filter(class_abilities, &(&1.ability.kind == "base-class"))
-
-    character = set_class_traits(character, base_class_abilities)
-
-    class_abilities = Enum.reject(class_abilities, &(&1.ability.kind == "base-class"))
-
     character =
-      (class_abilities ++ granted_abilities)
+      (skill_abilities ++ granted_abilities)
       |> Enum.reduce(character, fn
+        %{ability: %Ability{} = ability, kind: "skill"}, character ->
+          update_in(character.abilities, fn abilities ->
+            abilities
+            |> Map.put(ability.command, ability)
+          end)
+
         %{ability: %Ability{id: id, kind: "passive"}}, character ->
           effect = AbilityTrait.load_traits(id)
 
@@ -520,17 +541,10 @@ defmodule ApathyDrive.Character do
     |> set_level()
   end
 
-  def set_level(%Character{classes: []} = character) do
-    Map.put(character, :level, 1)
-  end
+  def set_level(%Character{} = character) do
+    level = Level.level_at_exp(character.experience) + 1
 
-  def set_level(%Character{classes: classes} = character) do
-    level =
-      classes
-      |> Enum.map(& &1.level)
-      |> Enum.max()
-
-    Map.put(character, :level, max(level, 1))
+    Map.put(character, :level, level)
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -996,114 +1010,68 @@ defmodule ApathyDrive.Character do
 
   def add_attribute_experience(%{} = character, %{} = _attributes), do: character
 
+  def skill_points(%Character{id: id} = character) do
+    spent =
+      CharacterSkill
+      |> Ecto.Query.where(character_id: ^id)
+      |> Repo.all()
+      |> Enum.map(& &1.level)
+      |> Enum.sum()
+
+    character.level - spent
+  end
+
   def exp_to_drain(%Character{exp_buffer: nil}), do: 0
   def exp_to_drain(%Character{exp_buffer: 0}), do: 0
   def exp_to_drain(%Character{exp_buffer_last_drained_at: nil}), do: 0
 
-  def exp_to_drain(%Character{} = character) do
-    max_level =
-      case character.classes do
-        [] ->
-          1
-
-        classes ->
-          classes
-          |> Enum.map(& &1.level)
-          |> Enum.max()
-      end
-
-    exp_to_drain(character, max_level)
-  end
-
-  def exp_to_drain(%Character{exp_buffer_last_drained_at: time, exp_buffer: buffer}, level) do
+  def exp_to_drain(%Character{exp_buffer_last_drained_at: time, exp_buffer: buffer, level: level}) do
     drain_total = Character.drain_rate(level)
 
     min(buffer, DateTime.diff(DateTime.utc_now(), time) * drain_total)
   end
 
   def drain_exp_buffer(%Character{} = character) do
-    drain_total = exp_to_drain(character)
+    exp = trunc(exp_to_drain(character))
 
     character =
-      if drain_total > 0 do
+      if exp > 0 do
         mind = ApathyDrive.Commands.Status.mind(character)
-
-        character =
-          Enum.reduce(character.classes, character, fn class, character ->
-            if class.experience == nil do
-              character = update_in(character.classes, &List.delete(&1, class))
-
-              exp =
-                ApathyDrive.Commands.Train.required_experience(
-                  character,
-                  class.class_id,
-                  class.level
-                ) * 1.0
-
-              class =
-                class
-                |> Ecto.Changeset.change(%{
-                  experience: exp
-                })
-                |> Repo.update!()
-
-              update_in(character.classes, &[class | &1])
-            else
-              character
-            end
-          end)
-
-        target_count = length(character.classes)
-
-        {character, drain_remaining} =
-          character.classes
-          |> Enum.sort_by(& &1.level)
-          |> Enum.with_index(1)
-          |> Enum.reduce({character, drain_total}, fn {class, n}, {character, drain_remaining} ->
-            if n == target_count do
-              exp = drain_remaining
-
-              character = update_in(character.classes, &List.delete(&1, class))
-
-              class =
-                class
-                |> Ecto.Changeset.change(%{
-                  experience: class.experience + exp
-                })
-                |> Repo.update!()
-
-              {update_in(character.classes, &[class | &1]), drain_remaining - exp}
-            else
-              rate = Character.exp_to_drain(character, class.level)
-
-              exp = min(rate, drain_total / target_count)
-
-              character = update_in(character.classes, &List.delete(&1, class))
-
-              class =
-                class
-                |> Ecto.Changeset.change(%{
-                  experience: class.experience + exp
-                })
-                |> Repo.update!()
-
-              {update_in(character.classes, &[class | &1]), drain_remaining - exp}
-            end
-          end)
-
-        amount = trunc(drain_total - drain_remaining)
+        level = character.level
 
         character =
           character
           |> Ecto.Changeset.change(%{
-            exp_buffer: max(0, character.exp_buffer - amount)
+            experience: character.experience + exp,
+            exp_buffer: max(0, character.exp_buffer - exp)
           })
           |> Repo.update!()
+          |> Character.set_level()
 
         new_mind = ApathyDrive.Commands.Status.mind(character)
 
         if new_mind != mind do
           ApathyDrive.Commands.Status.status(character)
+        end
+
+        if character.level > level do
+          message =
+            "<p><span class='yellow'>You have advanced to level #{character.level}!</span></p>"
+
+          Repo.insert!(%ChannelHistory{
+            character_id: character.id,
+            message: message
+          })
+
+          Character.send_chat(
+            character,
+            message
+          )
+
+          Mobile.send_scroll(
+            character,
+            "<p>You gain 1 skill point!</p>"
+          )
         end
 
         Character.update_exp_bar(character)
@@ -1350,6 +1318,7 @@ defmodule ApathyDrive.Character do
       combat: character |> Character.combat_level() |> Character.combat_proficiency(),
       level: character.level,
       alignment: legal_status(character),
+      skill: Character.skill_points(character),
       perception: Mobile.perception_at_level(character, character.level, room),
       attack: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level),
@@ -2122,23 +2091,27 @@ defmodule ApathyDrive.Character do
     def max_hp_at_level(mobile, level) do
       health = attribute_at_level(mobile, :health, level)
 
-      base = health / 2
-      hp_per_level = ability_value(mobile, "HPPerLevel") * level
-      bonus = (health - 20) * level / 16
+      base = health * 2
+      # default 2 HP/Level
+      hp_per_level = (ability_value(mobile, "HPPerLevel") + 2) * level
 
       max_hp_percent = ability_value(mobile, "MaxHP%")
 
       modifier = if max_hp_percent > 0, do: max_hp_percent, else: 1.0
 
-      max(1, trunc((base + hp_per_level + bonus + ability_value(mobile, "MaxHP")) * modifier))
+      max(1, trunc((base + hp_per_level + ability_value(mobile, "MaxHP")) * modifier))
     end
 
     def max_mana_at_level(mobile, level) do
-      mana_per_level = ability_value(mobile, "ManaPerLevel")
+      intellect = attribute_at_level(mobile, :intellect, level)
+      willpower = attribute_at_level(mobile, :willpower, level)
+
+      base_mana = div(intellect + intellect + willpower, 2) - 10
+
+      # default 2 Mana/Level
+      mana_per_level = ability_value(mobile, "ManaPerLevel") + 2
 
       bonus = ability_value(mobile, "MaxMana")
-
-      base_mana = 6
 
       mana_per_level * (level - 1) + base_mana + bonus
     end

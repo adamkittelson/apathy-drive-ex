@@ -20,7 +20,8 @@ defmodule ApathyDrive.RoomServer do
     Room,
     RoomSupervisor,
     Shop,
-    TimerManager
+    TimerManager,
+    Trainer
   }
 
   use Timex
@@ -186,7 +187,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       Repo.get!(Room, id)
       |> preload_area()
-      |> Repo.preload(:trainer)
+      |> Trainer.load()
       |> Room.load_exits()
       |> Room.load_items()
       |> Repo.preload(:placed_items)
@@ -317,6 +318,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.load_race()
         |> Character.set_attribute_levels()
         |> Character.update_exp_bar()
+        |> Character.load_skills()
         |> Character.load_abilities()
         |> Character.load_items()
         |> Character.set_title()

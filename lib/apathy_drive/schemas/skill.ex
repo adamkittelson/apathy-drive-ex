@@ -4,14 +4,19 @@ defmodule ApathyDrive.Skill do
 
   schema "skills" do
     field(:name, :string)
-    field(:description, :string)
-    field(:exp_multiplier, :float)
-    field(:universal, :boolean, default: false)
-
-    field(:attributes, :any, virtual: true, default: [])
 
     has_many(:characters_skills, CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])
+  end
+
+  def module(skill_name) do
+    module_name =
+      skill_name
+      |> String.split(~r/[^\w]+/)
+      |> Enum.map(&Macro.camelize/1)
+      |> Enum.join()
+
+    Module.concat([ApathyDrive, Skills, module_name])
   end
 
   def create_changeset(name) do

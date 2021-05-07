@@ -15,7 +15,8 @@ defmodule ApathyDrive.Commands.Help do
     Race,
     RaceTrait,
     Repo,
-    Room
+    Room,
+    Skill
   }
 
   require Ecto.Query
@@ -425,6 +426,22 @@ defmodule ApathyDrive.Commands.Help do
     )
   end
 
+  def help(character, %Skill{name: name}) do
+    name =
+      name
+      |> String.split(~r/[^\w]+/)
+      |> Enum.map(&Macro.camelize/1)
+      |> Enum.join()
+
+    module = Module.concat([ApathyDrive, Skills, name])
+
+    if function_exported?(module, :help, 1) do
+      module.help(character)
+    else
+      Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
+    end
+  end
+
   def help(character, %Ability{} = ability) do
     Mobile.send_scroll(
       character,
@@ -706,7 +723,7 @@ defmodule ApathyDrive.Commands.Help do
   end
 
   def topic(query) do
-    [Race.match_by_name(query), Class.match_by_name(query), Ability.match_by_name(query, true)]
+    [Race.match_by_name(query), Class.match_by_name(query), Skill.match_by_name(query, true)]
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()

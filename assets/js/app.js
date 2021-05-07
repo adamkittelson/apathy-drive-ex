@@ -183,6 +183,7 @@ chan.on("update score", function (score_data) {
   update_score_attribute("name", _.padEnd(score_data.name, 13));
   update_score_attribute("level", _.padEnd(score_data.level, 11));
   update_score_attribute("attack", score_data.attack);
+  update_score_attribute("skill", score_data.skill, 4);
   update_score_attribute("race", _.padEnd(score_data.race, 13));
   update_score_attribute("combat", _.padEnd(score_data.combat, 10));
   update_score_attribute("defense", score_data.defense);
