@@ -13,6 +13,7 @@ defmodule ApathyDrive.Skills.Healing do
       attributes: ["willpower"],
       mana: mana(level),
       spell?: true,
+      auto: character.skills["heal"].auto,
       user_message: "You cast healing on {{target}}, healing {{amount}} damage!",
       target_message: "{{user}} casts healing on you, healing {{amount}} damage!",
       spectator_message: "{{user}} casts healing on {{target}}, healing {{amount}} damage!",
@@ -72,7 +73,10 @@ defmodule ApathyDrive.Skills.Healing do
   end
 
   defp skill_level(character) do
-    case character.skills["healing"] do
+    character.skills
+    |> Map.values()
+    |> Enum.find(&(&1.name == "healing"))
+    |> case do
       %{level: level} ->
         level
 

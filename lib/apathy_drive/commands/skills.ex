@@ -8,9 +8,9 @@ defmodule ApathyDrive.Commands.Skills do
     Mobile.send_scroll(character, "<p><span class='dark-magenta'>Skill      Level</span></p>")
 
     character.skills
-    |> Enum.each(fn {name, skill} ->
+    |> Enum.each(fn {_command, skill} ->
       name =
-        name
+        skill.name
         |> to_string
         |> String.pad_trailing(10)
 

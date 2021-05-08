@@ -28,7 +28,6 @@ defmodule ApathyDrive.Commands.System do
         energy: 0,
         kind: "attack",
         user_message: "The gods smite you in atonement for your sins!",
-        ignores_round_cooldown?: true,
         difficulty: nil
       }
 

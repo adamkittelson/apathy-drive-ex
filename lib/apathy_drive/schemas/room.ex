@@ -101,7 +101,6 @@ defmodule ApathyDrive.Room do
     ability =
       id
       |> Ability.find()
-      |> Map.put(:ignores_round_cooldown?, true)
       |> Map.put(:energy, 0)
 
     Map.put(room, :ability, ability)

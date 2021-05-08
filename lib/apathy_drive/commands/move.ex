@@ -437,7 +437,6 @@ defmodule ApathyDrive.Commands.Move do
                 targets: "self",
                 energy: 0,
                 kind: "attack",
-                ignores_round_cooldown?: true,
                 difficulty: nil
               }
 

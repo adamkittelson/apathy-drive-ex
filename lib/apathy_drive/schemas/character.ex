@@ -322,14 +322,17 @@ defmodule ApathyDrive.Character do
       |> Ecto.Query.preload([:skill])
       |> Repo.all()
       |> Enum.reduce(%{}, fn %CharacterSkill{} = skill, skills ->
+        command = skill.skill.command
+
         skill = %{
-          skill_id: skill.id,
+          skill_id: skill.skill_id,
           name: skill.skill.name,
           level: skill.level,
-          module: Skill.module(skill.skill.name)
+          module: Skill.module(skill.skill.name),
+          auto: skill.auto
         }
 
-        Map.put(skills, skill.name, skill)
+        Map.put(skills, command, skill)
       end)
 
     put_in(character.skills, skills)
@@ -348,11 +351,6 @@ defmodule ApathyDrive.Character do
         Map.put(auto_abilities, auto_ability.ability_id, auto_ability.auto)
       end)
 
-    skill_abilities =
-      Enum.reduce(character.skills, [], fn {_name, %{module: module}}, abilities ->
-        [%{ability: module.ability(character), kind: "skill"} | abilities]
-      end)
-
     granted_abilities =
       character
       |> Mobile.ability_value("Grant")
@@ -368,7 +366,7 @@ defmodule ApathyDrive.Character do
       end)
 
     character =
-      (skill_abilities ++ granted_abilities)
+      granted_abilities
       |> Enum.reduce(character, fn
         %{ability: %Ability{} = ability, kind: "skill"}, character ->
           update_in(character.abilities, fn abilities ->
@@ -681,6 +679,19 @@ defmodule ApathyDrive.Character do
     end
   end
 
+  def execute_per_kill_traits(character) do
+    if (mpk = Mobile.ability_value(character, "ManaPerKill")) > 0 do
+      max_mana = Mobile.max_mana_at_level(character, character.level)
+
+      percentage = mpk / max_mana
+
+      character
+      |> update_in([Access.key!(:mana)], &min(max_mana, &1 + percentage))
+    else
+      character
+    end
+  end
+
   def ability_for_weapon(character, weapon) do
     verbs = %{
       "beat" => "Crushing",
@@ -808,7 +819,6 @@ defmodule ApathyDrive.Character do
       target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
       spectator_message:
         "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
-      ignores_round_cooldown?: true,
       can_crit: true,
       traits: %{
         "Damage" => [
@@ -1923,65 +1933,53 @@ defmodule ApathyDrive.Character do
     def hp_regen_per_30(%Character{hp: hp} = character) when hp >= 0 do
       max_hp = Mobile.max_hp_at_level(character, character.level)
 
-      regen =
-        (character.level + 20) * attribute_at_level(character, :health, character.level) / 750
+      bonus =
+        Mobile.ability_value(character, "HPRegen") +
+          Mobile.attribute_at_level(character, :willpower, character.level)
 
-      modified_hp_regen = regen * (1 + ability_value(character, "HPRegen") / 100)
+      regen_per_second = max_hp * (100 + bonus) / 12000
 
-      regeneration_percent_per_round = ability_value(character, "Heal")
+      regen_per_30 = regen_per_second * 30
 
-      regeneration_per_round = regeneration_percent_per_round * max_hp
+      heal_percent_per_round = ability_value(character, "Heal")
 
-      regen_per_30 =
-        if regeneration_per_round > 0 do
+      heal_per_round = heal_percent_per_round * max_hp
+
+      heal_per_30 =
+        if heal_per_round > 0 do
           round_length = Regeneration.round_length(character)
 
           rounds = 30_000 / round_length
 
-          rounds * regeneration_per_round
+          rounds * heal_per_round
         else
           0
         end
 
       if character.resting do
-        modified_hp_regen * 10 + regen_per_30 + 0.1 * max_hp
+        regen_per_30 * 3 + heal_per_30
       else
-        modified_hp_regen + regen_per_30 + 0.1 * max_hp
+        regen_per_30 + heal_per_30
       end
     end
 
     def hp_regen_per_30(%Character{hp: _hp} = _character), do: 0.0
 
     def mana_regen_per_30(%Character{} = character) do
-      level = character.level
+      max_mana = Mobile.max_mana_at_level(character, character.level)
 
-      attribute =
-        character.abilities
-        |> Enum.map(fn {_command, ability} ->
-          ability.attributes
-          |> Enum.map(
-            &Mobile.attribute_at_level(character, String.to_existing_atom(&1), character.level)
-          )
-        end)
-        |> List.flatten()
-        |> Room.average()
+      bonus =
+        Mobile.ability_value(character, "ManaRegen") +
+          Mobile.attribute_at_level(character, :willpower, character.level)
 
-      magic_level = Character.magic_level(character)
+      regen_per_second = max_mana * (100 + bonus) / 12000
 
-      max_mana = max_mana_at_level(character, character.level)
+      regen_per_30 = regen_per_second * 30
 
-      base_mana_regen = (level + 20) * attribute * (magic_level + 2) / 1650.0
-
-      rate = base_mana_regen * (1 + ability_value(character, "ManaRegen") / 100)
-
-      if max_mana > 0 do
-        if character.resting do
-          rate * 3
-        else
-          rate
-        end
+      if character.resting do
+        regen_per_30 * 3
       else
-        0.0
+        regen_per_30
       end
     end
 

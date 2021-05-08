@@ -38,7 +38,7 @@ clearScroll = function () {
 };
 
 adjustScrollTop = function () {
-  if ($('#scroll').scrollTop() + $('#scroll').height() > $('#scroll')[0].scrollHeight - 400) {
+  if ($('#scroll').scrollTop() + $('#scroll').height() > $('#scroll')[0].scrollHeight - 750) {
     return $("#scroll").scrollTop($('#scroll')[0].scrollHeight);
   }
 };

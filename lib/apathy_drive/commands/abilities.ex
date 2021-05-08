@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Ability, Character, Mobile}
   require Ecto.Query
 
   def keywords, do: ["abilities", "spells"]
@@ -11,15 +11,22 @@ defmodule ApathyDrive.Commands.Abilities do
   end
 
   def display_abilities(%Character{} = character) do
-    if Enum.any?(character.abilities) do
+    skill_abilities = Ability.skill_abilities(character)
+
+    abilities =
+      character.abilities
+      |> Map.values()
+
+    abilities = abilities ++ skill_abilities
+
+    if Enum.any?(abilities) do
       Mobile.send_scroll(
         character,
         "<p><span class='white'>You know the following abilities:</span></p>"
       )
 
       name_width =
-        character.abilities
-        |> Map.values()
+        abilities
         |> Enum.max_by(&String.length(&1.name))
         |> Map.get(:name)
         |> String.length()
@@ -32,8 +39,7 @@ defmodule ApathyDrive.Commands.Abilities do
         "<p><span class='dark-magenta'>Mana   Command  #{ability_name}</span> <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
       )
 
-      character.abilities
-      |> Map.values()
+      abilities
       |> Enum.sort_by(& &1.name)
       |> Enum.map(&format_ability(&1, name_width))
       |> Enum.chunk_every(2)

@@ -142,6 +142,14 @@ defmodule ApathyDrive.Command do
           scripts = Room.command(room, full_command) ->
             execute_room_command(room, monster, scripts)
 
+          "bash" == String.downcase(command) ->
+            bash = Match.one(Enum.map(all(), & &1.to_struct), :keyword_starts_with, command)
+            bash.module.execute(room, monster, arguments)
+
+          skill = monster.skills[String.downcase(command)] ->
+            ability = skill.module.ability(monster)
+            Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
+
           ability = monster.abilities[String.downcase(command)] ->
             Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 

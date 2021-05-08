@@ -533,7 +533,6 @@ defmodule ApathyDrive.Script do
       %Ability{} = ability ->
         ability =
           ability
-          |> Map.put(:ignores_round_cooldown?, true)
           |> Map.put(:energy, 0)
 
         room = Ability.execute(room, monster.ref, ability, [monster.ref])

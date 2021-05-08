@@ -4,6 +4,7 @@ defmodule ApathyDrive.Skill do
 
   schema "skills" do
     field(:name, :string)
+    field(:command, :string)
 
     has_many(:characters_skills, CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])

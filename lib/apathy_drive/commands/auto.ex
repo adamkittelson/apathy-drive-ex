@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Auto do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, CharacterAbility, Mobile, Repo}
+  alias ApathyDrive.{Character, CharacterSkill, Mobile, Repo}
 
   def keywords, do: ["auto"]
 
@@ -108,21 +108,22 @@ defmodule ApathyDrive.Commands.Auto do
     execute(room, room.mobiles[ref], [])
   end
 
-  def execute(%Room{} = room, %Character{abilities: abilities} = character, [command]) do
-    if ability = abilities[String.downcase(command)] do
-      case Repo.get_by(CharacterAbility, character_id: character.id, ability_id: ability.id) do
+  def execute(%Room{} = room, %Character{skills: skills} = character, [command]) do
+    if skill = skills[String.downcase(command)] do
+      IO.puts("character_id: #{character.id}, skill: #{inspect(skill)}")
+
+      case Repo.get_by(CharacterSkill, character_id: character.id, skill_id: skill.skill_id) do
         nil ->
-          %CharacterAbility{character_id: character.id, ability_id: ability.id, auto: true}
+          %CharacterSkill{character_id: character.id, skill_id: skill.skill_id, auto: true}
           |> Repo.insert!()
 
         ca ->
           ca
-          |> CharacterAbility.changeset(%{auto: !ca.auto})
+          |> Ecto.Changeset.change(%{auto: !ca.auto})
           |> Repo.update!()
       end
 
-      room =
-        update_in(room.mobiles[character.ref].abilities[String.downcase(command)].auto, &(!&1))
+      room = update_in(room.mobiles[character.ref], &Character.load_skills/1)
 
       ApathyDrive.Commands.Abilities.execute(room, room.mobiles[character.ref], [])
     else

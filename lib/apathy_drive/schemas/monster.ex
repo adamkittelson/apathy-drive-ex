@@ -896,7 +896,6 @@ defmodule ApathyDrive.Monster do
             attack
           end
           |> Map.put(:kind, "attack")
-          |> Map.put(:ignores_round_cooldown?, true)
       end
     end
 
@@ -1008,6 +1007,7 @@ defmodule ApathyDrive.Monster do
                 character
                 |> Character.add_experience_to_buffer(exp)
                 |> Character.add_currency_from_monster(monster)
+                |> Character.execute_per_kill_traits()
                 |> KillCount.increment(monster, exp)
               end)
 
@@ -1056,7 +1056,6 @@ defmodule ApathyDrive.Monster do
           ability =
             monster.death_ability_id
             |> Ability.find()
-            |> Map.put(:ignores_round_cooldown?, true)
             |> Map.put(:energy, 0)
 
           Ability.execute(room, monster.ref, ability, [monster.ref])

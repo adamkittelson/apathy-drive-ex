@@ -3,10 +3,7 @@ defmodule ApathyDrive.Commands.Train do
 
   alias ApathyDrive.{
     Character,
-    CharacterClass,
     CharacterSkill,
-    Class,
-    Level,
     Match,
     Repo,
     Skill

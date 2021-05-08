@@ -41,7 +41,6 @@ defmodule ApathyDrive.Scripts.Cleave do
         attack =
           attack
           |> Map.put(:energy, 0)
-          |> Map.put(:ignores_round_cooldown?, true)
 
         room = put_in(room.mobiles[character.ref], character)
 

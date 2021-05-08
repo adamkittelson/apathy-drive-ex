@@ -51,7 +51,6 @@ defmodule ApathyDrive.Ability do
     field(:damage_shield, :any, virtual: true)
     field(:caster, :any, virtual: true)
     field(:traits, :map, virtual: true, default: %{})
-    field(:ignores_round_cooldown?, :boolean, virtual: true, default: false)
     field(:result, :any, virtual: true)
     field(:cast_complete, :boolean, virtual: true, default: false)
     field(:target_list, :any, virtual: true)
@@ -175,6 +174,7 @@ defmodule ApathyDrive.Ability do
     "MaxHP%",
     "MR",
     "MR%",
+    "ManaPerKill",
     "ManaRegen",
     "MagicFind",
     "MaxHP",
@@ -281,7 +281,6 @@ defmodule ApathyDrive.Ability do
                 spell?: false,
                 user_message: "You trip and fall!",
                 spectator_message: "{{user}} trips and falls!",
-                ignores_round_cooldown?: true,
                 traits: %{
                   "Damage" => 0.10
                 }
@@ -297,7 +296,6 @@ defmodule ApathyDrive.Ability do
                 spell?: false,
                 user_message: "You stumble into a wall!",
                 spectator_message: "{{user}} stumbles into a wall!",
-                ignores_round_cooldown?: true,
                 traits: %{
                   "Damage" => 0.10
                 }
@@ -313,7 +311,6 @@ defmodule ApathyDrive.Ability do
                 spell?: false,
                 user_message: "You collapse to the ground!",
                 spectator_message: "{{user}} collapses to the ground!",
-                ignores_round_cooldown?: true,
                 traits: %{
                   "Damage" => 0.10
                 }
@@ -557,10 +554,19 @@ defmodule ApathyDrive.Ability do
     |> Enum.reject(&(is_nil(&1.name) or &1.name == "" or &1.kind == "base-class"))
   end
 
+  def skill_abilities(%Character{} = character) do
+    Enum.map(character.skills, fn {_cmd, skill} ->
+      skill.module.ability(character)
+    end)
+  end
+
+  def skill_abilities(_mobile), do: []
+
   def heal_abilities(%{abilities: abilities} = mobile) do
     abilities
     |> Map.values()
     |> List.flatten()
+    |> Kernel.++(skill_abilities(mobile))
     |> Enum.filter(&(&1.kind == "heal"))
     |> useable(mobile)
   end
@@ -569,6 +575,7 @@ defmodule ApathyDrive.Ability do
     abilities
     |> Map.values()
     |> List.flatten()
+    |> Kernel.++(skill_abilities(mobile))
     |> Enum.filter(fn ability ->
       Map.has_key?(ability.traits, "Damage") and
         Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
@@ -583,6 +590,7 @@ defmodule ApathyDrive.Ability do
     abilities
     |> Map.values()
     |> List.flatten()
+    |> Kernel.++(skill_abilities(mobile))
     |> Enum.filter(&(&1.kind == "blessing"))
     |> Enum.reject(fn ability ->
       removes_blessing?(target, ability)
@@ -595,6 +603,7 @@ defmodule ApathyDrive.Ability do
     abilities
     |> Map.values()
     |> List.flatten()
+    |> Kernel.++(skill_abilities(mobile))
     |> Enum.filter(&(&1.kind == "curse"))
     |> Enum.reject(fn ability ->
       Ability.removes_blessing?(target, ability)
@@ -606,6 +615,7 @@ defmodule ApathyDrive.Ability do
     abilities
     |> Map.values()
     |> List.flatten()
+    |> Kernel.++(skill_abilities(mobile))
     |> Enum.filter(&(&1.kind == "attack"))
     |> Enum.filter(fn ability ->
       Ability.affects_target?(target, ability)
@@ -1246,20 +1256,20 @@ defmodule ApathyDrive.Ability do
     |> Map.put(:enchantment, enchantment)
   end
 
-  def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
-    if req_energy > energy && !ability.on_hit? do
-      if caster.casting do
-        Mobile.send_scroll(
-          caster,
-          "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
-        )
-      end
+  def not_enough_energy(%{energy: energy} = caster, %{energy: _req_energy} = ability) do
+    if energy < caster.max_energy && !ability.on_hit? do
+      # if caster.casting do
+      #   Mobile.send_scroll(
+      #     caster,
+      #     "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
+      #   )
+      # end
 
-      if ability.spell? do
-        Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
-      else
-        Mobile.send_scroll(caster, "<p><span class='cyan'>You move into position...</span></p>")
-      end
+      # if ability.spell? do
+      #   Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
+      # else
+      #   Mobile.send_scroll(caster, "<p><span class='cyan'>You move into position...</span></p>")
+      # end
 
       Map.put(caster, :casting, ability)
     end
@@ -1267,6 +1277,12 @@ defmodule ApathyDrive.Ability do
 
   def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+    attack_rating_modifier =
+      (100 + Mobile.ability_value(caster, "AttackRating%") +
+         (ability.traits["AttackRating%"] || 0)) / 100
+
+    accuracy = accuracy * attack_rating_modifier
 
     accuracy =
       if ability.weapon? do
@@ -2030,25 +2046,6 @@ defmodule ApathyDrive.Ability do
     if ability.duration && ability.duration > 0 do
       {caster, target}
     else
-      ability =
-        if caster.__struct__ == Character && ability.mana && ability.mana > 0 do
-          count = length(damages)
-          bonus_damage = Character.base_spell_damage(caster, ability) * 0.1 / count
-
-          damages =
-            Enum.map(damages, fn element ->
-              element
-              |> Map.update(:min, 0, &trunc(&1 + bonus_damage))
-              |> Map.update(:max, 0, &trunc(&1 + bonus_damage))
-            end)
-
-          put_in(ability.traits["Damage"], damages)
-        else
-          ability
-        end
-
-      damages = ability.traits["Damage"]
-
       lore = Map.get(caster, :lore)
 
       damages =
@@ -3739,8 +3736,6 @@ defmodule ApathyDrive.Ability do
         :too_many_matches
     end
   end
-
-  def not_enough_mana?(%{} = _mobile, %Ability{ignores_round_cooldown?: true}), do: false
 
   def not_enough_mana?(%{} = mobile, %Ability{} = ability) do
     if !Mobile.enough_mana_for_ability?(mobile, ability) do
