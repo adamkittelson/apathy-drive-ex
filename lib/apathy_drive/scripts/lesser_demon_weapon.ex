@@ -54,8 +54,8 @@ defmodule ApathyDrive.Scripts.LesserDemonWeapon do
 
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 1, max: 1, damage_type: "Disruption", damage_type_id: 13},
-          %{kind: "magical", min: 1, max: 1, damage_type: "Fire", damage_type_id: 5}
+          %{min: 1, max: 1, damage_type: "Magical"},
+          %{min: 1, max: 1, damage_type: "Fire"}
         ],
         "RemoveMessage" => "The #{demon.name} bound to your #{item.name} returns to its plane.",
         "stack_key" => "demon-weapon",

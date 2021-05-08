@@ -426,11 +426,9 @@ defmodule ApathyDrive.Commands.Move do
                 traits: %{
                   "Damage" => [
                     %{
-                      kind: "raw",
                       min: trunc(room_exit["max_damage"] * 0.75),
                       max: room_exit["max_damage"],
-                      damage_type: "Unaspected",
-                      damage_type_id: 3
+                      damage_type: "Magical"
                     }
                   ]
                 },

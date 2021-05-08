@@ -65,13 +65,11 @@ defmodule ApathyDrive.ClassAbility do
     |> where([mt], mt.ability_id == ^ability_id)
     |> preload([:damage_type])
     |> Repo.all()
-    |> Enum.reduce([], fn %{damage_type: damage_type, kind: kind, potency: potency}, damages ->
+    |> Enum.reduce([], fn %{damage_type: damage_type, potency: potency}, damages ->
       [
         %{
-          kind: kind,
           potency: potency,
-          damage_type: damage_type.name,
-          damage_type_id: damage_type.id
+          damage_type: damage_type.name
         }
         | damages
       ]

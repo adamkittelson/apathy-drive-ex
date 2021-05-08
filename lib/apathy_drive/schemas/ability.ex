@@ -578,7 +578,7 @@ defmodule ApathyDrive.Ability do
     |> Kernel.++(skill_abilities(mobile))
     |> Enum.filter(fn ability ->
       Map.has_key?(ability.traits, "Damage") and
-        Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
+        Enum.any?(ability.traits["Damage"], &(&1.damage_type == "Drain"))
     end)
     |> Enum.filter(fn ability ->
       Ability.affects_target?(target, ability)
@@ -621,7 +621,8 @@ defmodule ApathyDrive.Ability do
       Ability.affects_target?(target, ability)
     end)
     |> Enum.reject(fn ability ->
-      ability.traits["Damage"] && Enum.any?(ability.traits["Damage"], &(&1.kind == "drain"))
+      ability.traits["Damage"] &&
+        Enum.any?(ability.traits["Damage"], &(&1.damage_type == "Drain"))
     end)
     |> useable(mobile)
   end
@@ -909,27 +910,7 @@ defmodule ApathyDrive.Ability do
 
           effects =
             if damage = effects["Damage"] do
-              effects =
-                if ability.traits["Elemental"] do
-                  elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
-                  damage = List.delete(damage, elemental_damage)
-
-                  if lore = caster.lore do
-                    elemental_damage =
-                      Enum.map(lore.damage_types, fn damage ->
-                        damage
-                        |> Map.put(:min, elemental_damage.min)
-                        |> Map.put(:max, elemental_damage.min)
-                      end)
-
-                    Map.put(effects, "Damage", elemental_damage ++ damage)
-                  else
-                    elemental_damage = Map.put(elemental_damage, :damage_type, "Elemental")
-                    Map.put(effects, "Damage", [elemental_damage | damage])
-                  end
-                else
-                  Map.put(effects, "Damage", damage)
-                end
+              effects = Map.put(effects, "Damage", damage)
 
               effects
               |> Map.put("WeaponDamage", effects["Damage"])
@@ -943,8 +924,7 @@ defmodule ApathyDrive.Ability do
               message =
                 message
                 |> Text.interpolate(%{
-                  "item" => item.name,
-                  "lore" => caster.lore && caster.lore.name
+                  "item" => item.name
                 })
 
               Map.put(effects, "RemoveMessage", message)
@@ -962,15 +942,9 @@ defmodule ApathyDrive.Ability do
                 items_instances_id: item.instance_id
               )
 
-            value =
-              if ability.traits["Elemental"] do
-                caster.lore.name
-              end
-
             enchantment
             |> Ecto.Changeset.change(%{
-              ability_id: ability.id,
-              value: value
+              ability_id: ability.id
             })
             |> Repo.update()
 
@@ -2046,54 +2020,6 @@ defmodule ApathyDrive.Ability do
     if ability.duration && ability.duration > 0 do
       {caster, target}
     else
-      lore = Map.get(caster, :lore)
-
-      damages =
-        if ability.traits["Elemental"] && lore do
-          min =
-            damages
-            |> Enum.map(& &1.min)
-            |> Enum.sum()
-
-          max =
-            damages
-            |> Enum.map(& &1.max)
-            |> Enum.sum()
-
-          damages =
-            Enum.reduce(damages, [], fn type, damages ->
-              type =
-                type
-                |> Map.put(:max, max(1, div(max, 2)))
-                |> Map.put(:min, max(1, div(min, 2)))
-
-              [type | damages]
-            end)
-
-          lore_min =
-            min
-            |> div(2)
-            |> div(length(lore.damage_types))
-            |> max(1)
-
-          lore_max =
-            max
-            |> div(2)
-            |> div(length(lore.damage_types))
-            |> max(1)
-
-          Enum.reduce(lore.damage_types, damages, fn type, damages ->
-            type =
-              type
-              |> Map.put(:min, lore_min)
-              |> Map.put(:max, lore_max)
-
-            [type | damages]
-          end)
-        else
-          damages
-        end
-
       target =
         target
         |> Map.put(:ability_shift, 0)
@@ -2105,22 +2031,7 @@ defmodule ApathyDrive.Ability do
 
       {caster, damage_percent, target} =
         Enum.reduce(damages, {caster, 0, target}, fn
-          %{kind: "raw", min: min, max: max, damage_type: type},
-          {caster, damage_percent, target} ->
-            damage = Enum.random(min..max)
-
-            damage = damage + bonus_damage
-
-            modifier = Mobile.ability_value(target, "Resist#{type}")
-
-            damage = damage * (1 - modifier / 100)
-
-            percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-            {caster, damage_percent + percent, target}
-
-          %{kind: "physical", min: min, max: max, damage_type: type},
-          {caster, damage_percent, target} ->
+          %{min: min, max: max, damage_type: "Physical"}, {caster, damage_percent, target} ->
             min = trunc(min)
             max = trunc(max)
 
@@ -2140,15 +2051,11 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent + penetration
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
-
-            damage = damage * (1 - modifier / 100)
-
             percent = damage / Mobile.max_hp_at_level(target, target.level)
 
             {caster, damage_percent + percent, target}
 
-          %{kind: "physical", damage: dmg, damage_type: type}, {caster, damage_percent, target} ->
+          %{damage: dmg, damage_type: "Physical"}, {caster, damage_percent, target} ->
             resist = Mobile.physical_resistance_at_level(target, target.level)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
@@ -2159,16 +2066,11 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
-
-            damage = damage * (1 - modifier / 100)
-
             percent = damage / Mobile.max_hp_at_level(target, target.level)
 
             {caster, damage_percent + percent, target}
 
-          %{kind: "magical", min: min, max: max, damage_type: type},
-          {caster, damage_percent, target} ->
+          %{min: min, max: max, damage_type: type}, {caster, damage_percent, target} ->
             min = trunc(min)
             max = trunc(max)
 
@@ -2198,8 +2100,7 @@ defmodule ApathyDrive.Ability do
 
             {caster, damage_percent + percent, target}
 
-          %{kind: "magical", damage: damage, damage_type: type},
-          {caster, damage_percent, target} ->
+          %{damage: damage, damage_type: type}, {caster, damage_percent, target} ->
             resist = Mobile.magical_resistance_at_level(target, target.level)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
@@ -2218,17 +2119,12 @@ defmodule ApathyDrive.Ability do
 
             {caster, damage_percent + percent, target}
 
-          %{kind: "drain", min: min, max: max, damage_type: type},
-          {caster, damage_percent, target} ->
+          %{min: min, max: max, damage_type: "Drain"}, {caster, damage_percent, target} ->
             damage = Enum.random(min..max)
 
             damage = damage - Mobile.ability_value(target, "MagicDR")
 
             damage = damage + bonus_damage
-
-            modifier = Mobile.ability_value(target, "Resist#{type}")
-
-            damage = damage * (1 - modifier / 100)
 
             percent = damage / Mobile.max_hp_at_level(target, target.level)
 
@@ -2948,7 +2844,7 @@ defmodule ApathyDrive.Ability do
   def caster_cast_message(%Ability{} = ability, %{} = caster, %Item{} = target, _mobile) do
     message =
       ability.user_message
-      |> Text.interpolate(%{"target" => target, "lore" => caster.lore && caster.lore.name})
+      |> Text.interpolate(%{"target" => target})
       |> Text.capitalize_first()
 
     unless message == "" do
@@ -3216,8 +3112,7 @@ defmodule ApathyDrive.Ability do
       ability.spectator_message
       |> Text.interpolate(%{
         "user" => caster,
-        "target" => target,
-        "lore" => caster.lore && caster.lore.name
+        "target" => target
       })
       |> Text.capitalize_first()
 
@@ -3428,9 +3323,6 @@ defmodule ApathyDrive.Ability do
       Map.get(mobile, :death_ability_id, :none) == ability.id ->
         true
 
-      lore_missing(mobile, ability) ->
-        false
-
       cd = on_cooldown?(mobile, ability) ->
         Mobile.send_scroll(
           mobile,
@@ -3449,24 +3341,6 @@ defmodule ApathyDrive.Ability do
         false
 
       true ->
-        true
-    end
-  end
-
-  def lore_missing(mobile, ability) do
-    cond do
-      !ability.traits["Elemental"] ->
-        false
-
-      Map.get(mobile, :lore) ->
-        false
-
-      :else ->
-        Mobile.send_scroll(
-          mobile,
-          "<p><span class='red'>Elemental spells require an active lore! (see \"help lores\")</span></p>"
-        )
-
         true
     end
   end

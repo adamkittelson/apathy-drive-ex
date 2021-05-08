@@ -61,7 +61,7 @@ defmodule ApathyDrive.Commands.Abilities do
     end
   end
 
-  def format_ability(%{name: name, mana: mana, command: command, auto: auto}, name_width) do
+  def format_ability(%{name: name, mana: mana, command: command, auto: auto} = blah, name_width) do
     command =
       command
       |> to_string

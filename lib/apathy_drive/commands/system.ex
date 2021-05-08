@@ -21,7 +21,7 @@ defmodule ApathyDrive.Commands.System do
       ability = %ApathyDrive.Ability{
         traits: %{
           "Damage" => [
-            %{kind: "raw", min: 100, max: 100, damage_type: "Unaspected", damage_type_id: 3}
+            %{min: 100, max: 100, damage_type: "Magical"}
           ]
         },
         targets: "self",

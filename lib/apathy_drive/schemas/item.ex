@@ -17,6 +17,7 @@ defmodule ApathyDrive.Item do
     PubSub,
     Regeneration,
     RoomServer,
+    Shop,
     ShopItem
   }
 
@@ -298,8 +299,8 @@ defmodule ApathyDrive.Item do
   def delete_at(quality) when quality in ["unique", "set", "rare", "crafted"],
     do: Timex.shift(DateTime.utc_now(), minutes: 30)
 
-  def delete_at("magic"), do: Timex.shift(DateTime.utc_now(), minutes: 20)
-  def delete_at(_), do: Timex.shift(DateTime.utc_now(), minutes: 10)
+  def delete_at("magic"), do: Timex.shift(DateTime.utc_now(), minutes: 5)
+  def delete_at(_), do: Timex.shift(DateTime.utc_now(), minutes: 1)
 
   def with_traits(%Item{} = item) do
     # item_traits =
@@ -506,65 +507,18 @@ defmodule ApathyDrive.Item do
     |> Ability.process_duration_traits(character, character, nil)
   end
 
-  def upgrade_for_character?(%Item{type: type} = item, %Character{} = character)
-      when type in ["Armour", "Shield"] do
+  def upgrade_for_character?(%Item{quality_level: nil}, _character), do: false
+
+  def upgrade_for_character?(%Item{} = item, %Character{} = character) do
     unless item in character.equipment do
-      item_traits = traits(item, character)
-      item_ac = item_traits["Defense"] || 0
-      item_mr = item_traits["MR"] || 0
-      item_prot = item_ac + item_mr
-
-      skill_level = Item.skill_for_character(character, item)
-
-      modifier =
-        if skill_level == 0 do
-          0.1
-        else
-          skill_level / character.level
-        end
-
-      item_prot = item_prot * modifier
-
       case items_to_compare(item, character) do
         [] ->
           true
 
         items ->
           Enum.any?(items, fn worn_item ->
-            worn_item_traits = traits(worn_item, character)
-
-            worn_ac = worn_item_traits["Defense"] || 0
-            worn_mr = worn_item_traits["MR"] || 0
-            worn_prot = worn_ac + worn_mr
-
-            skill_level = Item.skill_for_character(character, worn_item)
-
-            modifier =
-              if skill_level == 0 do
-                0.1
-              else
-                skill_level / character.level
-              end
-
-            worn_prot = worn_prot * modifier
-
-            item_prot > worn_prot
-          end)
-      end
-    end
-  end
-
-  def upgrade_for_character?(%Item{type: "Weapon"} = item, %Character{} = character) do
-    unless item in character.equipment do
-      item_dps = base_weapon_damage(character, item)
-
-      case items_to_compare(item, character) do
-        [] ->
-          true
-
-        items ->
-          Enum.any?(items, fn worn_item ->
-            base_weapon_damage(character, worn_item) < item_dps
+            Shop.sell_price(%Shop{cost_multiplier: 1}, character, item) >
+              Shop.sell_price(%Shop{cost_multiplier: 1}, character, worn_item)
           end)
       end
     end

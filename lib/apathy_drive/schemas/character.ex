@@ -455,18 +455,6 @@ defmodule ApathyDrive.Character do
         hp + max_hp
       end)
 
-    elemental =
-      Enum.reduce(1..max_level, 0, fn level, total ->
-        elemental =
-          traits
-          |> Enum.filter(&(&1["Level"] >= level))
-          |> Enum.map(& &1["Elemental"])
-          |> Enum.reject(&is_nil/1)
-          |> Enum.max(fn -> 0 end)
-
-        total + elemental
-      end)
-
     max_mana =
       Enum.reduce(1..max_level, 0, fn level, max_mana ->
         mana =
@@ -498,8 +486,7 @@ defmodule ApathyDrive.Character do
       "stack_count" => 1,
       "MaxHP" => max_hp,
       "MaxMana" => max_mana,
-      "CombatLevel" => combat_level,
-      "Elemental" => elemental
+      "CombatLevel" => combat_level
     }
 
     Systems.Effect.add(character, effect)
@@ -693,43 +680,6 @@ defmodule ApathyDrive.Character do
   end
 
   def ability_for_weapon(character, weapon) do
-    verbs = %{
-      "beat" => "Crushing",
-      "bludgeon" => "Crushing",
-      "chop" => "Cutting",
-      "claw" => "Cutting",
-      "cleave" => "Cutting",
-      "clobber" => "Crushing",
-      "crush" => "Crushing",
-      "cut" => "Cutting",
-      "double-shoot two arrows at" => "Impaling",
-      "hack" => "Cutting",
-      "hurl your chakram and strike" => "Cutting",
-      "hurl your nexus spear at" => "Impaling",
-      "hurl your shuriken and strike" => "Cutting",
-      "hurl your throwing hammer and strike" => "Impact",
-      "hurl your throwing knife and strike" => "Impaling",
-      "impale" => "Impaling",
-      "impale your nexus spear into" => "Impaling",
-      "jab" => "Impaling",
-      "lash" => "Cutting",
-      "pierce" => "Impaling",
-      "pound" => "Crushing",
-      "rip" => "Cutting",
-      "shoot a bolt at" => "Impaling",
-      "shoot an arrow and strike" => "Impaling",
-      "skewer" => "Impaling",
-      "slam" => "Crushing",
-      "slash" => "Cutting",
-      "slice" => "Cutting",
-      "slice and dice" => "Cutting",
-      "smack" => "Impact",
-      "smash" => "Crushing",
-      "stab" => "Impaling",
-      "whap" => "Crushing",
-      "whip" => "Cutting"
-    }
-
     %Item{
       type: "Weapon",
       name: name,
@@ -752,11 +702,9 @@ defmodule ApathyDrive.Character do
 
           Enum.map(list, fn %{"min" => min, "max" => max} ->
             %{
-              kind: "magical",
               damage_type: table,
               min: min,
-              max: max,
-              damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
+              max: max
             }
           end) ++ damages
         end
@@ -787,8 +735,6 @@ defmodule ApathyDrive.Character do
     bonus_damage = bonus_damage ++ elemental_damage
 
     [singular_hit, plural_hit] = Enum.random(hit_verbs)
-
-    table = verbs[singular_hit] || "Crushing"
 
     energy = Character.energy_per_swing(character, weapon)
 
@@ -823,11 +769,9 @@ defmodule ApathyDrive.Character do
       traits: %{
         "Damage" => [
           %{
-            kind: "physical",
-            damage_type: table,
+            damage_type: "Physical",
             min: min_dam,
-            max: max_dam,
-            damage_type_id: Repo.get_by(ApathyDrive.DamageType, name: table).id
+            max: max_dam
           }
           | bonus_damage
         ],

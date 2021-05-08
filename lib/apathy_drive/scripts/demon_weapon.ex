@@ -56,9 +56,8 @@ defmodule ApathyDrive.Scripts.DemonWeapon do
 
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 2, max: 2, damage_type: "Disruption", damage_type_id: 13},
-          %{kind: "magical", min: 2, max: 2, damage_type: "Fire", damage_type_id: 5},
-          %{kind: "magical", min: 2, max: 2, damage_type: "Stress", damage_type_id: 21}
+          %{min: 4, max: 4, damage_type: "Magical"},
+          %{min: 2, max: 2, damage_type: "Fire"}
         ],
         "RemoveMessage" => "The #{demon.name} bound to your #{item.name} returns to its plane.",
         "stack_key" => "demon-weapon",

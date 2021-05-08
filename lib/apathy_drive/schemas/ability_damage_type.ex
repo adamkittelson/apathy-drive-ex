@@ -25,11 +25,9 @@ defmodule ApathyDrive.AbilityDamageType do
     |> Enum.reduce([], fn %{damage_type: damage_type, kind: kind, min: min, max: max}, damages ->
       [
         %{
-          kind: kind,
           min: min,
           max: max,
-          damage_type: damage_type.name,
-          damage_type_id: damage_type.id
+          damage_type: damage_type.name
         }
         | damages
       ]

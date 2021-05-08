@@ -352,7 +352,7 @@ defmodule ApathyDrive.Commands.System.Ability do
     |> Enum.join(" ")
     |> Poison.decode()
     |> case do
-      {:ok, %{"kind" => kind, "type" => type, "min" => min, "max" => max}} ->
+      {:ok, %{"type" => type, "min" => min, "max" => max}} ->
         ability = character.editing
 
         type = Repo.get_by(DamageType, name: type)
@@ -366,8 +366,7 @@ defmodule ApathyDrive.Commands.System.Ability do
               ability_id: ability.id,
               damage_type_id: type.id,
               min: min,
-              max: max,
-              kind: kind
+              max: max
             }
             |> Repo.insert()
 

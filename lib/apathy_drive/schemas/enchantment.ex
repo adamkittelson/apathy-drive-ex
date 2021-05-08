@@ -6,7 +6,6 @@ defmodule ApathyDrive.Enchantment do
     AbilityDamageType,
     AbilityTrait,
     Character,
-    DamageType,
     Enchantment,
     Item,
     ItemInstance,
@@ -405,28 +404,7 @@ defmodule ApathyDrive.Enchantment do
                       traits
 
                     damage ->
-                      if traits["Elemental"] do
-                        elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
-                        damage = List.delete(damage, elemental_damage)
-
-                        lore = ApathyDrive.ElementalLores.lores()[enchantment.value]
-
-                        elemental_damage =
-                          Enum.map(lore.damage_types, fn damage ->
-                            damage_type_id = Repo.get_by(DamageType, name: damage.damage_type).id
-
-                            damage
-                            |> Map.put(:min, elemental_damage.min)
-                            |> Map.put(:max, elemental_damage.min)
-                            |> Map.put(:damage_type_id, damage_type_id)
-                          end)
-
-                        traits
-                        |> Map.put("WeaponDamage", elemental_damage ++ damage)
-                        |> Map.delete("Elemental")
-                      else
-                        Map.put(traits, "WeaponDamage", damage)
-                      end
+                      Map.put(traits, "WeaponDamage", damage)
                   end
 
                 traits =
@@ -467,11 +445,7 @@ defmodule ApathyDrive.Enchantment do
                   if ability.kind == "long-term" do
                     ability.name
                   else
-                    if traits["Elemental"] do
-                      "#{ability.name} (locked)"
-                    else
-                      String.replace(ability.name, "elemental", enchantment.value) <> " (locked)"
-                    end
+                    String.replace(ability.name, "elemental", enchantment.value) <> " (locked)"
                   end
 
                 weight =
