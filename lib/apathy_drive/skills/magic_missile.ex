@@ -22,7 +22,7 @@ defmodule ApathyDrive.Skills.MagicMissile do
           %{
             damage_type: "Magical",
             min: min_damage(level),
-            max: min_damage(level)
+            max: max_damage(level)
           }
         ]
       }
