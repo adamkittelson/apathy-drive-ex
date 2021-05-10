@@ -5,6 +5,7 @@ defmodule ApathyDrive.Monster do
   alias ApathyDrive.{
     Ability,
     Affix,
+    AffixSkill,
     Aggression,
     AI,
     ChannelHistory,
@@ -630,7 +631,7 @@ defmodule ApathyDrive.Monster do
     if prefix do
       prefix =
         prefix
-        |> Repo.preload(affixes_traits: [:trait])
+        |> Repo.preload(affixes_traits: [:trait], affix_skills: [:skill])
 
       if prefix.affixes_traits == [] do
         generate_prefix(item_instance, affix_level)
@@ -648,6 +649,38 @@ defmodule ApathyDrive.Monster do
           |> Repo.insert!()
         end)
 
+        prefix.affix_skills
+        |> Enum.each(fn
+          %AffixSkill{
+            value: %{
+              "kind" => "Charges",
+              "base_charges" => base_charges,
+              "max_level" => max_skill_level
+            }
+          } = as ->
+            required_skill_level = as.skill.required_level
+            item_level = item_instance.level
+            skill_level = charged_skill_level(required_skill_level, max_skill_level, item_level)
+            charges = charged_skill_charges(base_charges, skill_level)
+
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: %{"charges" => charges, "level" => skill_level},
+              description: as.description
+            }
+            |> Repo.insert!()
+
+          %AffixSkill{value: value} = as ->
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: value,
+              description: as.description
+            }
+            |> Repo.insert!()
+        end)
+
         prefix.name
       end
     end
@@ -661,7 +694,7 @@ defmodule ApathyDrive.Monster do
     if suffix do
       suffix =
         suffix
-        |> Repo.preload(affixes_traits: [:trait])
+        |> Repo.preload(affixes_traits: [:trait], affix_skills: [:skill])
 
       if suffix.affixes_traits == [] do
         generate_suffix(item_instance, affix_level)
@@ -679,9 +712,50 @@ defmodule ApathyDrive.Monster do
           |> Repo.insert!()
         end)
 
+        suffix.affix_skills
+        |> Enum.each(fn
+          %AffixSkill{
+            value: %{
+              "kind" => "Charges",
+              "base_charges" => base_charges,
+              "max_level" => max_skill_level
+            }
+          } = as ->
+            required_skill_level = as.skill.required_level
+            item_level = item_instance.level
+            skill_level = charged_skill_level(required_skill_level, max_skill_level, item_level)
+            charges = charged_skill_charges(base_charges, skill_level)
+
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: %{"charges" => charges, "level" => skill_level},
+              description: as.description
+            }
+            |> Repo.insert!()
+
+          %AffixSkill{value: value} = as ->
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: value,
+              description: as.description
+            }
+            |> Repo.insert!()
+        end)
+
         suffix.name
       end
     end
+  end
+
+  def charged_skill_level(required_skill_level, max_skill_level, item_level) do
+    modifier = trunc((99 - required_skill_level) / max_skill_level)
+    max(1, trunc((item_level - required_skill_level) / modifier))
+  end
+
+  def charged_skill_charges(base_charges, skill_level) do
+    trunc((base_charges + base_charges * skill_level) / 8)
   end
 
   def affix_description("DefensePerLevel", description, _val) do

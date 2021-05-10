@@ -16,6 +16,7 @@ defmodule ApathyDrive.Affix do
     field(:group, :integer)
 
     has_many(:affixes_traits, ApathyDrive.AffixTrait)
+    has_many(:affix_skills, ApathyDrive.AffixSkill)
 
     timestamps()
   end
