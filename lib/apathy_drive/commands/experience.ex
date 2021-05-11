@@ -10,15 +10,20 @@ defmodule ApathyDrive.Commands.Experience do
       "\n<p><span class='white'>Character:</span></p>"
     )
 
+    modifier = (100 + character.race.race.exp_modifier) / 100
     level = character.level
+    exp = trunc(character.experience)
+    tolevel = Level.exp_at_level(level, modifier)
+    remaining = tolevel - exp
+    percent = (exp / tolevel * 100) |> round
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
+      "<p><span class='dark-green'>Exp:</span> <span class='dark-cyan'>#{exp}</span> <span class='dark-green'>Level:</span> <span class='dark-cyan'>#{
         level
-        |> to_string
-        |> String.pad_trailing(12)
-      }</span>"
+      }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
+        remaining
+      } (#{tolevel}) [#{percent}%]</span></p>"
     )
 
     Mobile.send_scroll(
@@ -47,7 +52,7 @@ defmodule ApathyDrive.Commands.Experience do
           |> String.pad_trailing(3)
         }</span> <span class='dark-green'>Exp needed for next level:</span> <span class='dark-cyan'>#{
           to_level - exp
-        }</p>"
+        }</span></p>"
       )
     end)
 

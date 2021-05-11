@@ -79,8 +79,8 @@ defmodule ApathyDrive.Commands.Train do
 
       character =
         character
-        |> Character.load_classes()
         |> Character.load_race()
+        |> Character.load_classes()
         |> Character.add_equipped_items_effects()
         |> Character.load_skills()
         |> Character.load_abilities()
@@ -93,6 +93,8 @@ defmodule ApathyDrive.Commands.Train do
           character_skill.level
         }!</span></p>"
       )
+
+      ApathyDrive.Commands.Help.execute(room, character, [character_skill.skill.name])
 
       character
     end)

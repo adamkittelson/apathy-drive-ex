@@ -314,8 +314,8 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:leader, ref)
         |> Map.put(:socket, socket)
         |> Character.load_traits()
-        |> Character.load_classes()
         |> Character.load_race()
+        |> Character.load_classes()
         |> Character.set_attribute_levels()
         |> Character.update_exp_bar()
         |> Character.load_skills()
@@ -327,7 +327,6 @@ defmodule ApathyDrive.RoomServer do
         |> TimerManager.send_after(
           {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
         )
-        |> TimerManager.send_after({:drain_exp, :timer.seconds(1), {:drain_exp, ref}})
         |> TimerManager.send_after(
           {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
         )
@@ -712,17 +711,6 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:rest, mobile_ref}, room) do
     Room.update_hp_bar(room, mobile_ref)
     Room.update_mana_bar(room, mobile_ref)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:drain_exp, mobile_ref}, room) do
-    room =
-      Room.update_mobile(room, mobile_ref, fn _room, character ->
-        character
-        |> Character.drain_exp_buffer()
-        |> TimerManager.send_after({:drain_exp, :timer.seconds(1), {:drain_exp, character.ref}})
-      end)
 
     {:noreply, room}
   end

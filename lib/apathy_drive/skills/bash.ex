@@ -102,7 +102,7 @@ defmodule ApathyDrive.Skills.Bash do
   defp skill_level(character) do
     character.skills
     |> Map.values()
-    |> Enum.find(&(&1.name == "bash"))
+    |> Enum.find(&(&1.name == "Bash"))
     |> case do
       %{level: level} ->
         level

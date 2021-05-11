@@ -115,11 +115,11 @@ defmodule ApathyDrive.KillCount do
 
             character
             |> Character.send_chat(message)
-            |> Character.add_experience_to_buffer(bonus, true)
+            |> Character.add_experience(bonus, true)
           else
             character
             |> Mobile.send_scroll(message)
-            |> Character.add_experience_to_buffer(bonus, true)
+            |> Character.add_experience(bonus, true)
           end
 
         {character, [multiplier | kills_required]}

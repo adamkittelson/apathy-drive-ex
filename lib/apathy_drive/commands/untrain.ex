@@ -71,8 +71,8 @@ defmodule ApathyDrive.Commands.Untrain do
             character =
               character
               |> Map.put(:effects, %{})
-              |> Character.load_classes()
               |> Character.load_race()
+              |> Character.load_classes()
               |> Character.add_equipped_items_effects()
               |> Character.load_abilities()
               |> Character.set_title()

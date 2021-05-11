@@ -249,7 +249,7 @@ defmodule ApathyDrive.Enchantment do
         attribute => 1 / length(enchantment.ability.attributes)
       })
     end)
-    |> ApathyDrive.Character.add_experience_to_buffer(exp)
+    |> ApathyDrive.Character.add_experience(exp)
   end
 
   def present?(%Room{} = room, %Character{} = enchanter, instance_id) do
@@ -275,9 +275,9 @@ defmodule ApathyDrive.Enchantment do
       if skill do
         level = character.skills[skill].level
 
-        Character.drain_rate(level)
+        Character.attribute_exp(level)
       else
-        Character.drain_rate(character.level)
+        Character.attribute_exp(character.level)
       end
 
     rate * 80

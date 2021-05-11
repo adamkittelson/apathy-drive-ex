@@ -554,6 +554,14 @@ defmodule ApathyDrive.Ability do
     |> Enum.reject(&(is_nil(&1.name) or &1.name == "" or &1.kind == "base-class"))
   end
 
+  def masteries(%Character{} = character) do
+    Enum.map(character.skills, fn {_cmd, skill} ->
+      if String.ends_with?(skill.name, "Mastery") do
+        skill.module.ability(character)
+      end
+    end)
+  end
+
   def skill_abilities(%Character{} = character) do
     Enum.map(character.skills, fn {_cmd, skill} ->
       skill.module.ability(character)
@@ -1252,8 +1260,11 @@ defmodule ApathyDrive.Ability do
   def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
+    weapon = Character.weapon(caster)
+
     attack_rating_modifier =
       (100 + Mobile.ability_value(caster, "AttackRating%") +
+         Character.mastery_value(caster, weapon, "AttackRating%") +
          (ability.traits["AttackRating%"] || 0)) / 100
 
     accuracy = accuracy * attack_rating_modifier
@@ -2895,10 +2906,10 @@ defmodule ApathyDrive.Ability do
 
       cond do
         amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
-          if List.first(ability.traits["Damage"]).kind == "magical" do
-            Map.put(ability, :result, :resisted)
-          else
+          if List.first(ability.traits["Damage"]).damage_type == "Physical" do
             Map.put(ability, :result, :deflected)
+          else
+            Map.put(ability, :result, :resisted)
           end
           |> caster_cast_message(caster, target, mobile)
 
@@ -3014,10 +3025,10 @@ defmodule ApathyDrive.Ability do
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
-        if List.first(ability.traits["Damage"]).kind == "magical" do
-          Map.put(ability, :result, :resisted)
-        else
+        if List.first(ability.traits["Damage"]).damage_type == "Physical" do
           Map.put(ability, :result, :deflected)
+        else
+          Map.put(ability, :result, :resisted)
         end
         |> target_cast_message(caster, target, mobile)
 
@@ -3169,10 +3180,10 @@ defmodule ApathyDrive.Ability do
 
     cond do
       amount < 1 and has_ability?(ability, "Damage") and ability.kind != "critical" ->
-        if List.first(ability.traits["Damage"]).kind == "magical" do
-          Map.put(ability, :result, :resisted)
-        else
+        if List.first(ability.traits["Damage"]).damage_type == "Physical" do
           Map.put(ability, :result, :deflected)
+        else
+          Map.put(ability, :result, :resisted)
         end
         |> spectator_cast_message(caster, target, mobile)
 

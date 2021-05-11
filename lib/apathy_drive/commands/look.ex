@@ -440,7 +440,9 @@ defmodule ApathyDrive.Commands.Look do
   def damage(%{min_damage: nil, max_damage: nil}, _character), do: ""
 
   def damage(%Item{min_damage: min, max_damage: max} = item, character) do
-    modifier = (100 + (Systems.Effect.effect_bonus(item, "Damage%") || 0)) / 100
+    modifier =
+      (100 + (Systems.Effect.effect_bonus(item, "Damage%") || 0) +
+         Character.mastery_value(character, item, "Damage%")) / 100
 
     {min_dam, max_dam} =
       if modifier > 1 do

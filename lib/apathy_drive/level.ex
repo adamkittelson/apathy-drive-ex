@@ -1,8 +1,4 @@
 defmodule ApathyDrive.Level do
-  def exp_to_next_level(current_level, current_exp) do
-    exp_at_level(current_level) - current_exp
-  end
-
   def exp_for_level(0, _multiplier), do: 0
 
   def exp_for_level(lvl, multiplier) do

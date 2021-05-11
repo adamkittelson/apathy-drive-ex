@@ -526,12 +526,12 @@ defmodule ApathyDrive.Monster do
     end)
   end
 
+  def ac_for_item(%{min_ac: nil, max_ac: nil}, _quality), do: nil
+
   def ac_for_item(item, "low") do
     ac = Enum.random(item.min_ac..item.max_ac)
     trunc(ac * 0.75)
   end
-
-  def ac_for_item(%{min_ac: nil, max_ac: nil}, _quality), do: nil
 
   def ac_for_item(item, _quality) do
     Enum.random(item.min_ac..item.max_ac)
@@ -834,7 +834,9 @@ defmodule ApathyDrive.Monster do
   end
 
   def determine_item_quality(character, monster, item) do
-    magic_find = Mobile.ability_value(character, "MagicFind") + (200 - character.level * 2)
+    magic_find =
+      Mobile.ability_value(character, "MagicFind") +
+        Mobile.attribute_at_level(character, :charm, character.level)
 
     magic_find = if monster.game_limit == 1, do: 400 + magic_find * 2, else: magic_find
 
@@ -1079,7 +1081,7 @@ defmodule ApathyDrive.Monster do
                 exp = max(1, div(monster.experience, pets_and_players))
 
                 character
-                |> Character.add_experience_to_buffer(exp)
+                |> Character.add_experience(exp)
                 |> Character.add_currency_from_monster(monster)
                 |> Character.execute_per_kill_traits()
                 |> KillCount.increment(monster, exp)

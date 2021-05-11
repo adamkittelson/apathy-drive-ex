@@ -14,6 +14,7 @@ defmodule ApathyDrive.Item do
     ItemTypeParent,
     ItemRace,
     Match,
+    Mobile,
     PubSub,
     Regeneration,
     RoomServer,
@@ -722,7 +723,16 @@ defmodule ApathyDrive.Item do
   def useable_by_character?(_character, %Item{}), do: true
 
   def too_powerful_for_character?(character, item) do
-    too_high_level_for_character?(character, item)
+    too_high_level_for_character?(character, item) or not_enough_strength?(character, item) or
+      not_enough_agility?(character, item)
+  end
+
+  def not_enough_strength?(character, item) do
+    Mobile.attribute_at_level(character, :strength, character.level) < required_strength(item)
+  end
+
+  def not_enough_agility?(character, item) do
+    Mobile.attribute_at_level(character, :agility, character.level) < required_agility(item)
   end
 
   def required_strength(%Item{} = item) do
