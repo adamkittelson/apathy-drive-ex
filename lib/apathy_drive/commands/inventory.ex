@@ -8,7 +8,7 @@ defmodule ApathyDrive.Commands.Inventory do
     "Weapon Hand",
     "Off-Hand",
     "Two Handed",
-    "Arm",
+    "Arms",
     "Hands",
     "Wrist",
     "Finger",

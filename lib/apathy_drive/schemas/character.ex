@@ -1479,7 +1479,7 @@ defmodule ApathyDrive.Character do
     if mastery = mastery(weapon) do
       character
       |> Ability.masteries()
-      |> Enum.find(&(&1 && &1.kind == "mastery"))
+      |> Enum.find(&(&1 && &1.name == "#{mastery} Mastery"))
       |> case do
         nil ->
           0
