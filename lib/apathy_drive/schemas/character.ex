@@ -784,44 +784,14 @@ defmodule ApathyDrive.Character do
         "DodgeSpectatorMessage" =>
           "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!",
         "PhysicalPenetration" => Systems.Effect.effect_bonus(weapon, "PhysicalPenetration"),
-        "MagicalPenetration" => Systems.Effect.effect_bonus(weapon, "MagicalPenetration")
+        "MagicalPenetration" => Systems.Effect.effect_bonus(weapon, "MagicalPenetration"),
+        "OnAttack" => Mobile.ability_value(character, "OnAttack"),
+        "OnHit" => Mobile.ability_value(character, "OnHit")
       }
     }
 
-    ability =
-      if poison do
-        put_in(ability.traits["Poison"], poison)
-      else
-        ability
-      end
-
-    if on_hit = Systems.Effect.effect_bonus(weapon, "OnHit") do
-      # if on_hit.kind == "attack" do
-      #   modifier = energy / 1000
-
-      #   Enum.reduce(on_hit.traits["Damage"], ability, fn damage, ability ->
-      #     damage =
-      #       damage
-      #       |> update_in([:min], &trunc(&1 * modifier))
-      #       |> update_in([:max], &trunc(&1 * modifier))
-
-      #     update_in(ability, [Access.key!(:traits), "Damage"], &[damage | &1])
-      #   end)
-      # else
-      on_hit =
-        Enum.map(on_hit, fn ability ->
-          ability
-          |> Map.put(:energy, 0)
-          |> Map.put(:mana, 0)
-          |> Map.put(:on_hit?, true)
-          |> Map.put(:difficulty, nil)
-        end)
-
-      ability
-      |> put_in([Access.key!(:traits), "OnHit"], on_hit)
-      |> put_in([Access.key!(:traits), "OnHit%"], Systems.Effect.effect_bonus(weapon, "OnHit%"))
-
-      # end
+    if poison do
+      put_in(ability.traits["Poison"], poison)
     else
       ability
     end

@@ -10,6 +10,7 @@ defmodule ApathyDrive.Item do
     ItemClass,
     ItemInstance,
     ItemInstanceAffixTrait,
+    ItemInstanceAffixSkill,
     ItemType,
     ItemTypeParent,
     ItemRace,
@@ -19,7 +20,8 @@ defmodule ApathyDrive.Item do
     Regeneration,
     RoomServer,
     Shop,
-    ShopItem
+    ShopItem,
+    Trait
   }
 
   @types [
@@ -223,7 +225,11 @@ defmodule ApathyDrive.Item do
   def skill_for_character(_character, _item), do: 1
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
-    ii = Repo.preload(ii, affix_traits: [affix_trait: [:trait, :affix]])
+    ii =
+      Repo.preload(ii,
+        affix_traits: [affix_trait: [:trait, :affix]],
+        affix_skills: [affix_skill: [:skill, :affix]]
+      )
 
     values =
       ii
@@ -237,6 +243,7 @@ defmodule ApathyDrive.Item do
         :beacon_room_id,
         :quality,
         :affix_traits,
+        :affix_skills,
         :ac
       ])
 
@@ -311,6 +318,12 @@ defmodule ApathyDrive.Item do
     instance_traits =
       item.instance_id
       |> ItemInstanceAffixTrait.load_traits(item)
+
+    instance_skills =
+      item.instance_id
+      |> ItemInstanceAffixSkill.load_skills(item)
+
+    instance_traits = Trait.merge_traits(instance_traits, instance_skills)
 
     # Systems.Effect.add(item, Map.merge(item_traits, instance_traits))
     Systems.Effect.add(item, instance_traits)

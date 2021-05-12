@@ -398,16 +398,30 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def affix_trait_descriptions(item, character) do
-    item.affix_traits
-    |> Enum.reject(&is_nil(&1.description))
-    |> Enum.map(fn instance_affix_trait ->
-      affix_description(
-        character,
-        instance_affix_trait.affix_trait.trait.name,
-        instance_affix_trait.description,
-        instance_affix_trait.value
-      )
-    end)
+    trait_descs =
+      item.affix_traits
+      |> Enum.reject(&is_nil(&1.description))
+      |> Enum.map(fn instance_affix_trait ->
+        affix_description(
+          character,
+          instance_affix_trait.affix_trait.trait.name,
+          instance_affix_trait.description,
+          instance_affix_trait.value
+        )
+      end)
+
+    skill_descs =
+      item.affix_skills
+      |> Enum.reject(&is_nil(&1.description))
+      |> Enum.map(fn instance_affix_skill ->
+        values =
+          instance_affix_skill.affix_skill.value
+          |> Map.put("skill", instance_affix_skill.affix_skill.skill.name)
+
+        ApathyDrive.Text.interpolate(instance_affix_skill.description, values)
+      end)
+
+    (trait_descs ++ skill_descs)
     |> Enum.join("\n")
   end
 

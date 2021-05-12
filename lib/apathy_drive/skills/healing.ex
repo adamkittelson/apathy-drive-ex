@@ -1,9 +1,15 @@
 defmodule ApathyDrive.Skills.Healing do
-  alias ApathyDrive.{Ability, Mobile}
+  alias ApathyDrive.{Ability, Character, Mobile}
 
-  def ability(character) do
+  def ability(%Character{} = character) do
     level = skill_level(character)
 
+    level
+    |> ability()
+    |> Map.put(:auto, character.skills["heal"].auto)
+  end
+
+  def ability(level) do
     %Ability{
       kind: "heal",
       command: "heal",
@@ -13,7 +19,6 @@ defmodule ApathyDrive.Skills.Healing do
       attributes: ["willpower"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["heal"].auto,
       user_message: "You cast healing on {{target}}, healing {{amount}} damage!",
       target_message: "{{user}} casts healing on you, healing {{amount}} damage!",
       spectator_message: "{{user}} casts healing on {{target}}, healing {{amount}} damage!",

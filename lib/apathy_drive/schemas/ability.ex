@@ -21,6 +21,7 @@ defmodule ApathyDrive.Ability do
     RoomServer,
     Scripts,
     Stealth,
+    Skill,
     Text,
     TimerManager
   }
@@ -181,6 +182,8 @@ defmodule ApathyDrive.Ability do
     "MaxMana",
     "MinDamage",
     "ModifyDamage",
+    "OnAttack",
+    "OnHit",
     "Perception",
     "PhysicalDR",
     "Picklocks",
@@ -206,6 +209,7 @@ defmodule ApathyDrive.Ability do
     "ResistStrike",
     "ResistUnholy",
     "ResistVacuum",
+    "ResistPhysical",
     "Root",
     "SeeHidden",
     "Shadowform",
@@ -218,8 +222,9 @@ defmodule ApathyDrive.Ability do
     "Thorns",
     "Tracking",
     "Unbalanced",
-    "Willpower",
-    "WeaponDamage"
+    "WeaponDamage",
+    "WhenStruck",
+    "Willpower"
   ]
 
   @resist_message %{
@@ -1038,9 +1043,11 @@ defmodule ApathyDrive.Ability do
     Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
+          IO.puts("#{caster.name} not enough energy for #{ability.name}")
           mobile
 
         can_execute?(room, caster, ability) ->
+          IO.puts("#{caster.name} using #{ability.name} on targets: #{inspect(targets)}")
           display_pre_cast_message(room, caster, targets, ability)
 
           {caster, ability} = crit(caster, ability)
@@ -1152,16 +1159,74 @@ defmodule ApathyDrive.Ability do
               room
             end
 
-          if (on_hit = ability.traits["OnHit"]) && is_nil(Process.get(:ability_result)) &&
-               :rand.uniform(100) <= ability.traits["OnHit%"] do
-            Process.delete(:ability_result)
-            execute(room, caster_ref, Enum.random(on_hit), targets)
-          else
-            Process.delete(:ability_result)
-            room
-          end
+          room =
+            if ability.traits["OnHit"] && Enum.any?(ability.traits["OnHit"]) &&
+                 is_nil(Process.get(:ability_result)) do
+              Enum.reduce(ability.traits["OnHit"], room, fn on_hit, room ->
+                IO.inspect(ability.traits["OnHit"])
+                IO.puts("rolling for #{on_hit["chance"]}")
+
+                if IO.inspect(:rand.uniform(100)) <= on_hit["chance"] do
+                  Process.delete(:ability_result)
+
+                  skill =
+                    Skill
+                    |> Repo.get(on_hit["skill_id"])
+
+                  ability = Skill.module(skill.name).ability(caster, on_hit["level"])
+
+                  ability =
+                    ability
+                    |> Map.put(:mana, 0)
+                    |> Map.put(:energy, 0)
+                    |> Map.put(:on_hit?, true)
+
+                  execute(room, caster_ref, ability, targets)
+                else
+                  room
+                end
+              end)
+            else
+              room
+            end
+
+          room =
+            if ability.traits["OnAttack"] && Enum.any?(ability.traits["OnAttack"]) do
+              Enum.reduce(ability.traits["OnAttack"], room, fn on_hit, room ->
+                IO.inspect(ability.traits["OnAttack"])
+                IO.puts("rolling for #{on_hit["chance"]}")
+
+                if IO.inspect(:rand.uniform(100)) <= on_hit["chance"] do
+                  Process.delete(:ability_result)
+
+                  skill =
+                    Skill
+                    |> Repo.get(on_hit["skill_id"])
+
+                  ability = Skill.module(skill.name).ability(caster, on_hit["level"])
+
+                  ability =
+                    ability
+                    |> Map.put(:mana, 0)
+                    |> Map.put(:energy, 0)
+                    |> Map.put(:on_hit?, true)
+
+                  execute(room, caster_ref, ability, targets)
+                else
+                  room
+                end
+              end)
+            else
+              room
+            end
+
+          Process.delete(:ability_result)
+
+          room
 
         :else ->
+          IO.puts("#{caster.name} can't execute #{ability.name}")
+
           Room.update_mobile(room, caster_ref, fn _room, caster ->
             Mobile.subtract_energy(caster, ability)
           end)
@@ -1860,40 +1925,84 @@ defmodule ApathyDrive.Ability do
             end
         end)
 
-      target
-      |> Map.get(:effects)
-      |> Map.values()
-      |> Enum.filter(&Map.has_key?(&1, "Thorns"))
-      |> Enum.reduce(room, fn
-        %{"Thorns" => damages}, updated_room ->
-          damage =
-            damages
-            |> Enum.reduce(0, fn %{"min" => min, "max" => max}, damage ->
-              damage + Enum.random(min..max)
+      room =
+        if room.mobiles[caster_ref] do
+          target
+          |> Map.get(:effects)
+          |> Map.values()
+          |> Enum.filter(&Map.has_key?(&1, "Thorns"))
+          |> Enum.reduce(room, fn
+            %{"Thorns" => damages}, updated_room ->
+              damage =
+                damages
+                |> Enum.reduce(0, fn %{"min" => min, "max" => max}, damage ->
+                  damage + Enum.random(min..max)
+                end)
+
+              reaction = %Ability{
+                kind: "critical",
+                damage_shield: true,
+                mana: 0,
+                energy: 0,
+                traits: %{
+                  "Damage" => [
+                    %{kind: "raw", min: damage, max: damage, damage_type: "Unaspected"}
+                  ]
+                }
+              }
+
+              apply_ability(
+                updated_room,
+                updated_room.mobiles[target_ref],
+                updated_room.mobiles[caster_ref],
+                reaction
+              )
+
+            _, updated_room ->
+              updated_room
+          end)
+        else
+          room
+        end
+
+      if caster = room.mobiles[caster_ref] do
+        target
+        |> Map.get(:effects)
+        |> Map.values()
+        |> Enum.filter(&Map.has_key?(&1, "WhenStruck"))
+        |> Enum.reduce(room, fn
+          %{"WhenStruck" => when_struck}, updated_room ->
+            Enum.reduce(when_struck, updated_room, fn when_struck, updated_room ->
+              IO.inspect(when_struck)
+
+              if IO.inspect(:rand.uniform(100)) <= when_struck["chance"] do
+                skill =
+                  Skill
+                  |> Repo.get(when_struck["skill_id"])
+
+                ability =
+                  Skill.module(skill.name).ability(room.mobiles[target_ref], when_struck["level"])
+
+                ability =
+                  ability
+                  |> Map.put(:mana, 0)
+                  |> Map.put(:energy, 0)
+                  |> Map.put(:on_hit?, true)
+
+                IO.puts("executing #{ability.name}")
+
+                execute(updated_room, target_ref, ability, [caster_ref])
+              else
+                updated_room
+              end
             end)
 
-          reaction = %Ability{
-            kind: "critical",
-            damage_shield: true,
-            mana: 0,
-            energy: 0,
-            traits: %{
-              "Damage" => [
-                %{kind: "raw", min: damage, max: damage, damage_type: "Unaspected"}
-              ]
-            }
-          }
-
-          apply_ability(
-            updated_room,
-            updated_room.mobiles[target_ref],
-            updated_room.mobiles[caster_ref],
-            reaction
-          )
-
-        _, updated_room ->
-          updated_room
-      end)
+          _, updated_room ->
+            updated_room
+        end)
+      else
+        room
+      end
     else
       room
     end
@@ -2062,6 +2171,10 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent + penetration
 
+            modifier = Mobile.ability_value(target, "ResistPhysical")
+
+            damage = damage * (1 - modifier / 100)
+
             percent = damage / Mobile.max_hp_at_level(target, target.level)
 
             {caster, damage_percent + percent, target}
@@ -2076,6 +2189,10 @@ defmodule ApathyDrive.Ability do
             damage = dmg + bonus_damage
 
             damage = damage * resist_percent
+
+            modifier = Mobile.ability_value(target, "ResistPhysical")
+
+            damage = damage * (1 - modifier / 100)
 
             percent = damage / Mobile.max_hp_at_level(target, target.level)
 
