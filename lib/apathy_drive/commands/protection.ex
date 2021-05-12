@@ -2,24 +2,11 @@ defmodule ApathyDrive.Commands.Protection do
   use ApathyDrive.Command
 
   @damage_types %{
-    "Aether" => "magical",
     "Cold" => "magical",
-    "Crushing" => "physical",
-    "Cutting" => "physical",
-    "Disruption" => "magical",
     "Electricity" => "magical",
     "Fire" => "magical",
-    "Holy" => "magical",
-    "Impact" => "physical",
-    "Impaling" => "physical",
-    "Infernal" => "magical",
-    "Plasma" => "magical",
-    "Poison" => "magical",
-    "Sonic" => "magical",
-    "Stress" => "magical",
-    "Strike" => "physical",
-    "Unholy" => "magical",
-    "Vacuum" => "magical"
+    "Physical" => "physical",
+    "Poison" => "magical"
   }
 
   @protection_levels %{
