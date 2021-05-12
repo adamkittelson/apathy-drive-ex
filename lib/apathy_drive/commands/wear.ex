@@ -293,10 +293,10 @@ defmodule ApathyDrive.Commands.Wear do
   end
 
   def shield?(%Item{} = item) do
-    Enum.any?(item.item_types, &(&1.name == "Any Shield"))
+    item.worn_on == "Off-Hand"
   end
 
   def weapon?(%Item{} = item) do
-    Enum.any?(item.item_types, &(&1.name == "Weapon"))
+    item.worn_on == "Two Handed" or item.worn_on == "Weapon Hand"
   end
 end

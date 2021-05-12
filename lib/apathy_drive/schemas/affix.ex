@@ -123,7 +123,8 @@ defmodule ApathyDrive.Affix do
         nil
 
       affixes ->
-        affixes |> Enum.random()
+        affixes
+        |> Enum.random()
     end
   end
 

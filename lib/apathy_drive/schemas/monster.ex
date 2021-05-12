@@ -633,7 +633,8 @@ defmodule ApathyDrive.Monster do
         prefix
         |> Repo.preload(affixes_traits: [:trait], affix_skills: [:skill])
 
-      if prefix.affixes_traits == [] do
+      if prefix.affixes_traits == [] and prefix.affix_skills == [] do
+        IO.puts("no traits or skills, trying again")
         generate_prefix(item_instance, affix_level)
       else
         prefix.affixes_traits
@@ -696,7 +697,8 @@ defmodule ApathyDrive.Monster do
         suffix
         |> Repo.preload(affixes_traits: [:trait], affix_skills: [:skill])
 
-      if suffix.affixes_traits == [] do
+      if suffix.affixes_traits == [] and suffix.affix_skills == [] do
+        IO.puts("no traits or skills, trying again")
         generate_suffix(item_instance, affix_level)
       else
         suffix.affixes_traits
