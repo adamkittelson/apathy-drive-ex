@@ -631,7 +631,13 @@ defmodule ApathyDrive.AI do
     not_attacking? = is_nil(Mobile.auto_attack_target(mobile, room))
     roll? = :rand.uniform(10000) > 9990
 
-    not_attacking? and roll?
+    monster_count =
+      room.mobiles
+      |> Map.values()
+      |> Enum.filter(&(&1.__struct__ == Monster))
+      |> length()
+
+    not_attacking? and (roll? or monster_count > 5)
   end
 
   defp should_move?(%{} = _mobile, _room), do: false

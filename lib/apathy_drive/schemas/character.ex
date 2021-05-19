@@ -1306,7 +1306,7 @@ defmodule ApathyDrive.Character do
 
     hour_buffer = trunc(rate * 60 * 60)
 
-    max(1, hour_buffer * 0.01)
+    max(1, hour_buffer * 0.02)
   end
 
   def update_exp_bar(%Character{socket: socket} = character) do
@@ -1746,7 +1746,6 @@ defmodule ApathyDrive.Character do
           end)
           |> Map.put(:timers, %{})
           |> Character.load_race()
-          |> Repo.update!()
           |> Character.load_traits()
           |> Character.set_attribute_levels()
           |> Character.add_equipped_items_effects()

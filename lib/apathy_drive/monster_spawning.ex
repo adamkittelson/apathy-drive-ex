@@ -48,7 +48,7 @@ defmodule ApathyDrive.MonsterSpawning do
     if :rand.uniform(100) > 90 do
       monster_limit = Room.zone_monster_limit(id)
 
-      if !zone_limit_reached?(id, monster_limit) do
+      if !zone_limit_reached?(id, monster_limit) and !room_full?(room) do
         monster_id = Enum.random(monster_ids)
 
         if updated_room = spawn_monster(room, monster_id) do
@@ -64,6 +64,16 @@ defmodule ApathyDrive.MonsterSpawning do
     else
       room
     end
+  end
+
+  defp room_full?(room) do
+    monster_count =
+      room.mobiles
+      |> Map.values()
+      |> Enum.filter(&(&1.__struct__ == Monster))
+      |> length()
+
+    monster_count > 5
   end
 
   def spawn_monster(%Room{} = room, monster_id) do
