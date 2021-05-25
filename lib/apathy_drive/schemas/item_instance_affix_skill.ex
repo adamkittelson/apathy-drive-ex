@@ -12,7 +12,7 @@ defmodule ApathyDrive.ItemInstanceAffixSkill do
 
   def load_skills(nil, _item), do: %{}
 
-  def load_skills(item_instance_id, item) do
+  def load_skills(item_instance_id, _item) do
     __MODULE__
     |> where([mt], mt.item_instance_id == ^item_instance_id)
     |> preload(affix_skill: [:skill])
@@ -32,7 +32,7 @@ defmodule ApathyDrive.ItemInstanceAffixSkill do
 
         Trait.merge_traits(skills, trait)
 
-      %ItemInstanceAffixSkill{value: %{} = value, affix_skill: %{skill: %{} = skill}}, skills ->
+      %ItemInstanceAffixSkill{value: %{} = value, affix_skill: %{skill: %{} = _skill}}, skills ->
         IO.inspect(value)
         skills
     end)

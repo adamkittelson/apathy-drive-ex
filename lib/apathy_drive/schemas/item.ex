@@ -92,7 +92,7 @@ defmodule ApathyDrive.Item do
     field(:timers, :map, virtual: true, default: %{})
     field(:required_races, :any, virtual: true, default: [])
     field(:required_classes, :any, virtual: true, default: [])
-    field(:enchantments, :string, virtual: true, default: [])
+    field(:enchantments, :any, virtual: true, default: [])
     field(:keywords, :any, virtual: true)
     field(:uses, :float, virtual: true)
     field(:hidden, :boolean, virtual: true)

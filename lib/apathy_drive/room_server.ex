@@ -739,32 +739,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:auto_move, ref}, room) do
-    if mobile = Room.get_mobile(room, ref) do
-      if should_move?(room, mobile) do
-        exits =
-          case room.exits do
-            nil ->
-              []
-
-            _exits ->
-              exits_in_area(room)
-          end
-
-        if Enum.any?(exits) do
-          room_exit = Enum.random(exits)
-          {:noreply, Commands.Move.execute(room, mobile, room_exit)}
-        else
-          {:noreply, room}
-        end
-      else
-        {:noreply, room}
-      end
-    else
-      {:noreply, room}
-    end
-  end
-
   def handle_info({:expire_invite, ref, invitee_ref}, %Room{} = room) do
     room =
       Room.update_mobile(room, ref, fn _room, mobile ->
@@ -1199,38 +1173,4 @@ defmodule ApathyDrive.RoomServer do
     |> :rand.uniform()
     |> Kernel.+(time)
   end
-
-  defp exits_in_area(%Room{exits: exits} = room) do
-    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
-      room.room_unity.exits[direction] &&
-        room.room_unity.exits[direction]["area"] == room.area.name && passable?(room, room_exit)
-    end)
-  end
-
-  defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"],
-    do: ApathyDrive.Doors.open?(room, room_exit)
-
-  defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"],
-    do: true
-
-  defp passable?(_room, _room_exit), do: false
-
-  defp should_move?(%Room{}, %{movement: "stationary"}), do: false
-
-  defp should_move?(%Room{} = room, %{spirit: nil} = mobile) do
-    cond do
-      # at least 80% health and no enemies present, go find something to kill
-      mobile.hp / mobile.max_hp >= 0.8 and !Enum.any?(Room.local_hated_targets(room, mobile)) ->
-        true
-
-      # 30% or less health and enemies present, run away!
-      mobile.hp / mobile.max_hp <= 0.3 and Enum.any?(Room.local_hated_targets(room, mobile)) ->
-        true
-
-      true ->
-        false
-    end
-  end
-
-  defp should_move?(%Room{}, %{}), do: false
 end
