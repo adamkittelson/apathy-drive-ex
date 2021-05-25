@@ -1,5 +1,12 @@
 defmodule ApathyDrive.Metrics do
   alias ApathyDrive.{Directory, Statix}
+  
+  def child_spec(_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, []}
+    }
+  end
 
   def start_link do
     Task.start_link(fn ->

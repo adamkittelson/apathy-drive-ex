@@ -10,16 +10,16 @@ defmodule ApathyDrive do
 
     children = [
       {Phoenix.PubSub, name: ApathyDrive.PubSub},
-      worker(ApathyDriveWeb.Endpoint, []),
-      worker(ApathyDrive.Repo, []),
-      worker(ApathyDrive.Migrator, [], restart: :temporary),
-      worker(ApathyDrive.Trait, [], restart: :transient),
-      worker(ApathyDrive.Directory, []),
+      {ApathyDriveWeb.Endpoint, []},
+      {ApathyDrive.Repo, []},
+      {ApathyDrive.Migrator, []},
+      {ApathyDrive.Trait, []},
+      {ApathyDrive.Directory, []},
       supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
-      worker(ApathyDrive.Metrics, []),
-      worker(ApathyDrive.WorldMap, []),
-      worker(ApathyDrive, [], function: :load_shops, restart: :transient),
-      worker(ApathyDrive.DomainName, [], restart: :transient)
+      {ApathyDrive.Metrics, []},
+      {ApathyDrive.WorldMap, []},
+      {ApathyDrive, []},
+      {ApathyDrive.DomainName, []}
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -33,6 +33,14 @@ defmodule ApathyDrive do
   def config_change(changed, _new, removed) do
     ApathyDriveWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  def child_spec(_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :load_shops, []},
+      restart: :transient
+    }
   end
 
   def load_shops do
