@@ -350,7 +350,7 @@ defmodule ApathyDrive.Commands.System.Ability do
   defp add_damage(room, character, damage) do
     damage
     |> Enum.join(" ")
-    |> Poison.decode()
+    |> Jason.decode!()
     |> case do
       {:ok, %{"type" => type, "min" => min, "max" => max}} ->
         ability = character.editing

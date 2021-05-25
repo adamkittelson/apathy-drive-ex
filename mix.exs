@@ -62,7 +62,7 @@ defmodule ApathyDrive.Mixfile do
 
   defp deps do
     [
-      {:jason, "~> 1.1.2"},
+      {:jason, "~> 1.2.0"},
       {:postgrex, "~> 0.13"},
       {:phoenix, "~> 1.5.1"},
       {:phoenix_pubsub, "~> 2.0"},
