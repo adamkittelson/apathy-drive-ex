@@ -618,9 +618,7 @@ defmodule ApathyDrive.Item do
     name = if opts[:titleize], do: titleize(name), else: name
 
     if opts[:character] && !opts[:no_tooltip] do
-      "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{
-        ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)
-      }</span></span>"
+      "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)}</span></span>"
     else
       "<span style='color: #{color(item, opts)};'>#{name}</span>"
     end
@@ -654,10 +652,10 @@ defmodule ApathyDrive.Item do
           500
 
         "superior" ->
-          100
+          250
 
         "normal" ->
-          500
+          100
 
         "low" ->
           50
