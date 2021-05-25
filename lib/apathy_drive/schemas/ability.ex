@@ -1965,7 +1965,7 @@ defmodule ApathyDrive.Ability do
           room
         end
 
-      if target = room.mobiles[caster_ref] do
+      if target = room.mobiles[target_ref] do
         target
         |> Map.get(:effects)
         |> Map.values()
