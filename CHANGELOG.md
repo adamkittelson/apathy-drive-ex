@@ -310,3 +310,6 @@ CHANGELOG
 
 ---- 0.0.114 / 2020-04-26 / item-changes ---------------------------------------
 * don'\''t level item drops
+
+---- 0.0.115 / 2021-05-26 / random-equipment -----------------------------------
+* erlang / elixir updates, diablo 2 style equipment
