@@ -3,12 +3,16 @@ defmodule ApathyDrive.RoomSupervisor do
   require Ecto.Query
   alias ApathyDrive.{Repo, Room, RoomServer}
 
+  def start_link(opts) do
+    Supervisor.start_link(__MODULE__, [], opts)
+  end
+
   def start_link(children, opts) do
     Supervisor.start_link(__MODULE__, children, opts)
   end
 
   def init(children) do
-    supervise(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   def launch(id) do
@@ -40,10 +44,7 @@ defmodule ApathyDrive.RoomSupervisor do
     area = area || "unassigned"
 
     if area do
-      case Supervisor.start_child(
-             __MODULE__,
-             supervisor(__MODULE__, [[], [name: String.to_atom(area)]], id: area)
-           ) do
+      case Supervisor.start_child(__MODULE__, area_child_spec(area)) do
         {:ok, pid} ->
           pid
 
@@ -51,5 +52,12 @@ defmodule ApathyDrive.RoomSupervisor do
           pid
       end
     end
+  end
+
+  def area_child_spec(area) do
+    %{
+      id: area,
+      start: {__MODULE__, :start_link, [[], [name: String.to_atom(area)]]}
+    }
   end
 end

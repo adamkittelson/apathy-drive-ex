@@ -15,7 +15,7 @@ defmodule ApathyDrive do
       {ApathyDrive.Migrator, []},
       {ApathyDrive.Trait, []},
       {ApathyDrive.Directory, []},
-      supervisor(ApathyDrive.RoomSupervisor, [[], [name: ApathyDrive.RoomSupervisor]]),
+      {ApathyDrive.RoomSupervisor, [name: ApathyDrive.RoomSupervisor]},
       {ApathyDrive.Metrics, []},
       {ApathyDrive.WorldMap, []},
       {ApathyDrive, []},
