@@ -1,16 +1,4 @@
 defmodule ApathyDrive.Level do
-  def exp_to_next_level(current_level, current_exp) do
-    exp_at_level(current_level + 1) - current_exp
-  end
-
-  def exp_to_next_skill_level(current_level, current_exp, multiplier) do
-    trunc(exp_to_next_level(current_level, current_exp) * multiplier)
-  end
-
-  def exp_to_next_attribute_level(current_level, current_exp, multiplier) do
-    trunc(exp_to_next_level(current_level, current_exp) * multiplier)
-  end
-
   def exp_for_level(0, _multiplier), do: 0
 
   def exp_for_level(lvl, multiplier) do
@@ -50,7 +38,7 @@ defmodule ApathyDrive.Level do
   end
 
   def display_exp_table(multiplier) do
-    Enum.each(0..50, fn level ->
+    Enum.each(1..50, fn level ->
       exp = String.pad_leading("#{exp_at_level(level, multiplier)}", 8)
       level = String.pad_leading("#{level}", 2)
 

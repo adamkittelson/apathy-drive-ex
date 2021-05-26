@@ -20,7 +20,8 @@ defmodule ApathyDrive.RoomServer do
     Room,
     RoomSupervisor,
     Shop,
-    TimerManager
+    TimerManager,
+    Trainer
   }
 
   use Timex
@@ -186,7 +187,7 @@ defmodule ApathyDrive.RoomServer do
     room =
       Repo.get!(Room, id)
       |> preload_area()
-      |> Repo.preload(:trainer)
+      |> Trainer.load()
       |> Room.load_exits()
       |> Room.load_items()
       |> Repo.preload(:placed_items)
@@ -195,7 +196,7 @@ defmodule ApathyDrive.RoomServer do
       |> MonsterSpawning.load_monsters()
       |> spawn_permanent_npc()
 
-    Logger.metadata(room: room.name <> "##{room.id}")
+    Logger.metadata(room: "#{room.name} - ##{room.id}")
 
     PubSub.subscribe("rooms")
     PubSub.subscribe("rooms:#{room.id}")
@@ -222,8 +223,6 @@ defmodule ApathyDrive.RoomServer do
     Process.send_after(self(), :save, 2000)
 
     send(self(), :cleanup)
-
-    send(self(), :restore_limbs)
 
     {:noreply, room}
   end
@@ -315,12 +314,11 @@ defmodule ApathyDrive.RoomServer do
         |> Map.put(:leader, ref)
         |> Map.put(:socket, socket)
         |> Character.load_traits()
-        |> Character.load_classes()
         |> Character.load_race()
-        |> Character.load_limbs()
+        |> Character.load_classes()
         |> Character.set_attribute_levels()
-        |> Character.set_skill_levels()
         |> Character.update_exp_bar()
+        |> Character.load_skills()
         |> Character.load_abilities()
         |> Character.load_items()
         |> Character.set_title()
@@ -329,7 +327,6 @@ defmodule ApathyDrive.RoomServer do
         |> TimerManager.send_after(
           {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
         )
-        |> TimerManager.send_after({:drain_exp, :timer.seconds(1), {:drain_exp, ref}})
         |> TimerManager.send_after(
           {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
         )
@@ -650,21 +647,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:restore_limbs, room) do
-    room =
-      Enum.reduce(room.mobiles, room, fn {_ref, mobile}, room ->
-        if Mobile.has_ability?(mobile, "RestoreLimbs") do
-          ApathyDrive.Commands.Pray.restore_limbs(room, mobile)
-        else
-          room
-        end
-      end)
-
-    Process.send_after(self(), :restore_limbs, :timer.minutes(5))
-
-    {:noreply, room}
-  end
-
   def handle_info(:cleanup, room) do
     Enum.each(room.items, fn
       %Item{delete_at: nil} ->
@@ -733,17 +715,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info({:drain_exp, mobile_ref}, room) do
-    room =
-      Room.update_mobile(room, mobile_ref, fn _room, character ->
-        character
-        |> Character.drain_exp_buffer()
-        |> TimerManager.send_after({:drain_exp, :timer.seconds(1), {:drain_exp, character.ref}})
-      end)
-
-    {:noreply, room}
-  end
-
   def handle_info({:reduce_evil_points, mobile_ref}, room) do
     room =
       Room.update_mobile(room, mobile_ref, fn _room, character ->
@@ -766,32 +737,6 @@ defmodule ApathyDrive.RoomServer do
       end)
 
     {:noreply, room}
-  end
-
-  def handle_info({:auto_move, ref}, room) do
-    if mobile = Room.get_mobile(room, ref) do
-      if should_move?(room, mobile) do
-        exits =
-          case room.exits do
-            nil ->
-              []
-
-            _exits ->
-              exits_in_area(room)
-          end
-
-        if Enum.any?(exits) do
-          room_exit = Enum.random(exits)
-          {:noreply, Commands.Move.execute(room, mobile, room_exit)}
-        else
-          {:noreply, room}
-        end
-      else
-        {:noreply, room}
-      end
-    else
-      {:noreply, room}
-    end
   end
 
   def handle_info({:expire_invite, ref, invitee_ref}, %Room{} = room) do
@@ -849,13 +794,13 @@ defmodule ApathyDrive.RoomServer do
       ) do
     :erlang.send_after(5000, self(), :spawn_lair)
 
-    if DateTime.to_unix(DateTime.utc_now(), :seconds) >= lair_next_spawn_at do
+    if DateTime.to_unix(DateTime.utc_now(), :second) >= lair_next_spawn_at do
       room =
         room
         |> ApathyDrive.MonsterSpawning.spawn_lair()
         |> Map.put(
           :lair_next_spawn_at,
-          DateTime.to_unix(DateTime.utc_now(), :seconds) + room.lair_frequency * 60
+          DateTime.to_unix(DateTime.utc_now(), :second) + room.lair_frequency * 60
         )
 
       {:noreply, room}
@@ -1181,7 +1126,7 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    if ability.energy <= mobile.energy do
+    if mobile.energy >= mobile.max_energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
       Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
@@ -1190,8 +1135,8 @@ defmodule ApathyDrive.RoomServer do
     end
   end
 
-  def execute_casting_ability(%{casting: {script, target, energy_req}} = mobile, room) do
-    if energy_req <= mobile.energy do
+  def execute_casting_ability(%{casting: {script, target, _energy_req}} = mobile, room) do
+    if mobile.energy >= mobile.max_energy do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
       script.execute(room, mobile.ref, target)
@@ -1228,38 +1173,4 @@ defmodule ApathyDrive.RoomServer do
     |> :rand.uniform()
     |> Kernel.+(time)
   end
-
-  defp exits_in_area(%Room{exits: exits} = room) do
-    Enum.filter(exits, fn %{"direction" => direction} = room_exit ->
-      room.room_unity.exits[direction] &&
-        room.room_unity.exits[direction]["area"] == room.area.name && passable?(room, room_exit)
-    end)
-  end
-
-  defp passable?(room, %{"kind" => kind} = room_exit) when kind in ["Door", "Gate"],
-    do: ApathyDrive.Doors.open?(room, room_exit)
-
-  defp passable?(_room, %{"kind" => kind}) when kind in ["Normal", "Action", "Trap", "Cast"],
-    do: true
-
-  defp passable?(_room, _room_exit), do: false
-
-  defp should_move?(%Room{}, %{movement: "stationary"}), do: false
-
-  defp should_move?(%Room{} = room, %{spirit: nil} = mobile) do
-    cond do
-      # at least 80% health and no enemies present, go find something to kill
-      mobile.hp / mobile.max_hp >= 0.8 and !Enum.any?(Room.local_hated_targets(room, mobile)) ->
-        true
-
-      # 30% or less health and enemies present, run away!
-      mobile.hp / mobile.max_hp <= 0.3 and Enum.any?(Room.local_hated_targets(room, mobile)) ->
-        true
-
-      true ->
-        false
-    end
-  end
-
-  defp should_move?(%Room{}, %{}), do: false
 end

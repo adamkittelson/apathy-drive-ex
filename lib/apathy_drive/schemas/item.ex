@@ -4,68 +4,24 @@ defmodule ApathyDrive.Item do
   alias ApathyDrive.{
     Ability,
     Character,
-    Currency,
     Enchantment,
     Item,
     ItemAbility,
     ItemClass,
     ItemInstance,
+    ItemInstanceAffixTrait,
+    ItemInstanceAffixSkill,
+    ItemType,
+    ItemTypeParent,
     ItemRace,
-    ItemTrait,
     Match,
+    Mobile,
     PubSub,
     Regeneration,
     RoomServer,
-    ShopItem
-  }
-
-  @weapon_type_modifier %{
-    "blunt" => 1.0,
-    "blade" => 1.1,
-    "two handed blunt" => 1.15,
-    "two handed blade" => 1.25
-  }
-
-  @armour_type_protection %{
-    "cloth armour" => 0.10,
-    "leather armour" => 0.15,
-    "chainmail armour" => 0.20,
-    "scalemail armour" => 0.25,
-    "platemail armour" => 0.30
-  }
-
-  @slot_physical_protection_modifier %{
-    "Head" => 0.15,
-    "Torso" => 0.15,
-    "Arm" => 0.1,
-    "Back" => 0.1,
-    "Foot" => 0.1,
-    "Hand" => 0.1,
-    "Legs" => 0.15,
-    "Held" => 0.1,
-    "Waist" => 0.05,
-    "Ears" => 0.0,
-    "Finger" => 0.0,
-    "Neck" => 0.0,
-    "Wrist" => 0.0,
-    "Worn" => 0.0
-  }
-
-  @slot_magical_protection_modifier %{
-    "Head" => 0.0,
-    "Torso" => 0.0,
-    "Arm" => 0.0,
-    "Back" => 0.0,
-    "Foot" => 0.0,
-    "Hand" => 0.0,
-    "Legs" => 0.0,
-    "Held" => 0.0,
-    "Waist" => 0.0,
-    "Ears" => 0.3,
-    "Finger" => 0.2,
-    "Neck" => 0.3,
-    "Wrist" => 0.2,
-    "Worn" => 0.0
+    Shop,
+    ShopItem,
+    Trait
   }
 
   @types [
@@ -112,11 +68,23 @@ defmodule ApathyDrive.Item do
     field(:room_destruct_message, :string)
     field(:global_drop_rarity, :string)
     field(:level, :integer)
+    field(:quality_level, :integer)
+    field(:min_ac, :integer)
+    field(:max_ac, :integer)
+    field(:max_sockets, :integer)
+    field(:required_str, :integer)
+    field(:required_agi, :integer)
+    field(:magic_level, :integer)
+    field(:type_id, :integer)
+    field(:block_chance, :integer)
 
+    field(:item_type_ids, :any, virtual: true, default: [])
+    field(:item_types, :any, virtual: true, default: [])
+    field(:affix_traits, :any, virtual: true, default: [])
+    field(:quality, :any, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
     field(:owner_id, :any, virtual: true)
-    field(:limb, :string, virtual: true)
     field(:instance_id, :integer, virtual: true)
     field(:delete_at, :utc_datetime_usec, virtual: true)
     field(:effects, :map, virtual: true, default: %{})
@@ -124,7 +92,7 @@ defmodule ApathyDrive.Item do
     field(:timers, :map, virtual: true, default: %{})
     field(:required_races, :any, virtual: true, default: [])
     field(:required_classes, :any, virtual: true, default: [])
-    field(:enchantments, :string, virtual: true, default: [])
+    field(:enchantments, :any, virtual: true, default: [])
     field(:keywords, :any, virtual: true)
     field(:uses, :float, virtual: true)
     field(:hidden, :boolean, virtual: true)
@@ -196,17 +164,6 @@ defmodule ApathyDrive.Item do
     |> validate_required(:getable)
   end
 
-  def target_damage(0), do: 0
-  def target_damage(1), do: 6
-
-  def target_damage(level) do
-    trunc(round(target_damage(level - 1) + max(1, (level - 1) / 6)))
-  end
-
-  def target_damage(weapon_type, skill_level) do
-    trunc(target_damage(skill_level) * @weapon_type_modifier[weapon_type])
-  end
-
   def skill_for_character(%Character{} = character, %Item{type: type} = item)
       when type in ["Armour", "Shield"] do
     if owner_id = Systems.Effect.effect_bonus(item, "Claimed") do
@@ -267,19 +224,13 @@ defmodule ApathyDrive.Item do
 
   def skill_for_character(_character, _item), do: 1
 
-  def ac(type, level, slot) do
-    mitigation = @armour_type_protection[type]
-    base = -(50 * level * mitigation / (mitigation - 1))
-    max(1, trunc(base * @slot_physical_protection_modifier[slot]))
-  end
-
-  def mr(type, level, slot) do
-    mitigation = @armour_type_protection[type]
-    base = -(50 * level * mitigation / (mitigation - 1))
-    max(1, trunc(base * @slot_magical_protection_modifier[slot]))
-  end
-
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
+    ii =
+      Repo.preload(ii,
+        affix_traits: [affix_trait: [:trait, :affix]],
+        affix_skills: [affix_skill: [:skill, :affix]]
+      )
+
     values =
       ii
       |> Map.take([
@@ -289,7 +240,11 @@ defmodule ApathyDrive.Item do
         :owner_id,
         :delete_at,
         :uses,
-        :beacon_room_id
+        :beacon_room_id,
+        :quality,
+        :affix_traits,
+        :affix_skills,
+        :ac
       ])
 
     values =
@@ -312,6 +267,7 @@ defmodule ApathyDrive.Item do
     |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
     |> load_required_races_and_classes()
     |> load_item_abilities()
+    |> load_item_types()
   end
 
   def from_assoc(%ShopItem{item: item}) do
@@ -321,12 +277,100 @@ defmodule ApathyDrive.Item do
     |> load_item_abilities()
   end
 
-  def with_traits(%Item{} = item) do
-    item_traits =
-      item.id
-      |> ItemTrait.load_traits()
+  def load_item_types(%Item{type_id: type_id} = item) do
+    item_types = item_types(type_id)
 
-    Systems.Effect.add(item, item_traits)
+    item
+    |> Map.put(:item_types, item_types)
+  end
+
+  def item_types(nil), do: []
+
+  def item_types(type_id) do
+    ItemTypeParent
+    |> Ecto.Query.where(item_type_id: ^type_id)
+    |> Ecto.Query.preload([:item_type])
+    |> Repo.all()
+    |> case do
+      [] ->
+        [Repo.get(ItemType, type_id)]
+
+      parents ->
+        Enum.reduce(parents, [Repo.get(ItemType, type_id)], fn parent, item_types ->
+          item_types ++ item_types(parent.parent_id)
+        end)
+    end
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  def delete_at(quality) when quality in ["unique", "set", "rare", "crafted"],
+    do: Timex.shift(DateTime.utc_now(), minutes: 30)
+
+  def delete_at("magic"), do: Timex.shift(DateTime.utc_now(), minutes: 5)
+  def delete_at(_), do: Timex.shift(DateTime.utc_now(), minutes: 1)
+
+  def with_traits(%Item{} = item) do
+    # item_traits =
+    #   item.id
+    #   |> ItemTrait.load_traits()
+
+    instance_traits =
+      item.instance_id
+      |> ItemInstanceAffixTrait.load_traits(item)
+
+    instance_skills =
+      item.instance_id
+      |> ItemInstanceAffixSkill.load_skills(item)
+
+    instance_traits = Trait.merge_traits(instance_traits, instance_skills)
+
+    # Systems.Effect.add(item, Map.merge(item_traits, instance_traits))
+    Systems.Effect.add(item, instance_traits)
+  end
+
+  def of_quality_level(level) do
+    accessory_ids = accessory_ids()
+
+    __MODULE__
+    |> Ecto.Query.where(
+      [i],
+      i.quality_level <= ^level and i.quality_level >= ^level - 3 and
+        i.type_id not in ^accessory_ids
+    )
+    |> ApathyDrive.Repo.all()
+    |> case do
+      [] ->
+        of_quality_level(level - 3)
+
+      list ->
+        list
+    end
+  end
+
+  def accessory_ids() do
+    misc_id =
+      ItemType
+      |> Repo.get_by(name: "Miscellaneous")
+      |> Map.get(:id)
+
+    ItemTypeParent
+    |> Ecto.Query.where(parent_id: ^misc_id)
+    |> Repo.all()
+    |> Enum.map(& &1.item_type_id)
+  end
+
+  def random_accessory() do
+    item_types = accessory_ids()
+
+    __MODULE__
+    |> Ecto.Query.where([i], i.type_id in ^item_types)
+    |> ApathyDrive.Repo.all()
+    |> case do
+      list ->
+        list
+    end
+    |> Enum.random()
   end
 
   def match_by_name(name) do
@@ -341,16 +385,13 @@ defmodule ApathyDrive.Item do
 
   def slots do
     [
-      "Arm",
-      "Arm",
+      "Arms",
       "Back",
       "Ears",
-      "Foot",
-      "Foot",
+      "Feet",
       "Finger",
       "Finger",
-      "Hand",
-      "Hand",
+      "Hands",
       "Head",
       "Two Handed",
       "Legs",
@@ -419,27 +460,38 @@ defmodule ApathyDrive.Item do
     Map.put(item, :instance_id, ei.id)
   end
 
-  def price(%Item{}), do: 5
-
   def max_quality(%Item{level: level}) do
     min(div(level, 10) + 1, 5)
   end
 
   def color(%Item{type: type} = item, _opts)
       when type in ["Armour", "Shield", "Weapon"] do
-    count = Enchantment.count(item)
+    case item.quality do
+      "unique" ->
+        "#908858"
 
-    cond do
-      count >= 3 ->
-        "darkmagenta"
+      "set" ->
+        "#00c400"
 
-      count >= 2 ->
-        "blue"
+      "rare" ->
+        "yellow"
 
-      count >= 1 ->
-        "chartreuse"
+      "magic" ->
+        "#4850B8"
 
-      :else ->
+      "crafted" ->
+        "orange"
+
+      "normal" ->
+        "white"
+
+      "superior" ->
+        "#FFFFFF"
+
+      "low" ->
+        "grey"
+
+      _ ->
         "teal"
     end
   end
@@ -450,7 +502,7 @@ defmodule ApathyDrive.Item do
       when type in ["Armour", "Shield"] do
     worn_items = Enum.filter(character.equipment, &(&1.worn_on == item.worn_on))
 
-    if Enum.count(worn_items) >= ApathyDrive.Commands.Wear.worn_on_max(character, item) do
+    if Enum.count(worn_items) >= ApathyDrive.Commands.Wear.worn_on_max(item) do
       worn_items
     else
       []
@@ -462,72 +514,25 @@ defmodule ApathyDrive.Item do
     |> Enum.filter(&(&1.type == "Weapon"))
   end
 
-  def traits(%Item{} = item) do
+  def traits(%Item{} = item, character) do
     item.effects
     |> Map.values()
-    |> Enum.find(&(&1["stack_key"] == "traits"))
-    |> Ability.process_duration_traits(%{}, %{}, nil)
+    |> Enum.find(%{}, &(&1["stack_key"] == "traits"))
+    |> Ability.process_duration_traits(character, character, nil)
   end
 
-  def upgrade_for_character?(%Item{type: type} = item, %Character{} = character)
-      when type in ["Armour", "Shield"] do
+  def upgrade_for_character?(%Item{quality_level: nil}, _character), do: false
+
+  def upgrade_for_character?(%Item{} = item, %Character{} = character) do
     unless item in character.equipment do
-      item_traits = traits(item)
-      item_ac = item_traits["AC"] || 0
-      item_mr = item_traits["MR"] || 0
-      item_prot = item_ac + item_mr
-
-      skill_level = Item.skill_for_character(character, item)
-
-      modifier =
-        if skill_level == 0 do
-          0.1
-        else
-          skill_level / character.level
-        end
-
-      item_prot = item_prot * modifier
-
       case items_to_compare(item, character) do
         [] ->
           true
 
         items ->
           Enum.any?(items, fn worn_item ->
-            worn_item_traits = traits(worn_item)
-
-            worn_ac = worn_item_traits["AC"] || 0
-            worn_mr = worn_item_traits["MR"] || 0
-            worn_prot = worn_ac + worn_mr
-
-            skill_level = Item.skill_for_character(character, worn_item)
-
-            modifier =
-              if skill_level == 0 do
-                0.1
-              else
-                skill_level / character.level
-              end
-
-            worn_prot = worn_prot * modifier
-
-            item_prot > worn_prot
-          end)
-      end
-    end
-  end
-
-  def upgrade_for_character?(%Item{type: "Weapon"} = item, %Character{} = character) do
-    unless item in character.equipment do
-      item_dps = base_weapon_damage(character, item)
-
-      case items_to_compare(item, character) do
-        [] ->
-          true
-
-        items ->
-          Enum.any?(items, fn worn_item ->
-            base_weapon_damage(character, worn_item) < item_dps
+            Shop.sell_price(%Shop{cost_multiplier: 1}, character, item) >
+              Shop.sell_price(%Shop{cost_multiplier: 1}, character, worn_item)
           end)
       end
     end
@@ -610,17 +615,63 @@ defmodule ApathyDrive.Item do
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
 
-    "<span style='color: #{color(item, opts)};'>#{name}</span>"
+    name = if opts[:titleize], do: titleize(name), else: name
+
+    if opts[:character] && !opts[:no_tooltip] do
+      "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)}</span></span>"
+    else
+      "<span style='color: #{color(item, opts)};'>#{name}</span>"
+    end
   end
 
-  def cost_in_copper(%Item{cost_currency: nil} = item) do
-    0 + Enchantment.copper_value(item)
+  def titleize(string) do
+    string
+    |> String.split()
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
   end
 
   def cost_in_copper(%Item{} = item) do
-    value = item.cost_value * Currency.copper_value(item.cost_currency)
+    quality_level = item.quality_level || 0
 
-    value + Enchantment.copper_value(item)
+    quality_multiplier =
+      case item.quality do
+        "unique" ->
+          5000
+
+        "set" ->
+          2500
+
+        "crafted" ->
+          1000
+
+        "rare" ->
+          1000
+
+        "magic" ->
+          500
+
+        "superior" ->
+          250
+
+        "normal" ->
+          100
+
+        "low" ->
+          50
+
+        _ ->
+          0
+      end
+
+    affix_quality_levels =
+      item.affix_traits
+      |> Enum.map(& &1.affix_trait.affix.level)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sum()
+
+    Enum.max([1, quality_level]) * Enum.max([1, quality_multiplier]) *
+      Enum.max([1, affix_quality_levels])
   end
 
   def has_ability?(%Item{} = item, ability_name) do
@@ -683,7 +734,39 @@ defmodule ApathyDrive.Item do
   def useable_by_character?(_character, %Item{}), do: true
 
   def too_powerful_for_character?(character, item) do
-    too_high_level_for_character?(character, item)
+    too_high_level_for_character?(character, item) or not_enough_strength?(character, item) or
+      not_enough_agility?(character, item)
+  end
+
+  def not_enough_strength?(character, item) do
+    Mobile.attribute_at_level(character, :strength, character.level) < required_strength(item)
+  end
+
+  def not_enough_agility?(character, item) do
+    Mobile.attribute_at_level(character, :agility, character.level) < required_agility(item)
+  end
+
+  def required_strength(%Item{} = item) do
+    modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
+    trunc((item.required_str || 0) * modifier)
+  end
+
+  def required_agility(%Item{} = item) do
+    modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
+    trunc((item.required_agi || 0) * modifier)
+  end
+
+  def required_level(%Item{} = item) do
+    modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
+
+    level =
+      item.affix_traits
+      |> Enum.map(& &1.affix_trait.affix.required_level)
+      |> List.insert_at(0, Systems.Effect.effect_bonus(item, "MinLevel"))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.max(fn -> 0 end)
+
+    trunc(level * modifier)
   end
 
   def too_high_level_for_character?(character, %Item{type: "Scroll"} = scroll) do
@@ -704,13 +787,7 @@ defmodule ApathyDrive.Item do
   end
 
   def too_high_level_for_character?(character, item) do
-    case Systems.Effect.effect_bonus(item, "MinLevel") do
-      nil ->
-        false
-
-      min_level ->
-        character.level < min_level
-    end
+    character.level < required_level(item)
   end
 
   defp load_required_races_and_classes(%Item{} = item) do

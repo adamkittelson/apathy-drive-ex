@@ -52,18 +52,14 @@ defmodule ApathyDrive.Scripts.ExplodingRune do
               traits: %{
                 "Damage" => [
                   %{
-                    kind: "magical",
                     min: trunc(min * 0.75),
                     max: trunc(max * 0.75),
-                    damage_type: "Fire",
-                    damage_type_id: 5
+                    damage_type: "Fire"
                   },
                   %{
-                    kind: "magical",
                     min: trunc(min * 0.25),
                     max: trunc(max * 0.25),
-                    damage_type: "Impact",
-                    damage_type_id: 11
+                    damage_type: "Magical"
                   }
                 ]
               }

@@ -4,6 +4,8 @@ defmodule ApathyDrive.Monster do
 
   alias ApathyDrive.{
     Ability,
+    Affix,
+    AffixSkill,
     Aggression,
     AI,
     ChannelHistory,
@@ -13,7 +15,6 @@ defmodule ApathyDrive.Monster do
     Item,
     ItemInstance,
     KillCount,
-    LimbSet,
     LootPity,
     Mobile,
     Monster,
@@ -107,15 +108,12 @@ defmodule ApathyDrive.Monster do
     field(:drops, :any, virtual: true, default: [])
     field(:sneaking, :boolean, virtual: true, default: false)
     field(:delete_at, :any, virtual: true)
-    field(:limbs, :map, virtual: true, default: %{})
-    field(:missing_limbs, {:array, :string}, virtual: true, default: [])
     field(:lore, :any, virtual: true)
     field(:follow, :boolean, virtual: true)
 
     timestamps()
 
     belongs_to(:death_ability, ApathyDrive.Ability)
-    belongs_to(:limb_set, ApathyDrive.LimbSet)
 
     has_many(:lairs, ApathyDrive.LairMonster)
     has_many(:lair_rooms, through: [:lairs, :room])
@@ -211,7 +209,6 @@ defmodule ApathyDrive.Monster do
       |> Map.put(:spawned_at, rm.spawned_at)
       |> Map.put(:zone_spawned_at, rm.zone_spawned_at)
       |> Map.put(:delete_at, rm.delete_at)
-      |> Map.put(:missing_limbs, rm.missing_limbs)
       |> Map.put(:owner_id, rm.owner_id)
       |> Map.put(:lore, ApathyDrive.ElementalLores.lore(rm.lore))
 
@@ -221,7 +218,6 @@ defmodule ApathyDrive.Monster do
       monster
       |> Map.put(:ref, ref)
       |> generate_monster_attributes()
-      |> load_limbs()
       |> load_abilities()
       |> load_traits()
       |> load_drops()
@@ -244,7 +240,6 @@ defmodule ApathyDrive.Monster do
         :spawned_at,
         :room_spawned_at,
         :delete_at,
-        :missing_limbs,
         :owner_id
       ])
 
@@ -257,7 +252,6 @@ defmodule ApathyDrive.Monster do
     |> Map.put(:ref, ref)
     |> Map.put(:level, rm.level)
     |> Map.put(:base_name, monster.name)
-    |> load_limbs()
     |> load_abilities()
     |> load_traits()
     |> load_drops()
@@ -283,25 +277,6 @@ defmodule ApathyDrive.Monster do
 
   def load_abilities(%Monster{} = monster) do
     MonsterAbility.load_abilities(monster)
-  end
-
-  def load_limbs(%Monster{} = monster) do
-    limbs = LimbSet.load_limbs(monster, monster.limb_set_id)
-
-    limbs
-    |> Enum.reduce(monster, fn {limb_name, limb}, monster ->
-      if limb.health == 0 do
-        effect = %{
-          "StatusMessage" => "Your #{limb_name} is severed!",
-          "stack_key" => {:severed, limb_name}
-        }
-
-        Systems.Effect.add(monster, effect)
-      else
-        monster
-      end
-    end)
-    |> Map.put(:limbs, limbs)
   end
 
   def generate_monster_attributes(%Monster{level: level} = monster) do
@@ -386,40 +361,573 @@ defmodule ApathyDrive.Monster do
         %Monster{} = monster,
         %Character{} = character
       ) do
-    Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id, id: drop_id}, room ->
-      pity = LootPity.pity_for_character(character, drop_id)
+    room =
+      Enum.reduce(monster.drops, room, fn %{chance: chance, item_id: item_id, id: drop_id},
+                                          room ->
+        pity = LootPity.pity_for_character(character, drop_id)
 
-      if :rand.uniform(100) <= chance + pity do
-        Logger.info("Dropping item##{item_id} for #{character.name} in Room##{room.id}")
+        if :rand.uniform(100) <= chance + pity do
+          Logger.info("Dropping item##{item_id} for #{character.name} in Room##{room.id}")
 
+          item =
+            %ItemInstance{
+              item_id: item_id,
+              room_id: room.id,
+              character_id: nil,
+              equipped: false,
+              hidden: false,
+              level: max(1, character.level),
+              delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+            }
+            |> Repo.insert!()
+            |> Repo.preload(:item)
+            |> Item.from_assoc()
+
+          Mobile.send_scroll(
+            character,
+            "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+          )
+
+          LootPity.reset_pity(character, drop_id)
+        else
+          LootPity.increase_pity(character, drop_id)
+        end
+
+        room
+      end)
+
+    drop_random_loot_for_character(room, monster, character)
+
+    room
+    |> Room.load_items()
+  end
+
+  def drop_random_loot_for_character(
+        %Room{} = room,
+        %Monster{} = monster,
+        %Character{} = character,
+        quality \\ nil
+      ) do
+    level = (div(monster.level, 3) + 1) * 3
+
+    items = Item.of_quality_level(level)
+
+    picks = if monster.game_limit == 1, do: 5, else: 1
+
+    Enum.each(1..picks, fn _pick ->
+      roll = :rand.uniform(100)
+
+      chance = if monster.game_limit == 1, do: 80, else: 40
+
+      if Enum.any?(items) and (quality || roll <= chance) do
         item =
+          items
+          |> Enum.random()
+          |> Item.load_item_types()
+
+        Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+
+        quality = quality || determine_item_quality(character, monster, item)
+
+        ac = ac_for_item(item, quality)
+
+        item_instance =
           %ItemInstance{
-            item_id: item_id,
+            item_id: item.id,
             room_id: room.id,
             character_id: nil,
             equipped: false,
             hidden: false,
-            level: max(1, character.level),
-            delete_at: Timex.shift(DateTime.utc_now(), hours: 1)
+            ac: ac,
+            name: item.name,
+            quality: quality,
+            level: max(1, monster.level),
+            delete_at: Item.delete_at(item.quality)
           }
           |> Repo.insert!()
           |> Repo.preload(:item)
+          |> update_in([Access.key!(:item)], &Item.load_item_types/1)
+
+        affix_level = affix_level(item.quality_level, monster.level, 0)
+
+        {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+        prefixes = Enum.reject(prefixes, &is_nil/1)
+        suffixes = Enum.reject(suffixes, &is_nil/1)
+
+        name = item_name(item_instance, prefixes, suffixes)
+
+        item_instance =
+          item_instance
+          |> Ecto.Changeset.change(%{name: name})
+          |> Repo.update!()
+
+        item =
+          item_instance
           |> Item.from_assoc()
 
         Mobile.send_scroll(
           character,
           "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
         )
-
-        LootPity.reset_pity(character, drop_id)
       else
-        LootPity.increase_pity(character, drop_id)
+        chance = if monster.game_limit == 1, do: 60, else: 30
+        # drop jewelry, runes, gems etc
+        if :rand.uniform(100) < chance do
+          item =
+            Item.random_accessory()
+            |> Item.load_item_types()
+
+          Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+
+          quality = quality || determine_item_quality(character, monster, item)
+
+          item_instance =
+            %ItemInstance{
+              item_id: item.id,
+              room_id: room.id,
+              character_id: nil,
+              equipped: false,
+              hidden: false,
+              ac: 0,
+              name: item.name,
+              quality: quality,
+              level: max(1, monster.level),
+              delete_at: Item.delete_at(item.quality)
+            }
+            |> Repo.insert!()
+            |> Repo.preload(:item)
+            |> update_in([Access.key!(:item)], &Item.load_item_types/1)
+
+          affix_level = affix_level(item.quality_level, monster.level, character.level)
+
+          {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+          prefixes = Enum.reject(prefixes, &is_nil/1)
+          suffixes = Enum.reject(suffixes, &is_nil/1)
+
+          name = item_name(item_instance, prefixes, suffixes)
+
+          item_instance =
+            item_instance
+            |> Ecto.Changeset.change(%{name: name})
+            |> Repo.update!()
+
+          item =
+            item_instance
+            |> Item.from_assoc()
+
+          Mobile.send_scroll(
+            character,
+            "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+          )
+        end
+      end
+    end)
+  end
+
+  def ac_for_item(%{min_ac: nil, max_ac: nil}, _quality), do: nil
+
+  def ac_for_item(item, "low") do
+    ac = Enum.random(item.min_ac..item.max_ac)
+    trunc(ac * 0.75)
+  end
+
+  def ac_for_item(item, _quality) do
+    Enum.random(item.min_ac..item.max_ac)
+  end
+
+  def affix_level(quality_level, monster_level, magic_level) do
+    monster_level = min(monster_level, 99)
+
+    monster_level = max(quality_level, monster_level)
+
+    affix_level =
+      if magic_level > 0 do
+        monster_level + magic_level
+      else
+        if monster_level < 99 - quality_level / 2 do
+          monster_level - div(quality_level, 2)
+        else
+          2 * monster_level - 99
+        end
       end
 
-      room
+    min(affix_level, 99)
+  end
+
+  def item_affixes(
+        %ItemInstance{quality: "superior", item: %Item{type: "Armour"}} = item_instance,
+        _affix_level
+      ) do
+    affix =
+      Affix
+      |> Repo.get_by(name: "superior armor")
+      |> Repo.preload(affixes_traits: [:trait])
+
+    affix.affixes_traits
+    |> Enum.each(fn at ->
+      val = affix_value(at.value, at.trait.merge_by)
+
+      %ApathyDrive.ItemInstanceAffixTrait{
+        affix_trait_id: at.id,
+        item_instance_id: item_instance.id,
+        value: val,
+        description: affix_description(at.trait.name, at.description, val)
+      }
+      |> Repo.insert!()
     end)
-    # |> CraftingRecipe.drop_loot_for_character(character)
-    |> Room.load_items()
+
+    {[], []}
+  end
+
+  def item_affixes(%ItemInstance{quality: "magic"} = item_instance, affix_level) do
+    case :rand.uniform(4) do
+      4 ->
+        {[generate_prefix(item_instance, affix_level)],
+         [generate_suffix(item_instance, affix_level)]}
+
+      3 ->
+        {[generate_prefix(item_instance, affix_level)], []}
+
+      _ ->
+        {[], [generate_suffix(item_instance, affix_level)]}
+    end
+  end
+
+  def item_affixes(%ItemInstance{quality: "rare"} = item_instance, affix_level) do
+    affix_count = Enum.random(3..6)
+
+    1..affix_count
+    |> Enum.reduce({[], []}, fn _n, {prefixes, suffixes} ->
+      cond do
+        length(prefixes) >= 3 ->
+          {prefixes, [generate_suffix(item_instance, affix_level) | suffixes]}
+
+        length(suffixes) >= 3 ->
+          {[generate_prefix(item_instance, affix_level) | prefixes], suffixes}
+
+        :else ->
+          case :rand.uniform(2) do
+            1 ->
+              {[generate_prefix(item_instance, affix_level) | prefixes], suffixes}
+
+            2 ->
+              {prefixes, [generate_suffix(item_instance, affix_level) | suffixes]}
+          end
+      end
+    end)
+  end
+
+  def item_affixes(%ItemInstance{}, _affix_level) do
+    {[], []}
+  end
+
+  def generate_prefix(item_instance, affix_level) do
+    prefix =
+      affix_level
+      |> Affix.prefix_for_level(item_instance)
+
+    if prefix do
+      prefix =
+        prefix
+        |> Repo.preload(affixes_traits: [:trait], affix_skills: [:skill])
+
+      if prefix.affixes_traits == [] and prefix.affix_skills == [] do
+        IO.puts("no traits or skills, trying again")
+        generate_prefix(item_instance, affix_level)
+      else
+        prefix.affixes_traits
+        |> Enum.each(fn at ->
+          val = affix_value(at.value, at.trait.merge_by)
+
+          %ApathyDrive.ItemInstanceAffixTrait{
+            affix_trait_id: at.id,
+            item_instance_id: item_instance.id,
+            value: val,
+            description: affix_description(at.trait.name, at.description, val)
+          }
+          |> Repo.insert!()
+        end)
+
+        prefix.affix_skills
+        |> Enum.each(fn
+          %AffixSkill{
+            value: %{
+              "kind" => "Charges",
+              "base_charges" => base_charges,
+              "max_level" => max_skill_level
+            }
+          } = as ->
+            required_skill_level = as.skill.required_level
+            item_level = item_instance.level
+            skill_level = charged_skill_level(required_skill_level, max_skill_level, item_level)
+            charges = charged_skill_charges(base_charges, skill_level)
+
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: %{"charges" => charges, "level" => skill_level},
+              description: as.description
+            }
+            |> Repo.insert!()
+
+          %AffixSkill{value: value} = as ->
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: value,
+              description: as.description
+            }
+            |> Repo.insert!()
+        end)
+
+        prefix.name
+      end
+    end
+  end
+
+  def generate_suffix(item_instance, affix_level) do
+    suffix =
+      affix_level
+      |> Affix.suffix_for_level(item_instance)
+
+    if suffix do
+      suffix =
+        suffix
+        |> Repo.preload(affixes_traits: [:trait], affix_skills: [:skill])
+
+      if suffix.affixes_traits == [] and suffix.affix_skills == [] do
+        IO.puts("no traits or skills, trying again")
+        generate_suffix(item_instance, affix_level)
+      else
+        suffix.affixes_traits
+        |> Enum.each(fn at ->
+          val = affix_value(at.value, at.trait.merge_by)
+
+          %ApathyDrive.ItemInstanceAffixTrait{
+            affix_trait_id: at.id,
+            item_instance_id: item_instance.id,
+            value: val,
+            description: affix_description(at.trait.name, at.description, val)
+          }
+          |> Repo.insert!()
+        end)
+
+        suffix.affix_skills
+        |> Enum.each(fn
+          %AffixSkill{
+            value: %{
+              "kind" => "Charges",
+              "base_charges" => base_charges,
+              "max_level" => max_skill_level
+            }
+          } = as ->
+            required_skill_level = as.skill.required_level
+            item_level = item_instance.level
+            skill_level = charged_skill_level(required_skill_level, max_skill_level, item_level)
+            charges = charged_skill_charges(base_charges, skill_level)
+
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: %{"charges" => charges, "level" => skill_level},
+              description: as.description
+            }
+            |> Repo.insert!()
+
+          %AffixSkill{value: value} = as ->
+            %ApathyDrive.ItemInstanceAffixSkill{
+              affix_skill_id: as.id,
+              item_instance_id: item_instance.id,
+              value: value,
+              description: as.description
+            }
+            |> Repo.insert!()
+        end)
+
+        suffix.name
+      end
+    end
+  end
+
+  def charged_skill_level(required_skill_level, max_skill_level, item_level) do
+    modifier = trunc((99 - required_skill_level) / max_skill_level)
+    max(1, trunc((item_level - required_skill_level) / modifier))
+  end
+
+  def charged_skill_charges(base_charges, skill_level) do
+    trunc((base_charges + base_charges * skill_level) / 8)
+  end
+
+  def affix_description("DefensePerLevel", description, _val) do
+    description
+  end
+
+  def affix_description("HalfFreezeDuration", description, _val) do
+    description
+  end
+
+  def affix_description(_trait_name, description, [val]) do
+    ApathyDrive.Text.interpolate(description, val)
+  end
+
+  def affix_description(_trait_name, description, val) when is_integer(val) do
+    ApathyDrive.Text.interpolate(description, %{"amount" => val})
+  end
+
+  def affix_value(
+        %{
+          "max" => %{"max" => max_max, "min" => min_max},
+          "min" => %{"max" => max_min, "min" => min_min}
+        },
+        merge_by
+      ) do
+    affix_value(
+      %{"max" => Enum.random(min_max..max_max), "min" => Enum.random(min_min..max_min)},
+      merge_by
+    )
+  end
+
+  def affix_value(val, "list") do
+    [val]
+  end
+
+  def affix_value(%{"min" => min, "max" => max}, _merge_by) do
+    Enum.random(min..max)
+  end
+
+  def affix_value(value, _merge_by) do
+    value
+  end
+
+  def item_name(%ItemInstance{quality: "superior"} = item, _prefixes, _suffixes) do
+    "superior #{item.name}"
+  end
+
+  def item_name(%ItemInstance{quality: "low"} = item, _prefixes, _suffixes) do
+    prefix = Enum.random(["cracked", "damaged", "low quality", "crude"])
+    "#{prefix} #{item.name}"
+  end
+
+  def item_name(%ItemInstance{quality: quality} = item, prefixes, suffixes)
+      when quality in ["magic", "rare"] do
+    prefix =
+      if Enum.any?(prefixes) do
+        Enum.random(prefixes)
+      else
+        ""
+      end
+
+    suffix =
+      if Enum.any?(suffixes) do
+        Enum.random(suffixes)
+      else
+        ""
+      end
+
+    "#{prefix} #{item.name} #{suffix}"
+    |> String.trim()
+    |> String.downcase()
+  end
+
+  def item_name(%ItemInstance{quality: _} = item, _prefixes, _suffixes) do
+    item.name
+  end
+
+  def determine_item_quality(character, monster, item) do
+    magic_find =
+      Mobile.ability_value(character, "MagicFind") +
+        Mobile.attribute_at_level(character, :charm, character.level)
+
+    magic_find = if monster.game_limit == 1, do: 400 + magic_find * 2, else: magic_find
+
+    cond do
+      unique?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped unique!")
+        "rare"
+
+      set?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped set!")
+        "rare"
+
+      rare?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped rare!")
+        "rare"
+
+      magic?(monster.level, item, magic_find) ->
+        IO.puts("dropped magic!")
+        "magic"
+
+      high?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped superior!")
+        "superior"
+
+      normal?(monster.level, item.quality_level, magic_find) ->
+        IO.puts("dropped normal!")
+        "normal"
+
+      :else ->
+        "low"
+    end
+  end
+
+  def unique?(monster_level, quality_level, magic_find) do
+    chance = (400 - (monster_level - quality_level) / 1) * 128
+
+    chance = max(6400, trunc(chance * 100 / (100 + magic_find))) |> max(1)
+
+    IO.puts("unique chance: #{128 / chance * 100}%")
+    :rand.uniform(chance) < 128
+  end
+
+  def set?(monster_level, quality_level, magic_find) do
+    chance = (160 - (monster_level - quality_level) / 2) * 128
+
+    chance = max(5600, trunc(chance * 100 / (100 + magic_find))) |> max(1)
+    IO.puts("set chance: #{128 / chance * 100}%")
+    :rand.uniform(chance) < 128
+  end
+
+  def rare?(monster_level, quality_level, magic_find) do
+    chance = (100 - (monster_level - quality_level) / 2) * 128
+
+    chance = max(3200, trunc(chance * 100 / (100 + magic_find))) |> max(1)
+    IO.puts("rare chance: #{128 / chance * 100}%")
+    :rand.uniform(chance) < 128
+  end
+
+  def magic?(monster_level, %Item{quality_level: quality_level} = item, magic_find) do
+    item_types = Enum.map(item.item_types, & &1.name)
+
+    if "Ring" in item_types or "Amulet" in item_types do
+      true
+    else
+      chance = (34 - (monster_level - quality_level) / 3) * 128
+
+      chance = max(192, trunc(chance * 100 / (100 + magic_find))) |> max(1)
+      IO.puts("magic chance: #{128 / chance * 100}%")
+      :rand.uniform(chance) < 128
+    end
+  end
+
+  def high?(monster_level, quality_level, magic_find) do
+    chance = (12 - (monster_level - quality_level) / 8) * 128
+
+    chance = trunc(chance * 100 / (100 + magic_find)) |> max(1)
+    IO.puts("superior chance: #{128 / chance * 100}%")
+    :rand.uniform(chance) < 128
+  end
+
+  def normal?(monster_level, quality_level, magic_find) do
+    chance = (2 - (monster_level - quality_level) / 2) * 128
+    IO.puts("monster_level: #{monster_level}, quality_level: #{quality_level}")
+    IO.puts("chance: #{chance}")
+
+    chance = trunc(chance * 100 / (100 + magic_find)) |> max(1)
+    IO.puts("chance: #{chance}")
+    IO.puts("normal chance: #{128 / chance * 100}%")
+    :rand.uniform(chance) < 128
   end
 
   defimpl ApathyDrive.Mobile, for: Monster do
@@ -427,12 +935,8 @@ defmodule ApathyDrive.Monster do
       Trait.get_cached(monster, ability)
     end
 
-    def accuracy_at_level(monster, level, _room) do
-      agi = attribute_at_level(monster, :agility, level)
-      cha = attribute_at_level(monster, :charm, level)
-      agi = agi + cha / 10
-      modifier = ability_value(monster, "Accuracy")
-      trunc(agi * (1 + modifier / 100))
+    def accuracy_at_level(monster, _level, _room) do
+      attack_rating(monster)
     end
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
@@ -470,8 +974,11 @@ defmodule ApathyDrive.Monster do
             attack
           end
           |> Map.put(:kind, "attack")
-          |> Map.put(:ignores_round_cooldown?, true)
       end
+    end
+
+    def attack_rating(monster) do
+      (8 + (monster.level - 1) * 0.3245) * monster.level
     end
 
     def auto_attack_target(%Monster{} = monster, room) do
@@ -545,12 +1052,7 @@ defmodule ApathyDrive.Monster do
     def die?(monster) do
       max_hp = Mobile.max_hp_at_level(monster, monster.level)
 
-      missing_fatal_limb =
-        monster.limbs
-        |> Map.values()
-        |> Enum.any?(&(&1.fatal && &1.health <= 0))
-
-      max_hp <= 0 or monster.hp <= 0 or missing_fatal_limb
+      max_hp <= 0 or monster.hp <= 0
     end
 
     def die(monster, room) do
@@ -581,8 +1083,9 @@ defmodule ApathyDrive.Monster do
                 exp = max(1, div(monster.experience, pets_and_players))
 
                 character
-                |> Character.add_experience_to_buffer(exp)
+                |> Character.add_experience(exp)
                 |> Character.add_currency_from_monster(monster)
+                |> Character.execute_per_kill_traits()
                 |> KillCount.increment(monster, exp)
               end)
 
@@ -631,7 +1134,6 @@ defmodule ApathyDrive.Monster do
           ability =
             monster.death_ability_id
             |> Ability.find()
-            |> Map.put(:ignores_round_cooldown?, true)
             |> Map.put(:energy, 0)
 
           Ability.execute(room, monster.ref, ability, [monster.ref])
@@ -647,11 +1149,8 @@ defmodule ApathyDrive.Monster do
       room
     end
 
-    def dodge_at_level(monster, level, _room) do
-      agi = attribute_at_level(monster, :agility, level)
-      cha = attribute_at_level(monster, :charm, level)
-      base = agi + cha / 10
-      trunc(base + ability_value(monster, "Dodge"))
+    def dodge_at_level(monster, _level, _room) do
+      trunc(defense_rating(monster) + ability_value(monster, "Dodge"))
     end
 
     def enough_mana_for_ability?(monster, %Ability{mana: cost}) do
@@ -723,29 +1222,18 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def magical_resistance_at_level(monster, level) do
-      willpower = attribute_at_level(monster, :willpower, level)
-
-      mr_percent = ability_value(monster, "MR%")
-
-      mr_from_percent = Ability.ac_for_mitigation_at_level(mr_percent)
-
-      mr = ability_value(monster, "MR")
-
-      max(willpower - 50 + mr + mr_from_percent, 0)
+    def magical_resistance_at_level(monster, _level) do
+      defense_rating(monster)
     end
 
     def max_hp_at_level(%Monster{} = monster, level) do
-      health = attribute_at_level(monster, :health, level)
-
-      base = monster.base_hp
-      bonus = (health - 50) * level / 16
+      base = 7 + (2.5 + level * 0.585) * level
 
       max_hp_percent = ability_value(monster, "MaxHP%")
 
       modifier = if max_hp_percent > 0, do: max_hp_percent, else: 1.0
 
-      trunc((base + bonus + ability_value(monster, "MaxHP")) * modifier)
+      trunc((base + ability_value(monster, "MaxHP")) * modifier)
     end
 
     def max_mana_at_level(monster, level) do
@@ -770,16 +1258,12 @@ defmodule ApathyDrive.Monster do
       trunc(int * (1 + modifier / 100))
     end
 
-    def physical_resistance_at_level(monster, level) do
-      strength = attribute_at_level(monster, :strength, level)
+    def defense_rating(monster) do
+      (6 + (monster.level - 1) * 0.105) * monster.level
+    end
 
-      ac_percent = ability_value(monster, "AC%")
-
-      ac_from_percent = Ability.ac_for_mitigation_at_level(ac_percent)
-
-      ac = ability_value(monster, "AC")
-
-      max(strength - 50 + ac + ac_from_percent, 0)
+    def physical_resistance_at_level(monster, _level) do
+      defense_rating(monster)
     end
 
     def power_at_level(%Monster{} = monster, level) do

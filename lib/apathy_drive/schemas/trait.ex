@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Trait do
   use ApathyDriveWeb, :model
-  use GenServer
+  use GenServer, restart: :transient
 
   alias ApathyDrive.Match
 
@@ -20,7 +20,7 @@ defmodule ApathyDrive.Trait do
     timestamps()
   end
 
-  def start_link do
+  def start_link(_arg) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 

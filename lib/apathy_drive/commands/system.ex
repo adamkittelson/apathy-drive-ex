@@ -21,14 +21,13 @@ defmodule ApathyDrive.Commands.System do
       ability = %ApathyDrive.Ability{
         traits: %{
           "Damage" => [
-            %{kind: "raw", min: 100, max: 100, damage_type: "Unaspected", damage_type_id: 3}
+            %{min: 100, max: 100, damage_type: "Magical"}
           ]
         },
         targets: "self",
         energy: 0,
         kind: "attack",
         user_message: "The gods smite you in atonement for your sins!",
-        ignores_round_cooldown?: true,
         difficulty: nil
       }
 
@@ -52,6 +51,14 @@ defmodule ApathyDrive.Commands.System do
     Mobile.send_scroll(character, "<p>#{message}</p>")
 
     room
+  end
+
+  def system(%Room{} = room, character, ["random_item", level, quality]) do
+    {level, ""} = Integer.parse(level)
+
+    room
+    |> random_item(character.ref, level, quality)
+    |> Room.load_items()
   end
 
   def system(%Room{} = room, character, ["give_item" | item_id_or_name]) do
@@ -188,10 +195,6 @@ defmodule ApathyDrive.Commands.System do
 
   def system(%Room{} = room, character, ["edit" | args]) do
     System.Edit.execute(room, character, args)
-  end
-
-  def system(%Room{} = room, character, ["skill" | args]) do
-    System.Skill.execute(room, character, args)
   end
 
   def system(%Room{} = room, character, ["area" | args]) do

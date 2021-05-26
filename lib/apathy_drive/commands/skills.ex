@@ -1,46 +1,24 @@
 defmodule ApathyDrive.Commands.Skills do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Level, Mobile}
+  alias ApathyDrive.{Character, Mobile}
 
   def keywords, do: ["sk", "skills"]
 
   def execute(%Room{} = room, %Character{} = character, []) do
-    Mobile.send_scroll(character, "<p><span class='dark-magenta'>Level Progress Skill</span></p>")
+    Mobile.send_scroll(character, "<p><span class='dark-magenta'>Skill      Level</span></p>")
 
     character.skills
-    |> Enum.map(fn
-      {name, %{experience: experience, level: level}} ->
-        exp = trunc(experience)
-        currentLevel = Level.exp_at_level(level)
-        tolevel = Level.exp_at_level(level + 1)
-        percent = ((exp - currentLevel) / (tolevel - currentLevel) * 100) |> round
+    |> Enum.each(fn {_command, skill} ->
+      name =
+        skill.name
+        |> to_string
+        |> String.pad_trailing(10)
 
-        level =
-          level
-          |> to_string
-          |> String.pad_leading(5)
-
-        percent =
-          percent
-          |> to_string
-          |> String.pad_leading(4)
-
-        {level, percent <> "%", name}
-
-      {name, %{level: level}} ->
-        level =
-          level
-          |> to_string
-          |> String.pad_leading(5)
-
-        {level, "     ", name}
-    end)
-    |> Enum.sort()
-    |> Enum.reverse()
-    |> Enum.each(fn {level, percent, name} ->
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-cyan'>#{level} #{percent}    #{name}</span></p>"
+        "<p><span class='dark-cyan item-name'>#{name} #{skill.level}<span class='item tooltip'>#{
+          skill.module.tooltip(character)
+        }</span></span></p>"
       )
     end)
 

@@ -1,10 +1,10 @@
 defmodule ApathyDrive.JSONB do
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   def type, do: :jsonb
 
   def cast(json) when is_binary(json) do
-    case Poison.decode(json) do
+    case Jason.decode(json) do
       {:ok, any} ->
         {:ok, any}
 
@@ -25,13 +25,16 @@ defmodule ApathyDrive.JSONB do
   def load(""), do: {:ok, nil}
 
   def load(json) when is_binary(json) do
-    case Poison.decode(json) do
-      {:ok, any} -> {:ok, any}
-      {:error, {:invalid, _, _}} -> {:ok, json}
-      {:error, {:invalid, _}} -> {:ok, json}
-      {:error, :invalid, _} -> {:ok, json}
-      {:error, :invalid} -> {:ok, json}
-      _ -> :error
+    case Jason.decode(json) do
+      {:ok, any} ->
+        {:ok, any}
+
+      {:error, %Jason.DecodeError{data: data}} ->
+        {:ok, data}
+
+      other ->
+        IO.inspect(other)
+        :error
     end
   end
 

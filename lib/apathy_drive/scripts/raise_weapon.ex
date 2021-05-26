@@ -10,11 +10,9 @@ defmodule ApathyDrive.Scripts.RaiseWeapon do
           effect = %{
             "WeaponDamage" => [
               %{
-                kind: "raw",
-                damage_type: "Unaspected",
+                damage_type: "Magical",
                 min: 1,
-                max: 1,
-                damage_type_id: 3
+                max: 1
               }
             ],
             "RemoveMessage" => "The shimmer on your weapon fades."

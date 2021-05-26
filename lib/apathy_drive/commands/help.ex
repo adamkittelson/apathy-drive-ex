@@ -16,8 +16,7 @@ defmodule ApathyDrive.Commands.Help do
     RaceTrait,
     Repo,
     Room,
-    Skill,
-    SkillAbility
+    Skill
   }
 
   require Ecto.Query
@@ -427,6 +426,22 @@ defmodule ApathyDrive.Commands.Help do
     )
   end
 
+  def help(character, %Skill{name: name}) do
+    name =
+      name
+      |> String.split(~r/[^\w]+/)
+      |> Enum.map(&Macro.camelize/1)
+      |> Enum.join()
+
+    module = Module.concat([ApathyDrive, Skills, name])
+
+    if function_exported?(module, :help, 1) do
+      module.help(character)
+    else
+      Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
+    end
+  end
+
   def help(character, %Ability{} = ability) do
     Mobile.send_scroll(
       character,
@@ -471,20 +486,6 @@ defmodule ApathyDrive.Commands.Help do
     ability =
       Map.put(ability, :attributes, ApathyDrive.AbilityAttribute.load_attributes(ability.id))
 
-    chance =
-      if ability.difficulty do
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-green'>Attributes:</span> <span class='dark-cyan'>#{
-            Enum.join(ability.attributes, ", ")
-          }</span></p>"
-        )
-
-        Mobile.spellcasting_at_level(character, character.level, ability) + ability.difficulty
-      else
-        100
-      end
-
     if ability.duration && ability.kind != "passive" do
       cond do
         ability.duration > 0 ->
@@ -510,15 +511,6 @@ defmodule ApathyDrive.Commands.Help do
       Mobile.send_scroll(
         character,
         "<p><span class='dark-green'>Energy:</span> <span class='dark-cyan'>#{ability.energy}</span></p>"
-      )
-    end
-
-    if ability.kind != "passive" do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Success Chance:</span> <span class='dark-cyan'>#{
-          min(100, chance)
-        }%</span></p>"
       )
     end
 
@@ -560,23 +552,6 @@ defmodule ApathyDrive.Commands.Help do
       )
     end
 
-    skills =
-      SkillAbility
-      |> Ecto.Query.where(ability_id: ^ability.id)
-      |> Repo.all()
-      |> Enum.map(fn ca ->
-        Repo.get(Skill, ca.skill_id).name
-      end)
-
-    if Enum.any?(skills) do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Skills: </span><span class='dark-cyan'>#{
-          ApathyDrive.Commands.Inventory.to_sentence(skills)
-        }</span></p>"
-      )
-    end
-
     traits = AbilityTrait.load_traits(ability.id)
 
     traits =
@@ -604,77 +579,7 @@ defmodule ApathyDrive.Commands.Help do
 
           damage = traits["Damage"]
 
-          if traits["Elemental"] do
-            elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
-
-            if elemental_damage do
-              damage = List.delete(damage, elemental_damage)
-
-              if lore = character.lore do
-                elemental_damage =
-                  Enum.map(lore.damage_types, fn damage ->
-                    damage
-                    |> Map.put(:min, elemental_damage.min)
-                    |> Map.put(:max, elemental_damage.min)
-                  end)
-
-                Map.put(traits, "Damage", elemental_damage ++ damage)
-              else
-                elemental_damage = Map.put(elemental_damage, :damage_type, "Elemental")
-                Map.put(traits, "Damage", [elemental_damage | damage])
-              end
-            else
-              if lore = character.lore do
-                min =
-                  damage
-                  |> Enum.map(& &1.min)
-                  |> Enum.sum()
-
-                max =
-                  damage
-                  |> Enum.map(& &1.max)
-                  |> Enum.sum()
-
-                damage =
-                  Enum.reduce(damage, [], fn type, damage ->
-                    type =
-                      type
-                      |> Map.put(:max, max(1, div(max, 2)))
-                      |> Map.put(:min, max(1, div(min, 2)))
-
-                    [type | damage]
-                  end)
-
-                lore_min =
-                  min
-                  |> div(2)
-                  |> div(length(lore.damage_types))
-                  |> max(1)
-
-                lore_max =
-                  max
-                  |> div(2)
-                  |> div(length(lore.damage_types))
-                  |> max(1)
-
-                damage =
-                  Enum.reduce(lore.damage_types, damage, fn type, damage ->
-                    type =
-                      type
-                      |> Map.put(:min, lore_min)
-                      |> Map.put(:max, lore_max)
-
-                    [type | damage]
-                  end)
-
-                Map.put(traits, "Damage", damage)
-              else
-                Map.put(traits, "Damage", damage)
-              end
-            end
-          else
-            Map.put(traits, "Damage", damage)
-          end
+          Map.put(traits, "Damage", damage)
       end
 
     if ability.kind != "passive" do
@@ -748,7 +653,7 @@ defmodule ApathyDrive.Commands.Help do
   end
 
   def topic(query) do
-    [Race.match_by_name(query), Class.match_by_name(query), Ability.match_by_name(query, true)]
+    [Race.match_by_name(query), Class.match_by_name(query), Skill.match_by_name(query, true)]
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
@@ -799,9 +704,9 @@ defmodule ApathyDrive.Commands.Help do
     {"Bonus Mana per level", amount}
   end
 
-  defp massage_trait({"AC%", amount}, _character) do
+  defp massage_trait({"Defense%", amount}, _character) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
-    {"AC", ac_from_percent}
+    {"Defense", ac_from_percent}
   end
 
   defp massage_trait({"Powerstone", _value}, _character) do

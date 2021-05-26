@@ -33,10 +33,9 @@ defmodule ApathyDrive.Scripts.BindDemon do
           # "Bubble%" => 15,
           # "BubbleRegen%PerSecond" => 0.5,
           "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "AC%" => 10,
+          "Defense%" => 10,
           "MR%" => 20,
           "DarkVision" => 225,
-          "RestoreLimbs" => true,
           "Encumbrance" => 15,
           # "Grant" => abilities,
           "RemoveMessage" =>

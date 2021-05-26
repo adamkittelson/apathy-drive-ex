@@ -10,6 +10,7 @@ defmodule ApathyDrive.Commands.Look do
     Doors,
     Regeneration,
     Item,
+    ItemType,
     Match,
     Mobile,
     Repo,
@@ -239,17 +240,7 @@ defmodule ApathyDrive.Commands.Look do
           if item.type == "Light" do
             String.pad_trailing("(Readied/#{item.uses})", 15)
           else
-            if ApathyDrive.Commands.Wear.worn_on_max(item) > 1 do
-              worn_on =
-                item.limb
-                |> String.split(" ")
-                |> Enum.map(&String.capitalize/1)
-                |> Enum.join(" ")
-
-              String.pad_trailing("(#{worn_on})", 15)
-            else
-              String.pad_trailing("(#{item.worn_on})", 15)
-            end
+            String.pad_trailing("(#{item.worn_on})", 15)
           end
 
         Mobile.send_scroll(
@@ -406,10 +397,197 @@ defmodule ApathyDrive.Commands.Look do
     %{dps: dps, min_damage: min_damage, max_damage: max_damage, ability: ability}
   end
 
-  def look_at_item(%Character{} = character, %Item{type: "Weapon"} = item) do
-    ability = Character.ability_for_weapon(character, item)
-    damage = weapon_damage(character, ability)
+  def affix_trait_descriptions(item, character) do
+    trait_descs =
+      item.affix_traits
+      |> Enum.reject(&is_nil(&1.description))
+      |> Enum.map(fn instance_affix_trait ->
+        affix_description(
+          character,
+          instance_affix_trait.affix_trait.trait.name,
+          instance_affix_trait.description,
+          instance_affix_trait.value
+        )
+      end)
 
+    skill_descs =
+      item.affix_skills
+      |> Enum.reject(&is_nil(&1.description))
+      |> Enum.map(fn instance_affix_skill ->
+        values =
+          instance_affix_skill.affix_skill.value
+          |> Map.put("skill", instance_affix_skill.affix_skill.skill.name)
+
+        ApathyDrive.Text.interpolate(instance_affix_skill.description, values)
+      end)
+
+    (trait_descs ++ skill_descs)
+    |> Enum.join("\n")
+  end
+
+  def affix_description(character, "DefensePerLevel", description, val) do
+    ApathyDrive.Text.interpolate(description, %{"amount" => val * character.level})
+  end
+
+  def affix_description(_character, _trait, description, _val), do: description
+
+  def defense(item, character) do
+    value =
+      Systems.Effect.effect_bonus(item, "Defense") +
+        Systems.Effect.effect_bonus(item, "DefensePerLevel") * character.level
+
+    cond do
+      value <= 0 ->
+        ""
+
+      value > item.ac ->
+        "\nDefense: <span style='color: #4850B8'>#{value}</span>"
+
+      item.quality == "low" ->
+        "\nDefense: <span class='dark-red'>#{value}</span>"
+
+      :else ->
+        "\nDefense: #{value}"
+    end
+  end
+
+  def damage(%{min_damage: nil, max_damage: nil}, _character), do: ""
+
+  def damage(%Item{min_damage: min, max_damage: max} = item, character) do
+    modifier =
+      (100 + (Systems.Effect.effect_bonus(item, "Damage%") || 0) +
+         Character.mastery_value(character, item, "Damage%")) / 100
+
+    {min_dam, max_dam} =
+      if modifier > 1 do
+        {max(trunc(min * modifier), min + 1), max(trunc(max * modifier), max + 1)}
+      else
+        {min, max}
+      end
+
+    min_dam = min_dam + (Systems.Effect.effect_bonus(item, "MinDamage") || 0)
+
+    max_dam =
+      max_dam + (Systems.Effect.effect_bonus(item, "MaxDamage") || 0) +
+        (Systems.Effect.effect_bonus(item, "MaxDamagePerLevel") || 0) * character.level
+
+    {min_dam, max_dam} =
+      Enum.reduce(
+        ["ColdDamage", "ElectricityDamage", "FireDamage"],
+        {min_dam, max_dam},
+        fn damage, {min_dam, max_dam} ->
+          list = Systems.Effect.effect_bonus(item, damage)
+
+          Enum.reduce(list, {min_dam, max_dam}, fn %{"max" => max, "min" => min},
+                                                   {min_dam, max_dam} ->
+            {min_dam + min, max_dam + max}
+          end)
+        end
+      )
+
+    min_dam =
+      if min_dam > min do
+        "<span style='color: #4850B8'>#{min_dam}</span>"
+      else
+        min
+      end
+
+    max_dam =
+      if max_dam > max do
+        "<span style='color: #4850B8'>#{max_dam}</span>"
+      else
+        max
+      end
+
+    "\nDamage: #{min_dam}-#{max_dam}"
+  end
+
+  def block_chance(%Item{block_chance: nil}, _character), do: ""
+
+  def block_chance(%Item{block_chance: chance} = item, character) do
+    value = Character.block_chance(character, item)
+
+    cond do
+      value <= 0 ->
+        ""
+
+      value >= 75 ->
+        "\nChance to Block: <span style='color: #908858'>#{value}%</span>"
+
+      value > chance ->
+        "\nChance to Block: <span style='color: #4850B8'>#{value}%</span>"
+
+      :else ->
+        "\nChance to Block: #{value}%"
+    end
+  end
+
+  def required_strength(character, %Item{} = item) do
+    if (strength = Item.required_strength(item)) > 0 do
+      if Mobile.attribute_at_level(character, :strength, character.level) >= strength do
+        "\nRequired Strength: #{strength}"
+      else
+        "\n<span class='red'>Required Strength: #{strength}</span>"
+      end
+    else
+      ""
+    end
+  end
+
+  def required_agility(character, %Item{} = item) do
+    if (agility = Item.required_agility(item)) > 0 do
+      if Mobile.attribute_at_level(character, :agility, character.level) >= agility do
+        "\nRequired Agility: #{agility}"
+      else
+        "\n<span class='red'>Required Agility: #{agility}</span>"
+      end
+    else
+      ""
+    end
+  end
+
+  def required_level(character, %Item{} = item) do
+    if (level = Item.required_level(item)) > 0 do
+      if character.level >= level do
+        "\nRequired Level: #{level}"
+      else
+        "\n<span class='red'>Required Level: #{level}</span>"
+      end
+    else
+      ""
+    end
+  end
+
+  def weapon_speed(%Item{speed: nil}), do: ""
+
+  def weapon_speed(%Item{speed: _speed, type_id: nil} = _item), do: ""
+
+  def weapon_speed(%Item{speed: speed, type_id: type_id} = item) do
+    type = Repo.get(ItemType, type_id).name
+    desc = weapon_speeds(speed)
+
+    ias = Systems.Effect.effect_bonus(item, "IncreasedAttackSpeed") || 0
+
+    ias_multiplier = (100 - ias) / 100
+
+    ias_energy = trunc(speed * ias_multiplier)
+
+    enhanced_desc = weapon_speeds(ias_energy)
+
+    if enhanced_desc != desc do
+      "\n#{type} Class: <span style='color: #908858'>#{enhanced_desc} Attack Speed</span>"
+    else
+      "\n#{type} Class: #{enhanced_desc} Attack Speed"
+    end
+  end
+
+  def weapon_speeds(energy) when energy > 800, do: "Very Slow"
+  def weapon_speeds(energy) when energy > 500 and energy <= 800, do: "Slow"
+  def weapon_speeds(energy) when energy > 330 and energy <= 500, do: "Normal"
+  def weapon_speeds(energy) when energy > 250 and energy <= 330, do: "Fast"
+  def weapon_speeds(energy) when energy <= 250, do: "Very Fast"
+
+  def item_tooltip(%Character{} = character, %Item{} = item) do
     value =
       %Shop{cost_multiplier: 1}
       |> Shop.sell_price(character, item)
@@ -420,42 +598,19 @@ defmodule ApathyDrive.Commands.Look do
         value -> value
       end
 
-    Mobile.send_scroll(character, "<p>#{item.description}</p>")
+    """
+      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{
+      block_chance(item, character)
+    }#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{
+      required_strength(character, item)
+    }#{required_agility(character, item)}#{weapon_speed(item)}
+      <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
-    item.effects
-    |> Map.values()
-    |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
-    |> Enum.map(& &1["StatusMessage"])
-    |> Enum.each(fn effect_message ->
-      Mobile.send_scroll(character, "<p>#{effect_message}</p>")
-    end)
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Kind:</span> <span class='dark-cyan'>#{item.weapon_type}</span></p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>DPS:</span> <span class='dark-cyan'>#{damage.dps} (#{
-        trunc(damage.min_damage)
-      }-#{trunc(damage.max_damage)} @ #{trunc(damage.ability.energy / 10)}% energy per swing)</span></p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Weight:</span> <span class='dark-cyan'>#{item.weight}</span></p>"
-    )
-
-    Mobile.send_scroll(
-      character,
-      "<p><span class='dark-green'>Value:</span> <span class='dark-cyan'>#{value}</span></p>"
-    )
-
-    display_traits(character, item)
-
-    display_enchantment(character, item)
+      Sells For: #{value}
+    """
   end
+
+  def item_tooltip(%Character{} = _character, _item), do: ""
 
   def look_at_item(%Character{} = character, %Item{type: "Sign"} = item) do
     Mobile.send_scroll(
@@ -471,7 +626,7 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def look_at_item(%Character{} = character, %Item{} = item) do
+  def look_at_item(%Character{} = character, %Item{worn_on: nil} = item) do
     value =
       %Shop{cost_multiplier: 1}
       |> Shop.sell_price(character, item)
@@ -522,6 +677,11 @@ defmodule ApathyDrive.Commands.Look do
     display_enchantment(character, item)
   end
 
+  def look_at_item(%Character{} = character, %Item{} = item) do
+    item = item_tooltip(character, item)
+    Mobile.send_scroll(character, "<p class='item'>#{item}</span>")
+  end
+
   def look_at_item(mobile, %{description: description}) do
     Mobile.send_scroll(mobile, "<p>#{description}</p>")
   end
@@ -537,29 +697,18 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def display_traits(character, item, indent \\ 0) do
-    skill = Item.skill_for_character(character, item)
-
-    modifier =
-      if skill == 0 do
-        0.1
-      else
-        skill / character.level
-      end
-
     traits =
       item.effects
       |> Map.values()
       |> Enum.reduce(%{}, &Trait.merge_traits(&2, &1))
       |> Ability.process_duration_traits(character, character, nil)
-      |> Map.put_new("AC", 0)
-      |> update_in(["AC"], &trunc(&1 * modifier))
+      |> Map.put_new("Defense", 0)
       |> Map.put_new("MR", 0)
-      |> update_in(["MR"], &trunc(&1 * modifier))
 
     Enum.each(traits, &display_trait(character, item, &1, indent))
   end
 
-  def display_trait(_character, _item, {"AC", 0}, _indent), do: :noop
+  def display_trait(_character, _item, {"Defense", 0}, _indent), do: :noop
   def display_trait(_character, _item, {"MR", 0}, _indent), do: :noop
   def display_trait(_character, _item, {"RemoveMessage", _msg}, _indent), do: :noop
   def display_trait(_character, _item, {"stack_count", _msg}, _indent), do: :noop
@@ -624,7 +773,7 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
-  def display_trait(character, _item, {"AC%", value}, indent) do
+  def display_trait(character, _item, {"Defense%", value}, indent) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(value)
 
     Mobile.send_scroll(

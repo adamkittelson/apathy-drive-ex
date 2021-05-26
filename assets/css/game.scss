@@ -14,6 +14,30 @@ a.autolink {
 
 .container {margin-left: 25px;}
 
+p.item, span.item {
+  text-align: center;
+  width: 450px;
+  padding-right: 0px !important;
+  padding: 10px;
+  font-family: 'exocet-blizzard-mixed-caps-medium', Helvetica, Arial, Verdana, sans-serif;
+  //border: 1px solid #ccc;
+  background-color: rgba(5, 5, 5, 0.9);
+  border-radius: 25px;
+}
+
+span.item-name span.tooltip{
+  visibility: hidden;
+  z-index: 1;
+  position: absolute;
+  top: 300px;
+  left: 500px;
+  color: silver;
+}
+
+span.item-name:hover span.tooltip {
+  visibility: visible;
+}
+
 #scroll-container {
   position: fixed;
   display: flex;
@@ -173,6 +197,12 @@ textarea.prompt {
 
 .progress-bar.hp {
   background-image: linear-gradient(#c00000,#400000), linear-gradient(#8b008b, #360036), linear-gradient(#292929,#292929);
+  background-repeat:no-repeat;
+  transition:1s;
+}
+
+.progress-bar.hp.poisoned {
+  background-image: linear-gradient(#00c000,#004000), linear-gradient(#8b008b, #360036), linear-gradient(#292929,#292929);
   background-repeat:no-repeat;
   transition:1s;
 }

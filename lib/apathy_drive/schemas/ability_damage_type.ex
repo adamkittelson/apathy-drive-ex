@@ -22,14 +22,12 @@ defmodule ApathyDrive.AbilityDamageType do
     |> where([mt], mt.ability_id == ^ability_id)
     |> preload([:damage_type])
     |> Repo.all()
-    |> Enum.reduce([], fn %{damage_type: damage_type, kind: kind, min: min, max: max}, damages ->
+    |> Enum.reduce([], fn %{damage_type: damage_type, min: min, max: max}, damages ->
       [
         %{
-          kind: kind,
           min: min,
           max: max,
-          damage_type: damage_type.name,
-          damage_type_id: damage_type.id
+          damage_type: damage_type.name
         }
         | damages
       ]

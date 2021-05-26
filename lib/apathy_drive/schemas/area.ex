@@ -136,8 +136,8 @@ defmodule ApathyDrive.Area do
 
   def update_level(%Area{} = area, level) when is_integer(level) do
     area
-    |> Map.put(:level, level)
-    |> Repo.save!()
+    |> Ecto.Changeset.change(%{level: level})
+    |> Repo.update!()
   end
 
   def update_level(area, level), do: update_level(area, String.to_integer(level))

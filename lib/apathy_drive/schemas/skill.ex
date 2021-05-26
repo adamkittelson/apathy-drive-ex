@@ -1,17 +1,24 @@
 defmodule ApathyDrive.Skill do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{CharacterSkill, Level, Match}
+  alias ApathyDrive.{CharacterSkill, Match}
 
   schema "skills" do
     field(:name, :string)
-    field(:description, :string)
-    field(:exp_multiplier, :float)
-    field(:universal, :boolean, default: false)
-
-    field(:attributes, :any, virtual: true, default: [])
+    field(:command, :string)
+    field(:required_level, :integer)
 
     has_many(:characters_skills, CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])
+  end
+
+  def module(skill_name) do
+    module_name =
+      skill_name
+      |> String.split(~r/[^\w]+/)
+      |> Enum.map(&Macro.camelize/1)
+      |> Enum.join()
+
+    Module.concat([ApathyDrive, Skills, module_name])
   end
 
   def create_changeset(name) do
@@ -36,17 +43,5 @@ defmodule ApathyDrive.Skill do
     else
       Match.one(skills, :keyword_starts_with, name)
     end
-  end
-
-  def set_level(%CharacterSkill{experience: exp, exp_multiplier: multiplier} = skill)
-      when not is_nil(exp) do
-    skill =
-      skill
-      |> Ecto.Changeset.change(%{
-        experience: max(skill.experience, Level.exp_at_level(1))
-      })
-      |> Repo.update!()
-
-    put_in(skill.level, max(1, Level.level_at_exp(exp, multiplier)))
   end
 end

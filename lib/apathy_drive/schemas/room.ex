@@ -18,8 +18,7 @@ defmodule ApathyDrive.Room do
     PubSub,
     Shop,
     Stealth,
-    TimerManager,
-    Trainer
+    TimerManager
   }
 
   require Logger
@@ -46,6 +45,7 @@ defmodule ApathyDrive.Room do
     field(:silver, :integer, default: 0)
     field(:copper, :integer, default: 0)
     field(:zone_monster_limit, :integer)
+
     field(:exits, :any, virtual: true, default: [])
     field(:effects, :map, virtual: true, default: %{})
     field(:lair_next_spawn_at, :integer, virtual: true, default: 0)
@@ -56,6 +56,7 @@ defmodule ApathyDrive.Room do
     field(:items, :any, virtual: true, default: [])
     field(:allies, :any, virtual: true, default: %{})
     field(:enemies, :any, virtual: true, default: %{})
+    field(:trainable_skills, :any, virtual: true)
 
     timestamps()
 
@@ -67,7 +68,6 @@ defmodule ApathyDrive.Room do
     has_many(:lair_monsters, through: [:lairs, :monster])
     has_one(:shop, Shop)
     has_many(:shop_items, through: [:shop, :shop_items])
-    belongs_to(:trainer, Trainer)
   end
 
   def dedup_limited_monsters(%Room{mobiles: mobiles} = room) do
@@ -101,7 +101,6 @@ defmodule ApathyDrive.Room do
     ability =
       id
       |> Ability.find()
-      |> Map.put(:ignores_round_cooldown?, true)
       |> Map.put(:energy, 0)
 
     Map.put(room, :ability, ability)
@@ -149,7 +148,6 @@ defmodule ApathyDrive.Room do
         Room.update_mobile(updated_room, ref, fn _updated_room, character ->
           character
           |> Character.load_items()
-          |> Character.set_skill_levels()
           |> Character.load_abilities()
         end)
 
@@ -1032,7 +1030,6 @@ defmodule ApathyDrive.Room do
       character
       |> Character.load_traits()
       |> Character.load_race()
-      |> Character.load_limbs()
       |> Character.load_classes()
       |> Character.set_attribute_levels()
       |> Character.update_exp_bar()

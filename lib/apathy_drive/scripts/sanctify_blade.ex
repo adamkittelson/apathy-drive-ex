@@ -5,7 +5,7 @@ defmodule ApathyDrive.Scripts.SanctifyBlade do
     Room.update_mobile(room, mobile_ref, fn room, character ->
       effect = %{
         "WeaponDamage" => [
-          %{kind: "magical", min: 1, max: 1, damage_type: "Holy", damage_type_id: 9}
+          %{min: 1, max: 1, damage_type: "Magical"}
         ],
         "RemoveMessage" => "A sanctify blade spell wears off on your #{item.name}.",
         "stack_key" => "sanctify blade",

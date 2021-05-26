@@ -1,11 +1,9 @@
 defmodule ApathyDrive.Slot do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{LimbSetLimbSlot, Slot}
+  alias ApathyDrive.Slot
 
   schema "slots" do
     field :name, :string
-
-    has_many(:limb_set_limb_slots, LimbSetLimbSlot)
   end
 
   @required_fields ~w(name)a

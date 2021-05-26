@@ -41,7 +41,6 @@ defmodule ApathyDrive.Commands.Remove do
             item_to_remove =
               item_to_remove
               |> Map.put(:equipped, false)
-              |> Map.put(:limb, nil)
 
             char =
               update_in(char.inventory, &[item_to_remove | &1])

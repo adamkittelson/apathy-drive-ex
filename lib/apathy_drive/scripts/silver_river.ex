@@ -23,7 +23,6 @@ defmodule ApathyDrive.Scripts.SilverRiver do
           |> Ability.find()
           |> Map.put(:energy, 0)
           |> Map.put(:difficulty, nil)
-          |> Map.put(:ignores_round_cooldown?, true)
 
         Ability.execute(room, mobile_ref, ability, [mobile_ref])
       end

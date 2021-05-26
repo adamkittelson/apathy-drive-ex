@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Bash do
   use ApathyDrive.Command
-  alias ApathyDrive.Doors
+  alias ApathyDrive.{Ability, Doors}
 
   def keywords, do: ["bash"]
 
@@ -17,15 +17,20 @@ defmodule ApathyDrive.Commands.Bash do
 
     room
     |> Room.get_exit(direction)
-    |> bash(mobile, room)
+    |> bash(mobile, room, arguments)
   end
 
-  defp bash(nil, %{} = mobile, %Room{} = room) do
-    Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
-    room
+  defp bash(nil, %{} = mobile, %Room{} = room, arguments) do
+    if skill = mobile.skills["bash"] do
+      ability = skill.module.ability(mobile)
+      Ability.execute(room, mobile.ref, ability, Enum.join(arguments, " "))
+    else
+      Mobile.send_scroll(mobile, "<p>There is no exit in that direction!</p>")
+      room
+    end
   end
 
-  defp bash(%{"kind" => kind} = room_exit, %{} = mobile, %Room{} = room)
+  defp bash(%{"kind" => kind} = room_exit, %{} = mobile, %Room{} = room, _args)
        when kind in ["Door", "Gate", "Key"] do
     name = String.downcase(kind)
 
@@ -64,7 +69,7 @@ defmodule ApathyDrive.Commands.Bash do
     end
   end
 
-  defp bash(_room_exit, %{} = mobile, %Room{} = room) do
+  defp bash(_room_exit, %{} = mobile, %Room{} = room, _args) do
     Mobile.send_scroll(mobile, "<p>That exit has no door.</p>")
     room
   end

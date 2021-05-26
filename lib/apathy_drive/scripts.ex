@@ -54,6 +54,12 @@ defmodule ApathyDrive.Scripts do
     end)
   end
 
+  def random_item(%Room{} = room, mobile_ref, level, quality) do
+    Room.update_mobile(room, mobile_ref, fn room, character ->
+      Monster.drop_random_loot_for_character(room, %Monster{level: level}, character, quality)
+    end)
+  end
+
   def give_item(%Room{} = room, mobile_ref, item_id) when is_integer(item_id) do
     item = Repo.get!(Item, item_id)
 

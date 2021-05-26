@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Ability, Character, Mobile}
   require Ecto.Query
 
   def keywords, do: ["abilities", "spells"]
@@ -11,41 +11,41 @@ defmodule ApathyDrive.Commands.Abilities do
   end
 
   def display_abilities(%Character{} = character) do
-    if Enum.any?(character.abilities) do
+    skill_abilities = Ability.skill_abilities(character)
+
+    abilities =
+      character.abilities
+      |> Map.values()
+
+    abilities = abilities ++ skill_abilities
+
+    if Enum.any?(abilities) do
       Mobile.send_scroll(
         character,
         "<p><span class='white'>You know the following abilities:</span></p>"
       )
 
-      name_width =
-        character.abilities
-        |> Map.values()
-        |> Enum.max_by(&String.length(&1.name))
-        |> Map.get(:name)
-        |> String.length()
-        |> max(15)
-
-      ability_name = String.pad_trailing("Ability Name", name_width)
-
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-magenta'>Mana   Command  #{ability_name}</span> <span class='dark-magenta'>Mana   Command  Ability Name</span></p>"
+        "<p><span class='dark-magenta'>Auto   Mana   Command  Ability Name</span></p>"
       )
 
-      character.abilities
-      |> Map.values()
-      |> Enum.sort_by(& &1.name)
-      |> Enum.map(&format_ability(&1, name_width))
-      |> Enum.chunk_every(2)
-      |> Enum.each(fn
-        [ability1, ability2] ->
-          Mobile.send_scroll(
-            character,
-            "<p>#{ability1}#{ability2}</p>"
-          )
+      abilities
+      |> Enum.sort_by(& &1.level)
+      |> Enum.reject(&(&1.kind == "long-term"))
+      |> Enum.reject(&(&1.kind == "passive"))
+      |> Enum.each(fn %{name: name, command: command, mana: mana, auto: auto} ->
+        mana_cost = String.pad_trailing(to_string(mana), 6)
 
-        [ability] ->
-          Mobile.send_scroll(character, "<p>#{ability}</p>")
+        command =
+          command
+          |> to_string
+          |> String.pad_trailing(8)
+
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-cyan'> #{emoji(auto)}     #{mana_cost} #{command} #{name}</span></p>"
+        )
       end)
     else
       Mobile.send_scroll(
@@ -53,26 +53,6 @@ defmodule ApathyDrive.Commands.Abilities do
         "<p><span class='white'>You don't know any abilities.</span></p>"
       )
     end
-  end
-
-  def format_ability(%{name: name, mana: mana, command: command, auto: auto}, name_width) do
-    command =
-      command
-      |> to_string
-      |> String.pad_trailing(8)
-
-    mana_cost = String.pad_trailing(to_string(mana), 6)
-
-    name = String.pad_trailing(name, name_width + 1)
-
-    name =
-      if auto do
-        "<span class='dark-magenta'>#{name}</span>"
-      else
-        name
-      end
-
-    "<span class='dark-cyan'>#{mana_cost} #{command} #{name}</span>"
   end
 
   def emoji(true), do: "✅"

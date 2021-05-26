@@ -1,6 +1,15 @@
 defmodule ApathyDrive.ItemInstance do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, Class, Item, Room, Shop}
+
+  alias ApathyDrive.{
+    Character,
+    Class,
+    Item,
+    ItemInstanceAffixSkill,
+    ItemInstanceAffixTrait,
+    Room,
+    Shop
+  }
 
   schema "items_instances" do
     field(:level, :integer)
@@ -11,6 +20,8 @@ defmodule ApathyDrive.ItemInstance do
     field(:delete_at, :utc_datetime_usec)
     field(:uses, :integer)
     field(:getable, :boolean)
+    field(:quality, :string)
+    field(:ac, :integer)
 
     # overrides name and description of an item
     # used for severed limbs
@@ -24,6 +35,8 @@ defmodule ApathyDrive.ItemInstance do
     belongs_to(:character, Character)
     belongs_to(:class, Class)
     belongs_to(:shop, Shop)
+    has_many(:affix_traits, ItemInstanceAffixTrait)
+    has_many(:affix_skills, ItemInstanceAffixSkill)
   end
 
   def load_items(%Room{id: id}) do

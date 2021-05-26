@@ -259,7 +259,6 @@ defmodule ApathyDrive.AI do
       |> Enum.filter(&(Map.has_key?(&1.traits, "Bubble") or Map.has_key?(&1.traits, "Bubble%")))
       |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
       |> reject_item_if_monster(mobile)
-      |> reject_elemental_if_no_lore(mobile)
       |> reject_light_spells_if_it_isnt_dark(room)
       |> reject_target_has_ability_passively(member_to_bless)
       |> random_ability(mobile)
@@ -334,7 +333,6 @@ defmodule ApathyDrive.AI do
           |> Enum.reject(&(!&1.auto))
           |> reject_self_only_if_not_targetting_self(mobile, member_to_bless)
           |> reject_item_if_monster(mobile)
-          |> reject_elemental_if_no_lore(mobile)
           |> reject_light_spells_if_it_isnt_dark(room)
           |> reject_target_has_ability_passively(member_to_bless)
           |> random_ability(mobile)
@@ -384,7 +382,6 @@ defmodule ApathyDrive.AI do
         |> Enum.reject(&(!&1.auto))
         |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
         |> reject_item_if_monster(mobile)
-        |> reject_elemental_if_no_lore(mobile)
         |> random_ability(mobile)
 
       case ability do
@@ -422,7 +419,6 @@ defmodule ApathyDrive.AI do
         |> Enum.reject(&(!&1.auto))
         |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
         |> reject_item_if_monster(mobile)
-        |> reject_elemental_if_no_lore(mobile)
         |> random_ability(mobile)
 
       case ability do
@@ -460,7 +456,6 @@ defmodule ApathyDrive.AI do
         |> Enum.reject(&(!&1.auto))
         |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
         |> reject_item_if_monster(mobile)
-        |> reject_elemental_if_no_lore(mobile)
         |> random_ability(mobile)
 
       case ability do
@@ -515,7 +510,6 @@ defmodule ApathyDrive.AI do
         |> Enum.reject(fn ability ->
           Ability.removes_blessing?(target, ability)
         end)
-        |> reject_elemental_if_no_lore(mobile)
 
       attack_abilities =
         if mobile.__struct__ == Monster do
@@ -554,7 +548,7 @@ defmodule ApathyDrive.AI do
       attack = Mobile.attack_ability(mobile)
 
       if attack do
-        if mobile.energy >= attack.energy && !mobile.casting && auto_attack?(mobile) do
+        if mobile.energy >= mobile.max_energy && !mobile.casting && auto_attack?(mobile) do
           room
           |> Room.update_mobile(mobile.ref, fn _room, mobile ->
             Map.put(mobile, :last_auto_attack_at, DateTime.utc_now())
@@ -637,7 +631,13 @@ defmodule ApathyDrive.AI do
     not_attacking? = is_nil(Mobile.auto_attack_target(mobile, room))
     roll? = :rand.uniform(10000) > 9990
 
-    not_attacking? and roll?
+    monster_count =
+      room.mobiles
+      |> Map.values()
+      |> Enum.filter(&(&1.__struct__ == Monster))
+      |> length()
+
+    not_attacking? and (roll? or monster_count > 5)
   end
 
   defp should_move?(%{} = _mobile, _room), do: false
@@ -665,14 +665,6 @@ defmodule ApathyDrive.AI do
   end
 
   defp reject_item_if_monster(abilities, %{}), do: abilities
-
-  defp reject_elemental_if_no_lore(abilities, mobile) do
-    if !Map.get(mobile, :lore) do
-      Enum.reject(abilities, & &1.traits["Elemental"])
-    else
-      abilities
-    end
-  end
 
   defp reject_target_has_ability_passively(abilities, member_to_bless) do
     abilities

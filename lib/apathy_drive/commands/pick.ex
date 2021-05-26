@@ -21,7 +21,7 @@ defmodule ApathyDrive.Commands.Pick do
   end
 
   def skill(%{} = mobile) do
-    skill_level = lockpicking_skill(mobile)
+    skill_level = mobile.level
     agility = Mobile.attribute_at_level(mobile, :agility, mobile.level)
     intellect = Mobile.attribute_at_level(mobile, :intellect, mobile.level)
 
@@ -90,16 +90,6 @@ defmodule ApathyDrive.Commands.Pick do
   defp pick(_room_exit, %{} = mobile, %Room{} = room) do
     Mobile.send_scroll(mobile, "<p>That exit has no door.</p>")
     room
-  end
-
-  defp lockpicking_skill(mobile) do
-    case mobile.skills["lockpicking"] do
-      %{level: level} ->
-        level
-
-      _ ->
-        0
-    end
   end
 
   defp pick?(%{"kind" => "Key"}, _mobile), do: false

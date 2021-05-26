@@ -426,18 +426,15 @@ defmodule ApathyDrive.Commands.Move do
                 traits: %{
                   "Damage" => [
                     %{
-                      kind: "raw",
                       min: trunc(room_exit["max_damage"] * 0.75),
                       max: room_exit["max_damage"],
-                      damage_type: "Unaspected",
-                      damage_type_id: 3
+                      damage_type: "Magical"
                     }
                   ]
                 },
                 targets: "self",
                 energy: 0,
                 kind: "attack",
-                ignores_round_cooldown?: true,
                 difficulty: nil
               }
 
@@ -514,28 +511,7 @@ defmodule ApathyDrive.Commands.Move do
   end
 
   def energy_cost(%Character{} = character) do
-    current_encumbrance = Character.encumbrance(character)
-    max_encumbrance = Character.max_encumbrance(character)
-
-    encumbrance_percent = current_encumbrance / max_encumbrance
-
-    energy =
-      cond do
-        encumbrance_percent < 0.17 ->
-          # none
-          50
-
-        encumbrance_percent < 0.34 ->
-          # light
-          100
-
-        encumbrance_percent < 0.67 ->
-          # medium
-          200
-
-        :else ->
-          300
-      end
+    energy = 100
 
     if character.sneaking do
       modifier = max(1.0, 2 - Mobile.stealth_at_level(character, character.level) / 100)

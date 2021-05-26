@@ -6,16 +6,12 @@ defmodule ApathyDrive.Enchantment do
     AbilityDamageType,
     AbilityTrait,
     Character,
-    CraftingRecipe,
-    DamageType,
     Enchantment,
     Item,
     ItemInstance,
     Match,
     Mobile,
     Room,
-    Skill,
-    SkillAttribute,
     TimerManager
   }
 
@@ -26,7 +22,6 @@ defmodule ApathyDrive.Enchantment do
 
     belongs_to(:items_instances, ItemInstance)
     belongs_to(:ability, Ability)
-    belongs_to(:skill, Skill)
   end
 
   # crafting an item
@@ -241,24 +236,6 @@ defmodule ApathyDrive.Enchantment do
     Room.load_items(room)
   end
 
-  def add_enchantment_exp(enchanter, %{ability_id: nil} = enchantment) do
-    recipe = CraftingRecipe.for_item(enchantment.items_instances.item)
-
-    skill =
-      Skill
-      |> Repo.get(recipe.skill_id)
-      |> Map.put(:attributes, SkillAttribute.attributes(recipe.skill_id))
-
-    exp = enchantment_exp(enchanter, skill.name)
-
-    Enum.reduce(skill.attributes, enchanter, fn attribute, enchanter ->
-      Character.add_attribute_experience(enchanter, %{
-        attribute => 1 / length(skill.attributes)
-      })
-    end)
-    |> ApathyDrive.Character.add_experience_to_buffer(exp)
-  end
-
   def add_enchantment_exp(enchanter, enchantment) do
     exp = enchantment_exp(enchanter)
 
@@ -272,7 +249,7 @@ defmodule ApathyDrive.Enchantment do
         attribute => 1 / length(enchantment.ability.attributes)
       })
     end)
-    |> ApathyDrive.Character.add_experience_to_buffer(exp)
+    |> ApathyDrive.Character.add_experience(exp)
   end
 
   def present?(%Room{} = room, %Character{} = enchanter, instance_id) do
@@ -298,9 +275,9 @@ defmodule ApathyDrive.Enchantment do
       if skill do
         level = character.skills[skill].level
 
-        Character.drain_rate(level)
+        Character.attribute_exp(level)
       else
-        Character.drain_rate(character.level)
+        Character.attribute_exp(character.level)
       end
 
     rate * 80
@@ -427,28 +404,7 @@ defmodule ApathyDrive.Enchantment do
                       traits
 
                     damage ->
-                      if traits["Elemental"] do
-                        elemental_damage = Enum.find(damage, &(&1.damage_type == "Unaspected"))
-                        damage = List.delete(damage, elemental_damage)
-
-                        lore = ApathyDrive.ElementalLores.lores()[enchantment.value]
-
-                        elemental_damage =
-                          Enum.map(lore.damage_types, fn damage ->
-                            damage_type_id = Repo.get_by(DamageType, name: damage.damage_type).id
-
-                            damage
-                            |> Map.put(:min, elemental_damage.min)
-                            |> Map.put(:max, elemental_damage.min)
-                            |> Map.put(:damage_type_id, damage_type_id)
-                          end)
-
-                        traits
-                        |> Map.put("WeaponDamage", elemental_damage ++ damage)
-                        |> Map.delete("Elemental")
-                      else
-                        Map.put(traits, "WeaponDamage", damage)
-                      end
+                      Map.put(traits, "WeaponDamage", damage)
                   end
 
                 traits =
@@ -489,11 +445,7 @@ defmodule ApathyDrive.Enchantment do
                   if ability.kind == "long-term" do
                     ability.name
                   else
-                    if traits["Elemental"] do
-                      "#{ability.name} (locked)"
-                    else
-                      String.replace(ability.name, "elemental", enchantment.value) <> " (locked)"
-                    end
+                    String.replace(ability.name, "elemental", enchantment.value) <> " (locked)"
                   end
 
                 weight =

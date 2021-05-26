@@ -5,7 +5,6 @@ defmodule ApathyDrive.Commands.Use do
     Ability,
     Character,
     Doors,
-    ElementalLores,
     Item,
     ItemInstance,
     Match,
@@ -38,33 +37,6 @@ defmodule ApathyDrive.Commands.Use do
     "d",
     "down"
   ]
-
-  def execute(%Room{} = room, %Character{} = character, [requested_lore, "lore"]) do
-    if (lore = ElementalLores.lore(requested_lore)) &&
-         Mobile.ability_value(character, "Elemental") do
-      if lore.level <= Mobile.ability_value(character, "Elemental") do
-        Mobile.send_scroll(character, "<p>You are now using the lore of #{lore.name}.</p>")
-
-        character =
-          character
-          |> Ecto.Changeset.change(%{lore_name: requested_lore})
-          |> Repo.update!()
-          |> Map.put(:lore, lore)
-
-        put_in(room.mobiles[character.ref], character)
-      else
-        Mobile.send_scroll(
-          character,
-          "<p>You must be at least level #{lore.level} to use #{lore.name} lore!</p>"
-        )
-
-        room
-      end
-    else
-      Mobile.send_scroll(character, "<p>You don't know of a #{requested_lore} lore!</p>")
-      room
-    end
-  end
 
   def execute(%Room{} = room, %Character{} = character, [item_name]) do
     character.inventory

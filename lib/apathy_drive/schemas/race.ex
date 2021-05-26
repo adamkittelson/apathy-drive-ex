@@ -16,7 +16,6 @@ defmodule ApathyDrive.Race do
 
     has_many(:races_traits, ApathyDrive.RaceTrait)
     has_many(:traits, through: [:races_traits, :trait])
-    belongs_to(:limb_set, ApathyDrive.LimbSet)
 
     timestamps()
   end

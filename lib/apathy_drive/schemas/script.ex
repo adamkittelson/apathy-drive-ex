@@ -514,7 +514,7 @@ defmodule ApathyDrive.Script do
       ) do
     character =
       character
-      |> Character.add_experience_to_buffer(exp)
+      |> Character.add_experience(exp)
 
     room = put_in(room.mobiles[character.ref], character)
     execute_script(room, character, script)
@@ -533,7 +533,6 @@ defmodule ApathyDrive.Script do
       %Ability{} = ability ->
         ability =
           ability
-          |> Map.put(:ignores_round_cooldown?, true)
           |> Map.put(:energy, 0)
 
         room = Ability.execute(room, monster.ref, ability, [monster.ref])

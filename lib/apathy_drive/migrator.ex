@@ -1,6 +1,14 @@
 defmodule ApathyDrive.Migrator do
   alias ApathyDrive.{Repo, Monster}
 
+  def child_spec(_arg) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, []},
+      restart: :temporary
+    }
+  end
+
   def start_link do
     Ecto.Migrator.run(Repo, "#{:code.priv_dir(:apathy_drive)}/repo/migrations", :up, all: true)
 

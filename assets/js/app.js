@@ -38,7 +38,7 @@ clearScroll = function () {
 };
 
 adjustScrollTop = function () {
-  if ($('#scroll').scrollTop() + $('#scroll').height() > $('#scroll')[0].scrollHeight - 400) {
+  if ($('#scroll').scrollTop() + $('#scroll').height() > $('#scroll')[0].scrollHeight - 1000) {
     return $("#scroll").scrollTop($('#scroll')[0].scrollHeight);
   }
 };
@@ -153,9 +153,21 @@ chan.on("update mana bar", function (data) {
 chan.on("update hp bar", function (data) {
   if (data.player) {
     progress($("#player-bars .hp"), data.percentage, data.shield)
+    if (data.poisoned) {
+      $("#player-bars .hp").addClass('poisoned')
+    }
+    else {
+      $("#player-bars .hp").removeClass('poisoned')
+    }
   }
 
   progress($("#" + data.ref + "-bars .hp"), data.percentage, data.shield)
+  if (data.poisoned) {
+    $("#" + data.ref + "-bars .hp").addClass('poisoned')
+  }
+  else {
+    $("#" + data.ref + "-bars .hp").removeClass('poisoned')
+  }
 })
 
 chan.on("update mob list", function (data) {
@@ -170,12 +182,13 @@ chan.on("show talents", function (score_data) {
 chan.on("update score", function (score_data) {
   update_score_attribute("name", _.padEnd(score_data.name, 13));
   update_score_attribute("level", _.padEnd(score_data.level, 11));
-  update_score_attribute("accuracy", score_data.accuracy);
+  update_score_attribute("attack", score_data.attack);
+  update_score_attribute("skill", score_data.skill, 4);
   update_score_attribute("race", _.padEnd(score_data.race, 13));
   update_score_attribute("combat", _.padEnd(score_data.combat, 10));
-  update_score_attribute("dodge", score_data.dodge);
+  update_score_attribute("defense", score_data.defense);
   update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 8));
-  update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '%/' + score_data.magical_resistance + '%', 11));
+  update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance + '%', 11));
   update_score_attribute("hp", _.padEnd(score_data.hp + "/" + score_data.max_hp, 13));
   update_score_attribute("mana", _.padEnd(score_data.mana + "/" + score_data.max_mana, 11));
   update_score_attribute("hp-regen", _.padEnd(score_data.hp_regen, 12));

@@ -2,24 +2,11 @@ defmodule ApathyDrive.Commands.Protection do
   use ApathyDrive.Command
 
   @damage_types %{
-    "Aether" => "magical",
     "Cold" => "magical",
-    "Crushing" => "physical",
-    "Cutting" => "physical",
-    "Disruption" => "magical",
     "Electricity" => "magical",
     "Fire" => "magical",
-    "Holy" => "magical",
-    "Impact" => "physical",
-    "Impaling" => "physical",
-    "Infernal" => "magical",
-    "Plasma" => "magical",
-    "Poison" => "magical",
-    "Sonic" => "magical",
-    "Stress" => "magical",
-    "Strike" => "physical",
-    "Unholy" => "magical",
-    "Vacuum" => "magical"
+    "Physical" => "physical",
+    "Poison" => "magical"
   }
 
   @protection_levels %{
@@ -49,8 +36,8 @@ defmodule ApathyDrive.Commands.Protection do
     room
   end
 
-  def percent_for_ac_mr(amount) do
-    1 - amount / (25 * 50 + amount)
+  def percent_for_ac_mr(amount, level) do
+    1 - amount / (level * 50 + amount)
   end
 
   def protection_amount(character, damage_type) do
@@ -61,7 +48,7 @@ defmodule ApathyDrive.Commands.Protection do
         Mobile.magical_resistance_at_level(character, character.level)
       end
 
-    resist_percent = percent_for_ac_mr(resist)
+    resist_percent = percent_for_ac_mr(resist, character.level)
 
     modifier = Mobile.ability_value(character, "Resist#{damage_type}")
 

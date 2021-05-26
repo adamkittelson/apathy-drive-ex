@@ -16,7 +16,7 @@ defmodule ApathyDrive.Scripts.Cleave do
         |> Mobile.attack_ability()
         |> update_in([Access.key!(:energy)], &min(&1 * 2, character.max_energy))
 
-      if character.energy < attack.energy do
+      if character.energy < character.max_energy do
         if character.casting do
           Mobile.send_scroll(
             character,
@@ -41,7 +41,6 @@ defmodule ApathyDrive.Scripts.Cleave do
         attack =
           attack
           |> Map.put(:energy, 0)
-          |> Map.put(:ignores_round_cooldown?, true)
 
         room = put_in(room.mobiles[character.ref], character)
 
