@@ -304,6 +304,23 @@ defmodule ApathyDrive.Item do
     |> Enum.uniq()
   end
 
+  def child_item_types(type_id) do
+    ItemTypeParent
+    |> Ecto.Query.where(parent_id: ^type_id)
+    |> Repo.all()
+    |> case do
+      [] ->
+        [type_id]
+
+      children ->
+        Enum.reduce(children, [type_id], fn child, item_type_ids ->
+          item_type_ids ++ child_item_types(child.item_type_id)
+        end)
+    end
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
   def delete_at(quality) when quality in ["unique", "set", "rare", "crafted"],
     do: Timex.shift(DateTime.utc_now(), minutes: 30)
 
@@ -327,6 +344,25 @@ defmodule ApathyDrive.Item do
 
     # Systems.Effect.add(item, Map.merge(item_traits, instance_traits))
     Systems.Effect.add(item, instance_traits)
+  end
+
+  def for_shop(level, item_types) do
+    IO.puts("items for level: #{level}, types: #{inspect(item_types)}")
+
+    __MODULE__
+    |> Ecto.Query.where(
+      [i],
+      i.quality_level <= ^level and i.quality_level >= ^level - 3 and
+        i.type_id in ^item_types
+    )
+    |> ApathyDrive.Repo.all()
+    |> case do
+      [] ->
+        for_shop(level - 3, item_types)
+
+      list ->
+        list
+    end
   end
 
   def of_quality_level(level) do

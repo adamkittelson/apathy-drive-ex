@@ -3,10 +3,11 @@ defmodule ApathyDrive.Commands.List do
 
   alias ApathyDrive.{
     Character,
+    CharacterShop,
+    Currency,
     Mobile,
     Item,
     Shop,
-    ShopItem,
     Skill,
     Trainer
   }
@@ -21,41 +22,39 @@ defmodule ApathyDrive.Commands.List do
     room
   end
 
-  def list(%Room{shop: %Shop{shop_items: items, cost_multiplier: multiplier}}, character) do
+  def list(%Room{shop: %Shop{} = shop} = room, character) do
     character
     |> Mobile.send_scroll(
-      "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Quantity</span>    <span class='dark-cyan'>Price</span></p>"
+      "<p><span class='dark-green'>Item</span>                              <span class='dark-cyan'>Price</span></p>"
     )
     |> Mobile.send_scroll(
       "<p><span class='dark-cyan'>------------------------------------------------------</span></p>"
     )
 
+    CharacterShop.restock!(room, character)
+
+    IO.puts("done restocking!")
+
+    items = CharacterShop.items(shop, character)
+
     items
-    |> Enum.each(fn %ShopItem{} = shop_item ->
-      if shop_item.count > 0 do
-        shop_item = put_in(shop_item.item.level, character.level)
-        item = Item.from_assoc(shop_item)
+    |> Enum.each(fn %Item{} = item ->
+      padding = 30
 
-        padding = 30
-
-        if item.cost_value do
-          Mobile.send_scroll(
-            character,
-            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{
-              String.pad_trailing(to_string(shop_item.count), 12)
-            }</span><span class='dark-cyan'>#{trunc(item.cost_value * multiplier)} #{
-              item.cost_currency
-            }s #{Shop.item_disclaimer(item, character)}</span></p>"
-          )
-        else
-          Mobile.send_scroll(
-            character,
-            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{
-              String.pad_trailing(to_string(shop_item.count), 12)
-            }</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
-          )
+      value =
+        shop
+        |> Shop.buy_price(character, item)
+        |> Currency.set_value()
+        |> Currency.to_string()
+        |> case do
+          "" -> "FREE"
+          value -> value
         end
-      end
+
+      Mobile.send_scroll(
+        character,
+        "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{value} #{Shop.item_disclaimer(item, character)}</span></p>"
+      )
     end)
   end
 
