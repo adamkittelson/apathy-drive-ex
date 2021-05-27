@@ -38,7 +38,6 @@ defmodule ApathyDrive.Character do
   }
 
   require Logger
-  import Comeonin.Bcrypt
 
   @behaviour Access
   defdelegate get_and_update(container, key, fun), to: Map
@@ -845,11 +844,11 @@ defmodule ApathyDrive.Character do
   end
 
   def sign_in?(%Character{password: stored_hash}, password) do
-    checkpw(password, stored_hash)
+    Bcrypt.verify_pass(password, stored_hash)
   end
 
   def sign_in?(nil, _password) do
-    dummy_checkpw()
+    Bcrypt.no_user_verify()
   end
 
   def used_experience(%Character{} = character) do
@@ -1527,9 +1526,7 @@ defmodule ApathyDrive.Character do
 
       Room.send_scroll(
         room,
-        "<p><span class='cyan'>#{
-          Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => character})
-        }</span></p>",
+        "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => character})}</span></p>",
         [character]
       )
 
@@ -1662,13 +1659,7 @@ defmodule ApathyDrive.Character do
           end
         end)
 
-      "#{character.name} is a #{descriptions[:health]}, #{descriptions[:strength]} #{
-        character.race.race.name
-      }. {{target:He moves/She moves/They move}} #{descriptions[:agility]}, and {{target:is/is/are}} #{
-        descriptions[:charm]
-      } #{character.name} appears to be #{descriptions[:intellect]} and #{
-        descriptions[:willpower]
-      }."
+      "#{character.name} is a #{descriptions[:health]}, #{descriptions[:strength]} #{character.race.race.name}. {{target:He moves/She moves/They move}} #{descriptions[:agility]}, and {{target:is/is/are}} #{descriptions[:charm]} #{character.name} appears to be #{descriptions[:intellect]} and #{descriptions[:willpower]}."
     end
 
     def detected?(character, sneaker, room) do

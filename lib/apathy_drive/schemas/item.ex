@@ -347,8 +347,6 @@ defmodule ApathyDrive.Item do
   end
 
   def for_shop(level, item_types) do
-    IO.puts("items for level: #{level}, types: #{inspect(item_types)}")
-
     __MODULE__
     |> Ecto.Query.where(
       [i],
@@ -725,46 +723,13 @@ defmodule ApathyDrive.Item do
       Ability.appropriate_alignment?(ability, character)
   end
 
-  def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
-    class_ids =
-      character.classes
-      |> Enum.map(& &1.class_id)
-      |> Enum.into(MapSet.new())
-
-    required_classes = Enum.into(weapon.required_classes, MapSet.new())
-
-    cond do
-      Enum.any?(required_classes) and !Enum.any?(MapSet.intersection(class_ids, required_classes)) ->
-        false
-
-      Enum.any?(weapon.required_races) and !(character.race_id in weapon.required_races) ->
-        false
-
-      :else ->
-        true
-    end
+  def useable_by_character?(%Character{}, %Item{type: "Weapon"}) do
+    true
   end
 
-  def useable_by_character?(%Character{} = character, %Item{type: type} = armour)
+  def useable_by_character?(%Character{}, %Item{type: type})
       when type in ["Armour", "Shield"] do
-    class_ids =
-      character.classes
-      |> Enum.map(& &1.class_id)
-      |> Enum.into(MapSet.new())
-
-    required_classes = Enum.into(armour.required_classes, MapSet.new())
-
-    cond do
-      Enum.any?(armour.required_races) and !(character.race_id in armour.required_races) ->
-        false
-
-      Enum.any?(armour.required_races) and
-          !Enum.any?(MapSet.intersection(class_ids, required_classes)) ->
-        false
-
-      :else ->
-        true
-    end
+    true
   end
 
   def useable_by_character?(_character, %Item{}), do: true
