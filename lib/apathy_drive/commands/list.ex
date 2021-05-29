@@ -8,6 +8,7 @@ defmodule ApathyDrive.Commands.List do
     Mobile,
     Item,
     Shop,
+    ShopItem,
     Skill,
     Trainer
   }
@@ -25,7 +26,7 @@ defmodule ApathyDrive.Commands.List do
   def list(%Room{shop: %Shop{} = shop} = room, character) do
     character
     |> Mobile.send_scroll(
-      "<p><span class='dark-green'>Item</span>                              <span class='dark-cyan'>Price</span></p>"
+      "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Quantity</span>    <span class='dark-cyan'>Price</span></p>"
     )
     |> Mobile.send_scroll(
       "<p><span class='dark-cyan'>------------------------------------------------------</span></p>"
@@ -38,14 +39,21 @@ defmodule ApathyDrive.Commands.List do
     items = CharacterShop.items(shop, character)
 
     items
-    |> Enum.each(fn %Item{} = item ->
+    |> Enum.group_by(& &1.name)
+    |> Enum.sort_by(
+      fn {_name, items} ->
+        Shop.buy_price(shop, character, List.first(items))
+      end,
+      &>=/2
+    )
+    |> Enum.each(fn {_name, [%Item{} = item | _rest] = items} ->
       padding = 30
 
       value =
         shop
         |> Shop.buy_price(character, item)
         |> Currency.set_value()
-        |> Currency.to_string()
+        |> Currency.to_string(:short)
         |> case do
           "" -> "FREE"
           value -> value
@@ -53,8 +61,30 @@ defmodule ApathyDrive.Commands.List do
 
       Mobile.send_scroll(
         character,
-        "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{value} #{Shop.item_disclaimer(item, character)}</span></p>"
+        "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{String.pad_trailing(items |> length() |> to_string(), 12)}</span><span class='dark-cyan'>#{value} #{Shop.item_disclaimer(item, character)}</span></p>"
       )
+    end)
+
+    shop.shop_items
+    |> Enum.each(fn %ShopItem{} = shop_item ->
+      if shop_item.count > 0 do
+        shop_item = put_in(shop_item.item.level, character.level)
+        item = Item.from_assoc(shop_item)
+
+        padding = 30
+
+        if item.cost_value do
+          Mobile.send_scroll(
+            character,
+            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{String.pad_trailing(to_string(shop_item.count), 12)}</span><span class='dark-cyan'>#{trunc(item.cost_value * shop.cost_multiplier)} #{item.cost_currency}s #{Shop.item_disclaimer(item, character)}</span></p>"
+          )
+        else
+          Mobile.send_scroll(
+            character,
+            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{String.pad_trailing(to_string(shop_item.count), 12)}</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
+          )
+        end
+      end
     end)
   end
 

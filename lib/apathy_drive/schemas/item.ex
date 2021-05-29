@@ -81,6 +81,7 @@ defmodule ApathyDrive.Item do
     field(:item_type_ids, :any, virtual: true, default: [])
     field(:item_types, :any, virtual: true, default: [])
     field(:affix_traits, :any, virtual: true, default: [])
+    field(:affix_skills, :any, virtual: true, default: [])
     field(:quality, :any, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
@@ -644,12 +645,23 @@ defmodule ApathyDrive.Item do
         name
       end
 
+    name = if opts[:titleize], do: titleize(name), else: name
+
+    name =
+      if pad = opts[:pad_trailing] do
+        if String.length(name) >= pad do
+          String.slice(name, 0..(pad - 5)) <> "... "
+        else
+          name
+        end
+      else
+        name
+      end
+
     name =
       name
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
-
-    name = if opts[:titleize], do: titleize(name), else: name
 
     if opts[:character] && !opts[:no_tooltip] do
       "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)}</span></span>"

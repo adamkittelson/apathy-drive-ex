@@ -47,9 +47,7 @@ defmodule ApathyDrive.Commands.Look do
   def execute(%Room{} = room, %Character{} = character, ignore_light: true) do
     coords =
       if character.admin do
-        "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{
-          room.coordinates["y"]
-        } z:#{room.coordinates["z"]})</span>"
+        "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{room.coordinates["y"]} z:#{room.coordinates["z"]})</span>"
       else
         ""
       end
@@ -94,9 +92,7 @@ defmodule ApathyDrive.Commands.Look do
 
     coords =
       if character.admin do
-        "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{
-          room.coordinates["y"]
-        } z:#{room.coordinates["z"]})</span>"
+        "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{room.coordinates["y"]} z:#{room.coordinates["z"]})</span>"
       else
         ""
       end
@@ -132,7 +128,7 @@ defmodule ApathyDrive.Commands.Look do
       target = Room.find_mobile_in_room(room, character, Enum.join(arguments, " ")) ->
         look_at_mobile(target, character)
 
-      target = Room.find_item(room, Enum.join(arguments, " ")) ->
+      target = Room.find_item(room, character, Enum.join(arguments, " ")) ->
         target = Map.put(target, :level, target.level || character.level)
         look_at_item(character, target)
 
@@ -190,9 +186,7 @@ defmodule ApathyDrive.Commands.Look do
       |> Enum.each(fn
         %Character{} = observer ->
           message =
-            "#{Mobile.colored_name(character)} peeks in from #{
-              Room.enter_direction(mirror_exit["direction"])
-            }!"
+            "#{Mobile.colored_name(character)} peeks in from #{Room.enter_direction(mirror_exit["direction"])}!"
 
           Mobile.send_scroll(observer, "<p><span class='dark-magenta'>#{message}</span></p>")
 
@@ -245,9 +239,7 @@ defmodule ApathyDrive.Commands.Look do
 
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{
-            Item.colored_name(item, character: target)
-          }</span></p>"
+          "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{Item.colored_name(item, character: target)}</span></p>"
         )
       end)
 
@@ -599,11 +591,7 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     """
-      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{
-      block_chance(item, character)
-    }#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{
-      required_strength(character, item)
-    }#{required_agility(character, item)}#{weapon_speed(item)}
+      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(item)}
       <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
       Sells For: #{value}
@@ -742,9 +730,7 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{on_hit || "100"}% chance of:</span> <span class='dark-cyan'>#{
-        names
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{on_hit || "100"}% chance of:</span> <span class='dark-cyan'>#{names}</span></p>"
     )
   end
 
@@ -756,9 +742,7 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Grants the ability to cast:</span> <span class='dark-cyan'>#{
-        names
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Grants the ability to cast:</span> <span class='dark-cyan'>#{names}</span></p>"
     )
   end
 
@@ -766,9 +750,7 @@ defmodule ApathyDrive.Commands.Look do
     Enum.each(list, fn %{kind: kind, damage_type: type, min: min, max: max} ->
       Mobile.send_scroll(
         character,
-        "<p>#{String.pad_trailing("", indent)}<span class='dark-cyan'>#{min}-#{max} #{kind} #{
-          String.downcase(type)
-        } damage</span></p>"
+        "<p>#{String.pad_trailing("", indent)}<span class='dark-cyan'>#{min}-#{max} #{kind} #{String.downcase(type)} damage</span></p>"
       )
     end)
   end
@@ -778,18 +760,14 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>AC:</span> <span class='dark-cyan'>#{
-        ac_from_percent
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>AC:</span> <span class='dark-cyan'>#{ac_from_percent}</span></p>"
     )
   end
 
   def display_trait(character, item, {"Powerstone", _}, indent) do
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Powerstone:</span> <span class='dark-cyan'>#{
-        trunc(item.uses)
-      }/#{item.max_uses} mana</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Powerstone:</span> <span class='dark-cyan'>#{trunc(item.uses)}/#{item.max_uses} mana</span></p>"
     )
   end
 
@@ -798,9 +776,7 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>MR:</span> <span class='dark-cyan'>#{
-        ac_from_percent
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>MR:</span> <span class='dark-cyan'>#{ac_from_percent}</span></p>"
     )
   end
 
@@ -812,9 +788,7 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Remove Spells:</span> <span class='dark-cyan'>#{
-        inspect(list)
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Remove Spells:</span> <span class='dark-cyan'>#{inspect(list)}</span></p>"
     )
   end
 
@@ -839,9 +813,7 @@ defmodule ApathyDrive.Commands.Look do
     if owner = Repo.get(Character, id) do
       Mobile.send_scroll(
         character,
-        "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Claimed by:</span> <span class='dark-cyan'>#{
-          owner.name
-        }</span></p>"
+        "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Claimed by:</span> <span class='dark-cyan'>#{owner.name}</span></p>"
       )
     end
   end
@@ -852,9 +824,7 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(character, _item, {trait, list}, indent) when is_list(list) do
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
-        inspect(list)
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{inspect(list)}</span></p>"
     )
   end
 
@@ -863,9 +833,7 @@ defmodule ApathyDrive.Commands.Look do
   def display_trait(character, _item, {trait, value}, indent) do
     Mobile.send_scroll(
       character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{
-        inspect(value)
-      }</span></p>"
+      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>#{trait}:</span> <span class='dark-cyan'>#{inspect(value)}</span></p>"
     )
   end
 
@@ -874,9 +842,7 @@ defmodule ApathyDrive.Commands.Look do
   def display_enchantment(character, %Item{enchantments: list}) when length(list) > 0 do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Enchantments:</span> <span class='dark-cyan'>#{
-        ApathyDrive.Commands.Inventory.to_sentence(list)
-      }</span></p>"
+      "<p><span class='dark-green'>Enchantments:</span> <span class='dark-cyan'>#{ApathyDrive.Commands.Inventory.to_sentence(list)}</span></p>"
     )
   end
 
