@@ -313,3 +313,6 @@ CHANGELOG
 
 ---- 0.0.115 / 2021-05-26 / random-equipment -----------------------------------
 * erlang / elixir updates, diablo 2 style equipment
+
+---- 0.0.116 / 2021-05-31 / random-shops ---------------------------------------
+* random items in shops
