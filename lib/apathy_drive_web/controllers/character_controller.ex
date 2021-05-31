@@ -1,7 +1,6 @@
 defmodule ApathyDriveWeb.CharacterController do
   use ApathyDriveWeb, :controller
   alias ApathyDrive.Character
-  import Comeonin.Bcrypt
   import Ecto.Changeset
   import ApathyDrive.Text
 
@@ -14,7 +13,7 @@ defmodule ApathyDriveWeb.CharacterController do
       changeset
       |> get_field(:password)
       |> to_string
-      |> hashpwsalt
+      |> Bcrypt.hash_pwd_salt()
 
     changeset =
       changeset
