@@ -78,9 +78,25 @@ defmodule ApathyDrive.Currency do
     |> Enum.reject(&is_nil/1)
   end
 
-  def to_string(currency_holder) do
+  def to_string(currency_holder, length \\ :long)
+
+  def to_string(currency_holder, :long) do
     currency_holder
     |> to_list
+    |> ApathyDrive.Commands.Inventory.to_sentence()
+    |> case do
+      "" ->
+        "FREE"
+
+      other ->
+        other
+    end
+  end
+
+  def to_string(currency_holder, :short) do
+    currency_holder
+    |> to_list
+    |> Enum.take(2)
     |> ApathyDrive.Commands.Inventory.to_sentence()
     |> case do
       "" ->

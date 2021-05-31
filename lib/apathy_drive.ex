@@ -14,6 +14,7 @@ defmodule ApathyDrive do
       {ApathyDrive.Repo, []},
       {ApathyDrive.Migrator, []},
       {ApathyDrive.Trait, []},
+      {ApathyDrive.AffixItemType, []},
       {ApathyDrive.Directory, []},
       {ApathyDrive.RoomSupervisor, [name: ApathyDrive.RoomSupervisor]},
       {ApathyDrive.Metrics, []},

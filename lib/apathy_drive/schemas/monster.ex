@@ -776,6 +776,10 @@ defmodule ApathyDrive.Monster do
     ApathyDrive.Text.interpolate(description, %{"amount" => val})
   end
 
+  def affix_description(_trait_name, description, true) do
+    description
+  end
+
   def affix_value(
         %{
           "max" => %{"max" => max_max, "min" => min_max},
@@ -1023,9 +1027,7 @@ defmodule ApathyDrive.Monster do
 
       Room.send_scroll(
         room,
-        "<p><span class='cyan'>#{
-          Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => monster})
-        }</span></p>",
+        "<p><span class='cyan'>#{Text.interpolate("{{user}} fumbles in confusion!</span></p>", %{"user" => monster})}</span></p>",
         [monster]
       )
 

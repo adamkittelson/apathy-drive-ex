@@ -5,7 +5,9 @@ defmodule ApathyDrive.Room do
     Ability,
     Area,
     Character,
+    CharacterShop,
     Directory,
+    Item,
     ItemInstance,
     Match,
     Mobile,
@@ -608,11 +610,7 @@ defmodule ApathyDrive.Room do
         %Character{} = observer ->
           Mobile.send_scroll(
             observer,
-            "<p>#{
-              ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{
-                "name" => Mobile.colored_name(mobile)
-              })
-            }</span></p>"
+            "<p>#{ApathyDrive.Text.interpolate(remote_action_exit["room_message"], %{"name" => Mobile.colored_name(mobile)})}</span></p>"
           )
 
         _ ->
@@ -763,7 +761,7 @@ defmodule ApathyDrive.Room do
     ApathyDrive.Config.get(:start_room)
   end
 
-  def find_item(%Room{items: items} = room, item) do
+  def find_item(%Room{items: items} = room, character, item) do
     actual_item =
       items
       |> Enum.map(&%{name: &1.name, keywords: String.split(&1.name), item: &1})
@@ -771,7 +769,8 @@ defmodule ApathyDrive.Room do
 
     shop_item =
       if room.shop do
-        Match.one(room.shop.shop_items, :keyword_starts_with, item)
+        items = CharacterShop.items(room.shop, character) ++ room.shop.shop_items
+        Match.one(items, :keyword_starts_with, item)
       end
 
     cond do
@@ -779,7 +778,13 @@ defmodule ApathyDrive.Room do
         actual_item.item
 
       shop_item ->
-        shop_item.item
+        case shop_item do
+          %Item{} = item ->
+            item
+
+          shop_item ->
+            shop_item.item
+        end
 
       true ->
         nil
@@ -974,9 +979,7 @@ defmodule ApathyDrive.Room do
       %{
         "unlocked" => direction,
         "RemoveMessage" =>
-          "<span class='grey'>The #{name} #{
-            ApathyDrive.Exit.direction_description(room_exit["direction"])
-          } just locked!</span>"
+          "<span class='grey'>The #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])} just locked!</span>"
       },
       :timer.seconds(unlock_duration)
     )

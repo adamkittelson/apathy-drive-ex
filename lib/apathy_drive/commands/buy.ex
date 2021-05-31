@@ -1,6 +1,18 @@
 defmodule ApathyDrive.Commands.Buy do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Currency, Match, Mobile, Item, Repo, Shop, ShopItem}
+
+  alias ApathyDrive.{
+    Character,
+    CharacterShop,
+    Currency,
+    Match,
+    Mobile,
+    Item,
+    ItemInstance,
+    Repo,
+    Shop,
+    ShopItem
+  }
 
   def keywords, do: ["buy"]
 
@@ -29,7 +41,9 @@ defmodule ApathyDrive.Commands.Buy do
   end
 
   def buy(%Room{} = room, character, item_name) do
-    case Match.all(room.shop.shop_items, :name_contains, item_name) do
+    items = CharacterShop.items(room.shop, character) ++ room.shop.shop_items
+
+    case Match.all(items, :name_contains, item_name) do
       nil ->
         Mobile.send_scroll(
           character,
@@ -61,9 +75,7 @@ defmodule ApathyDrive.Commands.Buy do
           Currency.wealth(character) < price_in_copper ->
             Mobile.send_scroll(
               character,
-              "<p>You cannot afford to buy #{
-                Item.colored_name(shop_item.item, character: character)
-              }.<p>"
+              "<p>You cannot afford to buy #{Item.colored_name(shop_item.item, character: character)}.<p>"
             )
 
             room
@@ -101,9 +113,7 @@ defmodule ApathyDrive.Commands.Buy do
                   {ref, %Character{} = mobile} when ref != char_ref ->
                     Mobile.send_scroll(
                       mobile,
-                      "<p>#{Mobile.colored_name(char)} purchases #{
-                        Item.colored_name(item, character: mobile)
-                      } for nothing.</p>"
+                      "<p>#{Mobile.colored_name(char)} purchases #{Item.colored_name(item, character: mobile)} for nothing.</p>"
                     )
 
                   _ ->
@@ -112,9 +122,7 @@ defmodule ApathyDrive.Commands.Buy do
               else
                 Mobile.send_scroll(
                   char,
-                  "<p>You purchase #{Item.colored_name(item, character: char)} for #{
-                    Currency.to_string(currency)
-                  }.</p>"
+                  "<p>You purchase #{Item.colored_name(item, character: char)} for #{Currency.to_string(currency)}.</p>"
                 )
 
                 char_ref = char.ref
@@ -123,9 +131,7 @@ defmodule ApathyDrive.Commands.Buy do
                   {ref, %Character{} = mobile} when ref != char_ref ->
                     Mobile.send_scroll(
                       mobile,
-                      "<p>#{Mobile.colored_name(char)} purchases #{
-                        Item.colored_name(item, character: mobile)
-                      } for #{Currency.to_string(currency)}.</p>"
+                      "<p>#{Mobile.colored_name(char)} purchases #{Item.colored_name(item, character: mobile)} for #{Currency.to_string(currency)}.</p>"
                     )
 
                   _ ->
@@ -148,17 +154,114 @@ defmodule ApathyDrive.Commands.Buy do
             |> Shop.load()
         end
 
+      %Item{} = item ->
+        price_in_copper = Shop.buy_price(room.shop, character, item)
+
+        cond do
+          item.weight > Character.max_encumbrance(character) - Character.encumbrance(character) ->
+            Mobile.send_scroll(
+              character,
+              "<p>You cannot carry that much!<p>"
+            )
+
+            room
+
+          Currency.wealth(character) < price_in_copper ->
+            Mobile.send_scroll(
+              character,
+              "<p>You cannot afford to buy #{Item.colored_name(item, character: character)}.<p>"
+            )
+
+            room
+
+          :else ->
+            item_instance = Repo.get(ItemInstance, item.instance_id)
+
+            Room.update_mobile(room, character.ref, fn _room, char ->
+              item_instance
+              |> Ecto.Changeset.change(%{
+                shop_id: nil,
+                character_shop_id: nil,
+                character_id: char.id,
+                equipped: false,
+                hidden: false,
+                level: char.level
+              })
+              |> Repo.update!()
+
+              currency = Currency.set_value(price_in_copper)
+              char_currency = Currency.subtract(char, price_in_copper)
+
+              if price_in_copper == 0 do
+                Mobile.send_scroll(
+                  char,
+                  "<p>You purchase #{Item.colored_name(item, character: char)} for nothing.</p>"
+                )
+
+                char_ref = char.ref
+
+                Enum.each(room.mobiles, fn
+                  {ref, %Character{} = mobile} when ref != char_ref ->
+                    Mobile.send_scroll(
+                      mobile,
+                      "<p>#{Mobile.colored_name(char)} purchases #{Item.colored_name(item, character: mobile)} for nothing.</p>"
+                    )
+
+                  _ ->
+                    :noop
+                end)
+              else
+                Mobile.send_scroll(
+                  char,
+                  "<p>You purchase #{Item.colored_name(item, character: char)} for #{Currency.to_string(currency)}.</p>"
+                )
+
+                char_ref = char.ref
+
+                Enum.each(room.mobiles, fn
+                  {ref, %Character{} = mobile} when ref != char_ref ->
+                    Mobile.send_scroll(
+                      mobile,
+                      "<p>#{Mobile.colored_name(char)} purchases #{Item.colored_name(item, character: mobile)} for #{Currency.to_string(currency)}.</p>"
+                    )
+
+                  _ ->
+                    :noop
+                end)
+              end
+
+              char
+              |> Ecto.Changeset.change(%{
+                runic: char_currency.runic,
+                platinum: char_currency.platinum,
+                gold: char_currency.gold,
+                silver: char_currency.silver,
+                copper: char_currency.copper
+              })
+              |> Repo.update!()
+              |> Character.load_items()
+              |> Repo.save!()
+            end)
+        end
+
       matches ->
         Mobile.send_scroll(
           character,
           "<p><span class='red'>Please be more specific. You could have meant any of these:</span></p>"
         )
 
-        Enum.each(matches, fn match ->
-          Mobile.send_scroll(
-            character,
-            "<p>-- #{Item.colored_name(match.item, character: character)}</p>"
-          )
+        Enum.each(matches, fn
+          %ShopItem{} = match ->
+            Mobile.send_scroll(
+              character,
+              "<p>-- #{Item.colored_name(match.item, character: character)}</p>"
+            )
+
+          %Item{} = match ->
+            Mobile.send_scroll(
+              character,
+              "<p>-- #{Item.colored_name(match, character: character)}</p>"
+            )
         end)
 
         room

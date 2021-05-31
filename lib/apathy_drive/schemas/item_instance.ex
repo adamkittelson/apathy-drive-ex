@@ -3,6 +3,7 @@ defmodule ApathyDrive.ItemInstance do
 
   alias ApathyDrive.{
     Character,
+    CharacterShop,
     Class,
     Item,
     ItemInstanceAffixSkill,
@@ -35,6 +36,7 @@ defmodule ApathyDrive.ItemInstance do
     belongs_to(:character, Character)
     belongs_to(:class, Class)
     belongs_to(:shop, Shop)
+    belongs_to(:character_shop, CharacterShop)
     has_many(:affix_traits, ItemInstanceAffixTrait)
     has_many(:affix_skills, ItemInstanceAffixSkill)
   end

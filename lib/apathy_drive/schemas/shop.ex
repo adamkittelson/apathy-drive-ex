@@ -2,13 +2,14 @@ defmodule ApathyDrive.Shop do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Item, ItemInstance, Mobile, Room, Shop, ShopItem}
+  alias ApathyDrive.{Character, Item, ItemInstance, Mobile, Room, Shop, ShopItem, ShopItemType}
 
   schema "shops" do
     field(:cost_multiplier, :float)
 
     belongs_to(:room, Room)
     has_many(:shop_items, ShopItem)
+    has_many(:shop_item_types, ShopItemType)
     has_many(:item_instances, ItemInstance)
   end
 

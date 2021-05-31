@@ -24,8 +24,6 @@ defmodule ApathyDrive.Affix do
   def prefix_for_level(affix_level, item_instance) do
     affix_groups_on_item = ItemInstanceAffixTrait.affix_groups_on_item(item_instance, "prefix")
 
-    IO.inspect(item_instance.item.name)
-
     group =
       prefix_group_for_level(affix_level, affix_groups_on_item, item_instance.item.item_types)
 
@@ -38,8 +36,6 @@ defmodule ApathyDrive.Affix do
 
   def suffix_for_level(affix_level, item_instance) do
     affix_groups_on_item = ItemInstanceAffixTrait.affix_groups_on_item(item_instance, "suffix")
-
-    IO.inspect(item_instance.item.name)
 
     group =
       suffix_group_for_level(affix_level, affix_groups_on_item, item_instance.item.item_types)
@@ -87,7 +83,7 @@ defmodule ApathyDrive.Affix do
           a.frequency >= 1 and not is_nil(a.frequency)
       )
       |> Repo.all()
-      |> Enum.reject(&affix_not_allowed?(&1, item_types))
+      |> Enum.reject(&AffixItemType.not_allowed?(&1, item_types))
 
     total =
       affixes
@@ -116,7 +112,7 @@ defmodule ApathyDrive.Affix do
         a.frequency >= 1 and not is_nil(a.frequency)
     )
     |> Repo.all()
-    |> Enum.reject(&affix_not_allowed?(&1, item_types))
+    |> Enum.reject(&AffixItemType.not_allowed?(&1, item_types))
     |> Enum.map(& &1.group)
     |> case do
       [] ->
@@ -125,43 +121,6 @@ defmodule ApathyDrive.Affix do
       affixes ->
         affixes
         |> Enum.random()
-    end
-  end
-
-  def affix_not_allowed?(%__MODULE__{id: id} = _affix, item_types) do
-    allowed =
-      Enum.map(item_types, fn item_type ->
-        AffixItemType
-        |> Ecto.Query.where(affix_id: ^id, item_type_id: ^item_type.id, allowed: true)
-        |> Ecto.Query.preload([:affix, :item_type])
-        |> Repo.all()
-      end)
-      |> List.flatten()
-
-    Enum.each(
-      allowed,
-      &IO.puts("#{&1.affix.name}(#{&1.affix_id}) allowed for #{&1.item_type.name}")
-    )
-
-    if Enum.any?(allowed) do
-      disallowed =
-        Enum.map(item_types, fn item_type ->
-          AffixItemType
-          |> Ecto.Query.where(affix_id: ^id, item_type_id: ^item_type.id, allowed: false)
-          |> Ecto.Query.preload([:affix, :item_type])
-          |> Repo.all()
-        end)
-        |> List.flatten()
-
-      Enum.each(
-        disallowed,
-        &IO.puts("#{&1.affix.name}(#{&1.affix_id}) not allowed for #{&1.item_type.name}")
-      )
-
-      disallowed
-      |> Enum.any?()
-    else
-      true
     end
   end
 end

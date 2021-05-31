@@ -81,6 +81,7 @@ defmodule ApathyDrive.Item do
     field(:item_type_ids, :any, virtual: true, default: [])
     field(:item_types, :any, virtual: true, default: [])
     field(:affix_traits, :any, virtual: true, default: [])
+    field(:affix_skills, :any, virtual: true, default: [])
     field(:quality, :any, virtual: true)
     field(:equipped, :boolean, virtual: true, default: false)
     field(:beacon_room_id, :any, virtual: true)
@@ -304,6 +305,23 @@ defmodule ApathyDrive.Item do
     |> Enum.uniq()
   end
 
+  def child_item_types(type_id) do
+    ItemTypeParent
+    |> Ecto.Query.where(parent_id: ^type_id)
+    |> Repo.all()
+    |> case do
+      [] ->
+        [type_id]
+
+      children ->
+        Enum.reduce(children, [type_id], fn child, item_type_ids ->
+          item_type_ids ++ child_item_types(child.item_type_id)
+        end)
+    end
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
   def delete_at(quality) when quality in ["unique", "set", "rare", "crafted"],
     do: Timex.shift(DateTime.utc_now(), minutes: 30)
 
@@ -327,6 +345,23 @@ defmodule ApathyDrive.Item do
 
     # Systems.Effect.add(item, Map.merge(item_traits, instance_traits))
     Systems.Effect.add(item, instance_traits)
+  end
+
+  def for_shop(level, item_types) do
+    __MODULE__
+    |> Ecto.Query.where(
+      [i],
+      i.quality_level <= ^level and i.quality_level >= ^level - 3 and
+        i.type_id in ^item_types
+    )
+    |> ApathyDrive.Repo.all()
+    |> case do
+      [] ->
+        for_shop(level - 3, item_types)
+
+      list ->
+        list
+    end
   end
 
   def of_quality_level(level) do
@@ -610,12 +645,23 @@ defmodule ApathyDrive.Item do
         name
       end
 
+    name = if opts[:titleize], do: titleize(name), else: name
+
+    name =
+      if pad = opts[:pad_trailing] do
+        if String.length(name) >= pad do
+          String.slice(name, 0..(pad - 5)) <> "... "
+        else
+          name
+        end
+      else
+        name
+      end
+
     name =
       name
       |> String.pad_trailing(opts[:pad_trailing] || 0)
       |> String.pad_leading(opts[:pad_leading] || 0)
-
-    name = if opts[:titleize], do: titleize(name), else: name
 
     if opts[:character] && !opts[:no_tooltip] do
       "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)}</span></span>"
@@ -689,46 +735,13 @@ defmodule ApathyDrive.Item do
       Ability.appropriate_alignment?(ability, character)
   end
 
-  def useable_by_character?(%Character{} = character, %Item{type: "Weapon"} = weapon) do
-    class_ids =
-      character.classes
-      |> Enum.map(& &1.class_id)
-      |> Enum.into(MapSet.new())
-
-    required_classes = Enum.into(weapon.required_classes, MapSet.new())
-
-    cond do
-      Enum.any?(required_classes) and !Enum.any?(MapSet.intersection(class_ids, required_classes)) ->
-        false
-
-      Enum.any?(weapon.required_races) and !(character.race_id in weapon.required_races) ->
-        false
-
-      :else ->
-        true
-    end
+  def useable_by_character?(%Character{}, %Item{type: "Weapon"}) do
+    true
   end
 
-  def useable_by_character?(%Character{} = character, %Item{type: type} = armour)
+  def useable_by_character?(%Character{}, %Item{type: type})
       when type in ["Armour", "Shield"] do
-    class_ids =
-      character.classes
-      |> Enum.map(& &1.class_id)
-      |> Enum.into(MapSet.new())
-
-    required_classes = Enum.into(armour.required_classes, MapSet.new())
-
-    cond do
-      Enum.any?(armour.required_races) and !(character.race_id in armour.required_races) ->
-        false
-
-      Enum.any?(armour.required_races) and
-          !Enum.any?(MapSet.intersection(class_ids, required_classes)) ->
-        false
-
-      :else ->
-        true
-    end
+    true
   end
 
   def useable_by_character?(_character, %Item{}), do: true

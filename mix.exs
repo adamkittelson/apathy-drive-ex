@@ -76,6 +76,7 @@ defmodule ApathyDrive.Mixfile do
       {:scrivener_ecto, "~> 2.7.0"},
       {:inflex, "~> 2.1.0"},
       {:comeonin, "~> 5.3.2"},
+      {:bcrypt_elixir, "~> 2.0"},
       {:statix, "~> 1.4.0"},
       {:rollbax, "~> 0.11.0"},
       {:gossip, "~> 1.4.0"},
