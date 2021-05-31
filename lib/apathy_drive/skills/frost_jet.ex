@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.IceBolt do
+defmodule ApathyDrive.Skills.FrostJet do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -58,17 +58,19 @@ defmodule ApathyDrive.Skills.IceBolt do
     level = skill_level(character) + 1
 
     if level <= Skill.max_level() do
-      "\nNext Skill Level: #{level}\nCold Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Cold Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
 
   defp mana(_level), do: 2
 
   defp min_damage(level) do
-    trunc(1 + level * 2.2)
+    # 14 - 21
+    trunc(13 + level * 1.4)
   end
 
   defp max_damage(level) do
-    trunc(4 + level * 2.8)
+    # 22-32
+    trunc(20 + level * 2)
   end
 end

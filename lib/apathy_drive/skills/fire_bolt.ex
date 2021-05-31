@@ -15,9 +15,9 @@ defmodule ApathyDrive.Skills.FireBolt do
       mana: mana(level),
       spell?: true,
       auto: character.skills["fbol"] && character.skills["fbol"].auto,
-      user_message: "You fire a fire bolt at {{target}} for {{amount}} damage!",
-      target_message: "{{user}} fire a fire bolt at you for {{amount}} damage!",
-      spectator_message: "{{user}} fires a fire bolt at {{target}} for {{amount}} damage!",
+      user_message: "You cast a fire bolt at {{target}} for {{amount}} damage!",
+      target_message: "{{user}} casts fire bolt at you for {{amount}} damage!",
+      spectator_message: "{{user}} cast fire bolt at {{target}} for {{amount}} damage!",
       traits: %{
         "Damage" => [
           %{
@@ -58,17 +58,19 @@ defmodule ApathyDrive.Skills.FireBolt do
     level = skill_level(character) + 1
 
     if level <= Skill.max_level() do
-      "\nNext Skill Level: #{level}\nFire Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Fire Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
 
-  defp mana(_level), do: 2.5
+  defp mana(_level), do: 2
 
   defp min_damage(level) do
-    trunc(1 + level * 2.2)
+    # 3-45
+    trunc(-5 + level * 8.4)
   end
 
   defp max_damage(level) do
-    trunc(4 + level * 2.8)
+    # 6-60
+    trunc(-4 + level * 10.75)
   end
 end

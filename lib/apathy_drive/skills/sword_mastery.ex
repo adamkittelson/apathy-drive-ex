@@ -46,7 +46,7 @@ defmodule ApathyDrive.Skills.SwordMastery do
     level = skill_level(character) + 1
 
     if level <= Skill.max_level() do
-      "\nNext Skill Level: #{level}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nCrit Bonus: #{crit_percent(level)}%"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Damage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nCrit Bonus: #{crit_percent(level)}%"
     end
   end
 

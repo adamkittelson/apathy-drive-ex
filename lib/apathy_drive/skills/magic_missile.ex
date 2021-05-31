@@ -58,7 +58,7 @@ defmodule ApathyDrive.Skills.MagicMissile do
     level = skill_level(character) + 1
 
     if level <= Skill.max_level() do
-      "\nNext Skill Level: #{level}\nMagic Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Magic Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
 

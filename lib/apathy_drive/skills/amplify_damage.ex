@@ -56,7 +56,7 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
     level = skill_level(character) + 1
 
     if level <= Skill.max_level() do
-      "\nNext Skill Level: #{level}\nDuration: #{duration(level)} seconds\nMana Cost: #{mana(level)}"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Duration: #{duration(level)} seconds\nMana Cost: #{mana(level)}"
     end
   end
 
