@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Skills.FireBolt do
-  alias ApathyDrive.{Ability, Mobile}
+  alias ApathyDrive.{Ability, Mobile, Skill}
+  use ApathyDrive.Skill
 
   def ability(character, level \\ nil) do
     level = level || skill_level(character)
@@ -56,10 +57,8 @@ defmodule ApathyDrive.Skills.FireBolt do
   defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= 20 do
-      "\nNext Skill Level: #{level}\nFire Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{
-        mana(level)
-      }"
+    if level <= Skill.max_level() do
+      "\nNext Skill Level: #{level}\nFire Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
 
@@ -71,18 +70,5 @@ defmodule ApathyDrive.Skills.FireBolt do
 
   defp max_damage(level) do
     trunc(4 + level * 2.8)
-  end
-
-  defp skill_level(character) do
-    character.skills
-    |> Map.values()
-    |> Enum.find(&(&1.name == "Fire Bolt"))
-    |> case do
-      %{level: level} ->
-        level
-
-      _ ->
-        0
-    end
   end
 end

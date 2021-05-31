@@ -11,6 +11,54 @@ defmodule ApathyDrive.Skill do
     has_many(:characters, through: [:characters_skills, :character])
   end
 
+  defmacro __using__(_opts) do
+    quote do
+      alias ApathyDrive.{Repo, Skill}
+
+      def prereq(), do: nil
+
+      def name() do
+        __MODULE__
+        |> to_string()
+        |> String.split(".")
+        |> List.last()
+        |> String.replace(~r/([A-Z])/, " \\1")
+        |> String.trim()
+      end
+
+      def skill_level(character) do
+        character.skills
+        |> Map.values()
+        |> Enum.find(&(&1.name == name()))
+        |> case do
+          %{level: level} ->
+            level
+
+          _ ->
+            0
+        end
+      end
+
+      def prereq(character, level) do
+        if prereq() && prereq().skill_level(character) < level do
+          "<span class='red'>Prerequisite: #{prereq().name()} Level #{level}</span>\n"
+        end
+      end
+
+      def required_level(level) do
+        req = Repo.get_by(Skill, name: name()).required_level
+
+        if level < req do
+          "<span class='red'>Required Character Level: #{req}</span>\n"
+        end
+      end
+
+      defoverridable(prereq: 0)
+    end
+  end
+
+  def max_level, do: 6
+
   def module(skill_name) do
     module_name =
       skill_name

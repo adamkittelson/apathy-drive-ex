@@ -40,15 +40,29 @@ defmodule ApathyDrive.Commands.Train do
       end
 
     skill_points = Character.skill_points(character)
+    module = Skill.module(skill.name)
 
     cond do
-      level >= 20 ->
-        message = "<p>You cannot train #{skill.name} beyond level 20.</p>"
+      level >= Skill.max_level() ->
+        message = "<p>You cannot train #{skill.name} beyond level #{Skill.max_level()}.</p>"
         Mobile.send_scroll(character, message)
         room
 
       skill_points < 1 and !force ->
         message = "<p>You do not have any availabe skill points!</p>"
+        Mobile.send_scroll(character, message)
+        room
+
+      character.level < skill.required_level ->
+        message =
+          "<p>You must be at least level #{skill.required_level} to train #{skill.name}!</p>"
+
+        Mobile.send_scroll(character, message)
+        room
+
+      module.prereq() && module.prereq().skill_level(character) < level + 1 ->
+        message = "<p>You must have #{module.prereq().name()} at at least level #{level + 1}!</p>"
+
         Mobile.send_scroll(character, message)
         room
 
@@ -89,9 +103,7 @@ defmodule ApathyDrive.Commands.Train do
 
       Mobile.send_scroll(
         character,
-        "<p><span class='yellow'>Your #{character_skill.skill.name} level has increased to #{
-          character_skill.level
-        }!</span></p>"
+        "<p><span class='yellow'>Your #{character_skill.skill.name} level has increased to #{character_skill.level}!</span></p>"
       )
 
       ApathyDrive.Commands.Help.execute(room, character, [character_skill.skill.name])

@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Skills.Bash do
-  alias ApathyDrive.{Character, Mobile}
+  alias ApathyDrive.{Character, Mobile, Skill}
+  use ApathyDrive.Skill
 
   def ability(character) do
     level = skill_level(character)
@@ -76,10 +77,8 @@ defmodule ApathyDrive.Skills.Bash do
   defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= 20 do
-      "\nNext Skill Level: #{level}\nDamage: +#{damage(level)}\nDamage Bonus: #{
-        damage_percent(level)
-      }%\nAttack Bonus: #{attack_percent(level)}%\nMana Cost: #{mana(level)}"
+    if level <= Skill.max_level() do
+      "\nNext Skill Level: #{level}\nDamage: +#{damage(level)}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nMana Cost: #{mana(level)}"
     end
   end
 
@@ -88,27 +87,17 @@ defmodule ApathyDrive.Skills.Bash do
   end
 
   defp damage(level) do
-    level
+    # 1 - 20
+    trunc(-2 + level * 3.75)
   end
 
   defp damage_percent(level) do
-    45 + level * 5
+    # 50 - 145
+    trunc(31 + level * 19)
   end
 
   defp attack_percent(level) do
-    15 + level * 5
-  end
-
-  defp skill_level(character) do
-    character.skills
-    |> Map.values()
-    |> Enum.find(&(&1.name == "Bash"))
-    |> case do
-      %{level: level} ->
-        level
-
-      _ ->
-        0
-    end
+    # 20 - 115
+    trunc(7 + level * (level + 12))
   end
 end

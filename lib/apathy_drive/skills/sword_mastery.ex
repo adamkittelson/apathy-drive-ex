@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Skills.SwordMastery do
-  alias ApathyDrive.{Ability, Mobile}
+  alias ApathyDrive.{Ability, Mobile, Skill}
+  use ApathyDrive.Skill
 
   def ability(character) do
     level = skill_level(character)
@@ -44,35 +45,23 @@ defmodule ApathyDrive.Skills.SwordMastery do
   defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= 20 do
-      "\nNext Skill Level: #{level}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{
-        attack_percent(level)
-      }%\nCrit Bonus: #{crit_percent(level)}%"
+    if level <= Skill.max_level() do
+      "\nNext Skill Level: #{level}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nCrit Bonus: #{crit_percent(level)}%"
     end
   end
 
   defp damage_percent(level) do
-    23 + level * 5
+    # 28 - 123
+    trunc(9 + level * 19)
   end
 
   defp attack_percent(level) do
-    23 + level * 8
+    # 28 - 180
+    trunc(-2 + level * 30.4)
   end
 
   defp crit_percent(level) do
-    trunc(4 + level * 1.25)
-  end
-
-  defp skill_level(character) do
-    character.skills
-    |> Map.values()
-    |> Enum.find(&(&1.name == "Sword Mastery"))
-    |> case do
-      %{level: level} ->
-        level
-
-      _ ->
-        0
-    end
+    # 5 - 29
+    trunc(1 + level * 4.75)
   end
 end

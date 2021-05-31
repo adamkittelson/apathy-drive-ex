@@ -1,5 +1,6 @@
 defmodule ApathyDrive.Skills.AmplifyDamage do
-  alias ApathyDrive.{Ability, Mobile}
+  alias ApathyDrive.{Ability, Mobile, Skill}
+  use ApathyDrive.Skill
 
   def ability(character, level \\ nil) do
     level = level || skill_level(character)
@@ -45,7 +46,7 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
     if level > 0 do
       """
       \nCurrent Skill Level: #{level}
-      Duration: #{duration(level)}
+      Duration: #{duration(level)} seconds
       Mana Cost: #{mana(level)}
       """
     end
@@ -54,27 +55,15 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
   defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= 20 do
-      "\nNext Skill Level: #{level}\nDuration: #{duration(level)}\nMana Cost: #{mana(level)}"
+    if level <= Skill.max_level() do
+      "\nNext Skill Level: #{level}\nDuration: #{duration(level)} seconds\nMana Cost: #{mana(level)}"
     end
   end
 
   defp mana(_level), do: 4
 
   defp duration(level) do
-    trunc(5 + level * 3)
-  end
-
-  defp skill_level(character) do
-    character.skills
-    |> Map.values()
-    |> Enum.find(&(&1.name == "Damage Amplification"))
-    |> case do
-      %{level: level} ->
-        level
-
-      _ ->
-        0
-    end
+    # 8 - 65
+    trunc(3 + level * (level + 4.4))
   end
 end

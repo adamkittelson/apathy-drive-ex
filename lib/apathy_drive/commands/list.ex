@@ -90,8 +90,28 @@ defmodule ApathyDrive.Commands.List do
 
   def list(%Room{shop: nil} = room, character) do
     if Trainer.trainer?(room) do
-      Enum.each(room.trainable_skills, fn %Skill{name: skill} ->
-        Mobile.send_scroll(character, "<p>#{skill}</p>")
+      character
+      |> Mobile.send_scroll(
+        "<p><span class='white'>The following abilities may be trained here:</span></p>"
+      )
+      |> Mobile.send_scroll(
+        "<p><span class='dark-magenta'>Level       Ability                 Prerequisite</span></p>"
+      )
+
+      Enum.each(room.trainable_skills, fn %Skill{} = skill ->
+        name = String.pad_trailing(skill.name, 24)
+
+        level =
+          skill.required_level
+          |> to_string()
+          |> String.pad_trailing(11)
+
+        prereq = Skill.module(skill.name).prereq() && Skill.module(skill.name).prereq().name()
+
+        Mobile.send_scroll(
+          character,
+          "<p><span class='dark-cyan'>#{level} #{name}#{prereq}</span></p>"
+        )
       end)
     else
       Mobile.send_scroll(
