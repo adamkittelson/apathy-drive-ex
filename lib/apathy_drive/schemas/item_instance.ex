@@ -9,7 +9,8 @@ defmodule ApathyDrive.ItemInstance do
     ItemInstanceAffixSkill,
     ItemInstanceAffixTrait,
     Room,
-    Shop
+    Shop,
+    Socket
   }
 
   schema "items_instances" do
@@ -39,6 +40,7 @@ defmodule ApathyDrive.ItemInstance do
     belongs_to(:character_shop, CharacterShop)
     has_many(:affix_traits, ItemInstanceAffixTrait)
     has_many(:affix_skills, ItemInstanceAffixSkill)
+    has_many(:sockets, Socket, foreign_key: :item_id)
   end
 
   def load_items(%Room{id: id}) do

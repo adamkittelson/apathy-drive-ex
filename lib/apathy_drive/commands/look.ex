@@ -16,6 +16,7 @@ defmodule ApathyDrive.Commands.Look do
     Repo,
     RoomServer,
     Shop,
+    Socket,
     Trait
   }
 
@@ -417,6 +418,17 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.join("\n")
   end
 
+  def sockets(item) do
+    Enum.map(item.sockets, fn
+      %Socket{socketed_item: nil} ->
+        "\n<span class='dark-grey'>empty socket</span>"
+
+      %Socket{socketed_item: %Item{} = item} ->
+        "\n" ++ Item.colored_name(item)
+    end)
+    |> Enum.join("")
+  end
+
   def affix_description(character, "DefensePerLevel", description, val) do
     ApathyDrive.Text.interpolate(description, %{"amount" => val * character.level})
   end
@@ -591,10 +603,10 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     """
-      <span>#{Item.colored_name(item, titleize: true, no_tooltip: true)}</span>#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(item)}
-      <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
+    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(item)}#{sockets(item)}
+    <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
-      Sells For: #{value}
+    Sells For: #{value}
     """
   end
 

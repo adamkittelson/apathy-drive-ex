@@ -229,7 +229,8 @@ defmodule ApathyDrive.Item do
     ii =
       Repo.preload(ii,
         affix_traits: [affix_trait: [:trait, :affix]],
-        affix_skills: [affix_skill: [:skill, :affix]]
+        affix_skills: [affix_skill: [:skill, :affix]],
+        sockets: [socketed_item: []]
       )
 
     values =
@@ -245,7 +246,8 @@ defmodule ApathyDrive.Item do
         :quality,
         :affix_traits,
         :affix_skills,
-        :ac
+        :ac,
+        :sockets
       ])
 
     values =

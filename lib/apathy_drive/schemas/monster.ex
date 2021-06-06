@@ -565,6 +565,20 @@ defmodule ApathyDrive.Monster do
       |> Repo.get_by(name: "superior armor")
       |> Repo.preload(affixes_traits: [:trait])
 
+    if :rand.uniform(3) == 3 && item_instance.item.max_sockets &&
+         item_instance.item.max_sockets > 0 do
+      min = min(1, item_instance.item.max_sockets)
+      max = item_instance.item.max_sockets
+
+      Enum.each(min..max, fn n ->
+        %ApathyDrive.Socket{
+          item_id: item_instance.id,
+          number: n
+        }
+        |> Repo.insert!()
+      end)
+    end
+
     affix.affixes_traits
     |> Enum.each(fn at ->
       val = affix_value(at.value, at.trait.merge_by)
@@ -619,6 +633,28 @@ defmodule ApathyDrive.Monster do
     end)
   end
 
+  def item_affixes(
+        %ItemInstance{quality: quality, item: %Item{}} = item_instance,
+        _affix_level
+      )
+      when quality in ["normal", "superior"] do
+    if :rand.uniform(3) == 3 && item_instance.item.max_sockets &&
+         item_instance.item.max_sockets > 0 do
+      min = min(1, item_instance.item.max_sockets)
+      max = item_instance.item.max_sockets
+
+      Enum.each(min..max, fn n ->
+        %ApathyDrive.Socket{
+          item_id: item_instance.id,
+          number: n
+        }
+        |> Repo.insert!()
+      end)
+    end
+
+    {[], []}
+  end
+
   def item_affixes(%ItemInstance{}, _affix_level) do
     {[], []}
   end
@@ -638,16 +674,32 @@ defmodule ApathyDrive.Monster do
         generate_prefix(item_instance, affix_level)
       else
         prefix.affixes_traits
-        |> Enum.each(fn at ->
-          val = affix_value(at.value, at.trait.merge_by)
+        |> Enum.each(fn
+          %{name: "Socket", value: %{"min" => min, "max" => max}} ->
+            if min && max && item_instance.item.max_sockets &&
+                 item_instance.item.max_sockets > 0 do
+              min = min(min, item_instance.item.max_sockets)
+              max = min(max, item_instance.item.max_sockets)
 
-          %ApathyDrive.ItemInstanceAffixTrait{
-            affix_trait_id: at.id,
-            item_instance_id: item_instance.id,
-            value: val,
-            description: affix_description(at.trait.name, at.description, val)
-          }
-          |> Repo.insert!()
+              Enum.each(min..max, fn n ->
+                %ApathyDrive.Socket{
+                  item_id: item_instance.id,
+                  number: n
+                }
+                |> Repo.insert!()
+              end)
+            end
+
+          at ->
+            val = affix_value(at.value, at.trait.merge_by)
+
+            %ApathyDrive.ItemInstanceAffixTrait{
+              affix_trait_id: at.id,
+              item_instance_id: item_instance.id,
+              value: val,
+              description: affix_description(at.trait.name, at.description, val)
+            }
+            |> Repo.insert!()
         end)
 
         prefix.affix_skills
@@ -702,16 +754,32 @@ defmodule ApathyDrive.Monster do
         generate_suffix(item_instance, affix_level)
       else
         suffix.affixes_traits
-        |> Enum.each(fn at ->
-          val = affix_value(at.value, at.trait.merge_by)
+        |> Enum.each(fn
+          %{name: "Socket", value: %{"min" => min, "max" => max}} ->
+            if min && max && item_instance.item.max_sockets &&
+                 item_instance.item.max_sockets > 0 do
+              min = min(min, item_instance.item.max_sockets)
+              max = min(max, item_instance.item.max_sockets)
 
-          %ApathyDrive.ItemInstanceAffixTrait{
-            affix_trait_id: at.id,
-            item_instance_id: item_instance.id,
-            value: val,
-            description: affix_description(at.trait.name, at.description, val)
-          }
-          |> Repo.insert!()
+              Enum.each(min..max, fn n ->
+                %ApathyDrive.Socket{
+                  item_id: item_instance.id,
+                  number: n
+                }
+                |> Repo.insert!()
+              end)
+            end
+
+          at ->
+            val = affix_value(at.value, at.trait.merge_by)
+
+            %ApathyDrive.ItemInstanceAffixTrait{
+              affix_trait_id: at.id,
+              item_instance_id: item_instance.id,
+              value: val,
+              description: affix_description(at.trait.name, at.description, val)
+            }
+            |> Repo.insert!()
         end)
 
         suffix.affix_skills
