@@ -907,6 +907,8 @@ defmodule ApathyDrive.Monster do
     item.name
   end
 
+  def determine_item_quality(_character, _monster, %Item{type: "Stone"}), do: "normal"
+
   def determine_item_quality(character, monster, item) do
     magic_find =
       Mobile.ability_value(character, "MagicFind") +

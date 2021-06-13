@@ -77,7 +77,9 @@ defmodule ApathyDrive.Item do
     field(:magic_level, :integer)
     field(:type_id, :integer)
     field(:block_chance, :integer)
+    field(:socketable, :boolean)
 
+    field(:sockets, :any, virtual: true, default: [])
     field(:item_type_ids, :any, virtual: true, default: [])
     field(:item_types, :any, virtual: true, default: [])
     field(:affix_traits, :any, virtual: true, default: [])
@@ -230,7 +232,7 @@ defmodule ApathyDrive.Item do
       Repo.preload(ii,
         affix_traits: [affix_trait: [:trait, :affix]],
         affix_skills: [affix_skill: [:skill, :affix]],
-        sockets: [socketed_item: []]
+        sockets: [socketed_item: [:item]]
       )
 
     values =
@@ -247,7 +249,8 @@ defmodule ApathyDrive.Item do
         :affix_traits,
         :affix_skills,
         :ac,
-        :sockets
+        :sockets,
+        :socketable
       ])
 
     values =
@@ -263,14 +266,26 @@ defmodule ApathyDrive.Item do
       |> Map.put(:instance_id, id)
       |> with_traits()
 
-    item
-    |> Map.put(:uses, ii.uses || item.max_uses)
-    |> Map.put(:name, ii.name || item.name)
-    |> Map.put(:description, ii.description || item.description)
-    |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
-    |> load_required_races_and_classes()
-    |> load_item_abilities()
-    |> load_item_types()
+    item =
+      item
+      |> Map.put(:uses, ii.uses || item.max_uses)
+      |> Map.put(:name, ii.name || item.name)
+      |> Map.put(:description, ii.description || item.description)
+      |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
+      |> load_required_races_and_classes()
+      |> load_item_abilities()
+      |> load_item_types()
+
+    socketed_items =
+      Enum.map(item.sockets, fn socket ->
+        if socket.socketed_item_id do
+          Map.put(socket, :socketed_item, Item.from_assoc(socket.socketed_item))
+        else
+          socket
+        end
+      end)
+
+    Map.put(item, :sockets, socketed_items)
   end
 
   def from_assoc(%ShopItem{item: item}) do
@@ -399,6 +414,8 @@ defmodule ApathyDrive.Item do
 
   def random_accessory() do
     item_types = accessory_ids()
+
+    IO.inspect(item_types)
 
     __MODULE__
     |> Ecto.Query.where([i], i.type_id in ^item_types)
@@ -559,6 +576,7 @@ defmodule ApathyDrive.Item do
   end
 
   def upgrade_for_character?(%Item{quality_level: nil}, _character), do: false
+  def upgrade_for_character?(%Item{type: "Stone"}, _character), do: false
 
   def upgrade_for_character?(%Item{} = item, %Character{} = character) do
     unless item in character.equipment do

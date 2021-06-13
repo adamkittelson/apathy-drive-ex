@@ -424,7 +424,7 @@ defmodule ApathyDrive.Commands.Look do
         "\n<span class='dark-grey'>empty socket</span>"
 
       %Socket{socketed_item: %Item{} = item} ->
-        "\n" ++ Item.colored_name(item)
+        "\n" <> Item.colored_name(item)
     end)
     |> Enum.join("")
   end

@@ -107,6 +107,45 @@ defmodule ApathyDrive.Commands.Use do
 
         room
 
+      %Item{type: "Stone", id: _id} = gem ->
+        character.inventory
+        |> Match.one(:name_contains, target)
+        |> case do
+          %Item{name: name} = item ->
+            IO.inspect(item.sockets)
+
+            if socket = Enum.find(item.sockets, &is_nil(&1.socketed_item_id)) do
+              socket
+              |> Ecto.Changeset.change(%{
+                socketed_item_id: gem.instance_id
+              })
+              |> Repo.update!()
+
+              ItemInstance
+              |> Repo.get(gem.instance_id)
+              |> Ecto.Changeset.change(%{
+                character_id: nil
+              })
+              |> Repo.update!()
+
+              Mobile.send_scroll(
+                character,
+                "<p>Socketing #{gem.name} in #{name}'s socket ##{socket.number}!</p>"
+              )
+
+              Room.update_mobile(room, character.ref, fn _room, character ->
+                Character.load_items(character)
+              end)
+            else
+              Mobile.send_scroll(
+                character,
+                "<p>No empty sockets on #{name}!</p>"
+              )
+
+              room
+            end
+        end
+
       %Item{type: "Key", id: id} = item ->
         if target in @directions do
           case Room.get_exit(room, target) do
@@ -123,9 +162,7 @@ defmodule ApathyDrive.Commands.Use do
 
                 Room.send_scroll(
                   room,
-                  "<p>You see #{Mobile.colored_name(character)} open the #{name} #{
-                    ApathyDrive.Exit.direction_description(room_exit["direction"])
-                  }.</p>",
+                  "<p>You see #{Mobile.colored_name(character)} open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>",
                   [character]
                 )
 
