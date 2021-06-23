@@ -419,12 +419,32 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def sockets(item) do
-    Enum.map(item.sockets, fn
+    item.sockets
+    |> Enum.sort_by(& &1.number)
+    |> Enum.map(fn
       %Socket{socketed_item: nil} ->
         "\n<span class='dark-grey'>empty socket</span>"
 
-      %Socket{socketed_item: %Item{} = item} ->
-        "\n" <> Item.colored_name(item)
+      %Socket{socketed_item: %Item{} = socketed_item} ->
+        description =
+          socketed_item.socketable_item_affixes
+          |> Enum.filter(&(&1.item_type in item.item_types))
+          |> List.flatten()
+          |> Enum.map(& &1.affix.affixes_traits)
+          |> List.flatten()
+          |> Enum.reject(&is_nil(&1.description))
+          |> Enum.map(fn affix_trait ->
+            value =
+              if is_integer(affix_trait.value) do
+                %{"amount" => affix_trait.value}
+              else
+                affix_trait.value
+              end
+
+            ApathyDrive.Text.interpolate(affix_trait.description, value)
+          end)
+
+        "\n#{Item.colored_name(socketed_item)}\n<span style='color: #4850B8'>#{description}</span>"
     end)
     |> Enum.join("")
   end

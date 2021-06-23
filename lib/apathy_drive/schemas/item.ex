@@ -21,6 +21,7 @@ defmodule ApathyDrive.Item do
     RoomServer,
     Shop,
     ShopItem,
+    Socket,
     Trait
   }
 
@@ -102,6 +103,7 @@ defmodule ApathyDrive.Item do
     field(:unfinished, :boolean, virtual: true)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
+    has_many(:socketable_item_affixes, ApathyDrive.SocketableItemAffix)
   end
 
   @required_fields ~w()a
@@ -232,7 +234,18 @@ defmodule ApathyDrive.Item do
       Repo.preload(ii,
         affix_traits: [affix_trait: [:trait, :affix]],
         affix_skills: [affix_skill: [:skill, :affix]],
-        sockets: [socketed_item: [:item]]
+        sockets: [
+          socketed_item: [
+            item: [
+              socketable_item_affixes: [
+                :item_type,
+                affix: [
+                  affixes_traits: [:trait, :affix]
+                ]
+              ]
+            ]
+          ]
+        ]
       )
 
     values =
@@ -263,18 +276,6 @@ defmodule ApathyDrive.Item do
     item =
       item
       |> Map.merge(values)
-      |> Map.put(:instance_id, id)
-      |> with_traits()
-
-    item =
-      item
-      |> Map.put(:uses, ii.uses || item.max_uses)
-      |> Map.put(:name, ii.name || item.name)
-      |> Map.put(:description, ii.description || item.description)
-      |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
-      |> load_required_races_and_classes()
-      |> load_item_abilities()
-      |> load_item_types()
 
     socketed_items =
       Enum.map(item.sockets, fn socket ->
@@ -285,7 +286,20 @@ defmodule ApathyDrive.Item do
         end
       end)
 
-    Map.put(item, :sockets, socketed_items)
+    item =
+      item
+      |> Map.put(:instance_id, id)
+      |> Map.put(:sockets, socketed_items)
+      |> load_item_types()
+      |> with_traits()
+
+    item
+    |> Map.put(:uses, ii.uses || item.max_uses)
+    |> Map.put(:name, ii.name || item.name)
+    |> Map.put(:description, ii.description || item.description)
+    |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
+    |> load_required_races_and_classes()
+    |> load_item_abilities()
   end
 
   def from_assoc(%ShopItem{item: item}) do
@@ -354,11 +368,31 @@ defmodule ApathyDrive.Item do
       item.instance_id
       |> ItemInstanceAffixTrait.load_traits(item)
 
+    socket_traits =
+      item.sockets
+      |> Enum.reduce(%{}, fn
+        %Socket{socketed_item: nil}, traits ->
+          traits
+
+        %Socket{socketed_item: %Item{} = socketed_item}, traits ->
+          socketed_item.socketable_item_affixes
+          |> Enum.filter(&(&1.item_type in item.item_types))
+          |> List.flatten()
+          |> Enum.map(& &1.affix.affixes_traits)
+          |> List.flatten()
+          |> Enum.reduce(traits, fn affix_trait, traits ->
+            Trait.merge_traits(traits, %{affix_trait.trait.name => affix_trait.value})
+          end)
+      end)
+
     instance_skills =
       item.instance_id
       |> ItemInstanceAffixSkill.load_skills(item)
 
-    instance_traits = Trait.merge_traits(instance_traits, instance_skills)
+    instance_traits =
+      instance_traits
+      |> Trait.merge_traits(instance_skills)
+      |> Trait.merge_traits(socket_traits)
 
     # Systems.Effect.add(item, Map.merge(item_traits, instance_traits))
     Systems.Effect.add(item, instance_traits)

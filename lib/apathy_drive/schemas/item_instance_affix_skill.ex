@@ -38,5 +38,3 @@ defmodule ApathyDrive.ItemInstanceAffixSkill do
     end)
   end
 end
-
-%{"chance" => 10, "kind" => "WhenStruck", "level" => 3}
