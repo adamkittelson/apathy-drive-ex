@@ -14,20 +14,54 @@ defmodule ApathyDrive.AffixItemType do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  def not_allowed?(%Affix{id: id} = _affix, item_types) do
-    Enum.map(item_types, fn item_type ->
-      key = {id, item_type}
+  def allowed?(%Affix{id: id} = affix, item_types) do
+    allowed? =
+      Enum.map(item_types, fn item_type ->
+        key = {id, item_type.id}
 
-      case :ets.lookup(:affix_item_types, key) do
-        [{^key, allowed}] ->
-          allowed
+        case :ets.lookup(:affix_item_types, key) do
+          [{^key, allowed}] ->
+            allowed
 
-        _ ->
-          nil
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.any?(&(&1 == false))
+          _ ->
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.any?(&(&1 == true))
+
+    if allowed?,
+      do:
+        IO.puts(
+          "Affix #{affix.name} (#{affix.id}) allowed for types: #{inspect(Enum.map(item_types, & &1.name))}? #{allowed?}"
+        )
+
+    allowed?
+  end
+
+  def not_allowed?(%Affix{id: id} = affix, item_types) do
+    not_allowed? =
+      Enum.map(item_types, fn item_type ->
+        key = {id, item_type.id}
+
+        case :ets.lookup(:affix_item_types, key) do
+          [{^key, allowed}] ->
+            allowed
+
+          _ ->
+            nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.any?(&(&1 == false))
+
+    if not_allowed?,
+      do:
+        IO.puts(
+          "Affix #{affix.name} (#{affix.id}) not allowed for types: #{inspect(Enum.map(item_types, & &1.name))}? #{not_allowed?}"
+        )
+
+    not_allowed?
   end
 
   def init(state) do

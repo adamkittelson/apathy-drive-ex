@@ -418,7 +418,38 @@ defmodule ApathyDrive.Commands.Look do
     |> Enum.join("\n")
   end
 
-  def sockets(item) do
+  def socket(item, type) do
+    description =
+      item.socketable_item_affixes
+      |> Enum.filter(&(&1.item_type.name == type))
+      |> List.flatten()
+      |> Enum.map(& &1.affix.affixes_traits)
+      |> List.flatten()
+      |> Enum.reject(&is_nil(&1.description))
+      |> Enum.map(fn affix_trait ->
+        value =
+          if is_integer(affix_trait.value) do
+            %{"amount" => affix_trait.value}
+          else
+            affix_trait.value
+          end
+
+        ApathyDrive.Text.interpolate(affix_trait.description, value)
+      end)
+      |> Enum.join("\n")
+
+    "\n<span style='color: #4850B8'>#{description}</span>"
+  end
+
+  def sockets(%Item{type: "Stone"} = item) do
+    tooltip = "\nCan Be Inserted into Socketed Items\n"
+
+    tooltip = tooltip <> "\nWeapons#{socket(item, "Weapon")}"
+    tooltip = tooltip <> "\nHelm or Torso#{socket(item, "Helm")}"
+    tooltip <> "\nShield#{socket(item, "Any Shield")}"
+  end
+
+  def sockets(%Item{} = item) do
     item.sockets
     |> Enum.sort_by(& &1.number)
     |> Enum.map(fn
@@ -443,6 +474,7 @@ defmodule ApathyDrive.Commands.Look do
 
             ApathyDrive.Text.interpolate(affix_trait.description, value)
           end)
+          |> Enum.join("\n")
 
         "\n#{Item.colored_name(socketed_item)}\n<span style='color: #4850B8'>#{description}</span>"
     end)
@@ -644,57 +676,6 @@ defmodule ApathyDrive.Commands.Look do
       character,
       "<p>#{item.description}</p>"
     )
-  end
-
-  def look_at_item(%Character{} = character, %Item{worn_on: nil} = item) do
-    value =
-      %Shop{cost_multiplier: 1}
-      |> Shop.sell_price(character, item)
-      |> Currency.set_value()
-      |> Currency.to_string()
-      |> case do
-        "" -> "FREE"
-        value -> value
-      end
-
-    Mobile.send_scroll(
-      character,
-      "<p>#{item.description}</p>"
-    )
-
-    item.effects
-    |> Map.values()
-    |> Enum.filter(&Map.has_key?(&1, "StatusMessage"))
-    |> Enum.map(& &1["StatusMessage"])
-    |> Enum.each(fn effect_message ->
-      Mobile.send_scroll(character, "<p>#{effect_message}</p>")
-    end)
-
-    if item.worn_on do
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Type:</span> <span class='dark-cyan'>#{item.armour_type}</span></p>"
-      )
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Worn On:</span> <span class='dark-cyan'>#{item.worn_on}</span> </p>"
-      )
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Weight:</span> <span class='dark-cyan'>#{item.weight}</span></p>"
-      )
-
-      Mobile.send_scroll(
-        character,
-        "<p><span class='dark-green'>Value:</span> <span class='dark-cyan'>#{value}</span></p>"
-      )
-    end
-
-    display_traits(character, item)
-
-    display_enchantment(character, item)
   end
 
   def look_at_item(%Character{} = character, %Item{} = item) do

@@ -83,6 +83,7 @@ defmodule ApathyDrive.Affix do
           a.frequency >= 1 and not is_nil(a.frequency)
       )
       |> Repo.all()
+      |> Enum.filter(&AffixItemType.allowed?(&1, item_types))
       |> Enum.reject(&AffixItemType.not_allowed?(&1, item_types))
 
     total =
@@ -112,6 +113,7 @@ defmodule ApathyDrive.Affix do
         a.frequency >= 1 and not is_nil(a.frequency)
     )
     |> Repo.all()
+    |> Enum.filter(&AffixItemType.allowed?(&1, item_types))
     |> Enum.reject(&AffixItemType.not_allowed?(&1, item_types))
     |> Enum.map(& &1.group)
     |> case do

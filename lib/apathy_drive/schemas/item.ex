@@ -230,6 +230,16 @@ defmodule ApathyDrive.Item do
   def skill_for_character(_character, _item), do: 1
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
+    item =
+      Repo.preload(item,
+        socketable_item_affixes: [
+          :item_type,
+          affix: [
+            affixes_traits: [:trait, :affix]
+          ]
+        ]
+      )
+
     ii =
       Repo.preload(ii,
         affix_traits: [affix_trait: [:trait, :affix]],
@@ -263,7 +273,8 @@ defmodule ApathyDrive.Item do
         :affix_skills,
         :ac,
         :sockets,
-        :socketable
+        :socketable,
+        :socketable_item_affixes
       ])
 
     values =

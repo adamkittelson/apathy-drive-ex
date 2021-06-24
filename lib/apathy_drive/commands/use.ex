@@ -128,7 +128,7 @@ defmodule ApathyDrive.Commands.Use do
 
               Mobile.send_scroll(
                 character,
-                "<p>Socketing #{gem.name} in #{name}'s socket ##{socket.number}!</p>"
+                "<p>You deftly insert the #{gem.name} into a socket on the #{name}!</p>"
               )
 
               Room.update_mobile(room, character.ref, fn _room, character ->
@@ -142,6 +142,14 @@ defmodule ApathyDrive.Commands.Use do
 
               room
             end
+
+          _ ->
+            Mobile.send_scroll(
+              character,
+              "<p>You do not have a #{target} in your inventory!</p>"
+            )
+
+            room
         end
 
       %Item{type: "Key", id: id} = item ->

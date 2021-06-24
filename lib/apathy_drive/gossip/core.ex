@@ -38,12 +38,10 @@ defmodule ApathyDrive.Gossip.Core do
 
     channel = if channel == "gossip", do: "grapevine", else: channel
 
+    name = String.replace(payload.name, ~r/ \(.* in I3\)/, "")
+
     message =
-      "<p>[<span class='#{@channel_colors[channel]}'>#{channel}</span> : #{
-        ApathyDrive.Character.sanitize(payload.name)
-      }@#{ApathyDrive.Character.sanitize(payload.game)}] #{
-        ApathyDrive.Character.sanitize(payload.message)
-      }</p>"
+      "<p>[<span class='#{@channel_colors[channel]}'>#{channel}</span> : #{ApathyDrive.Character.sanitize(name)}@#{ApathyDrive.Character.sanitize(payload.game)}] #{ApathyDrive.Character.sanitize(payload.message)}</p>"
 
     ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "chat", %{
       html: message,

@@ -197,6 +197,7 @@ defmodule ApathyDrive.Ability do
     "ResistCutting",
     "ResistDisruption",
     "ResistElectricity",
+    "ElementalResist",
     "ResistFire",
     "ResistHoly",
     "ResistImpact",
@@ -749,9 +750,7 @@ defmodule ApathyDrive.Ability do
 
               Mobile.send_scroll(
                 caster,
-                "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                  Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()
-                }</span></p>"
+                "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()}</span></p>"
               )
 
               caster
@@ -775,9 +774,7 @@ defmodule ApathyDrive.Ability do
 
               Mobile.send_scroll(
                 caster,
-                "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                  Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()
-                }</span></p>"
+                "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()}</span></p>"
               )
 
               caster
@@ -862,10 +859,8 @@ defmodule ApathyDrive.Ability do
 
                     Mobile.send_scroll(
                       caster,
-                      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                        Enchantment.time_left(caster, enchantment)
-                        |> Enchantment.formatted_time_left()
-                      }</span></p>"
+                      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{Enchantment.time_left(caster, enchantment)
+                      |> Enchantment.formatted_time_left()}</span></p>"
                     )
 
                     TimerManager.send_after(
@@ -972,9 +967,7 @@ defmodule ApathyDrive.Ability do
               if is_integer(script) do
                 Mobile.send_scroll(
                   caster,
-                  "<p><span class='red'>Not Implemented: Script##{script} for Ability##{
-                    ability.id
-                  } (#{ability.name})</span>"
+                  "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{ability.name})</span>"
                 )
 
                 room
@@ -1290,9 +1283,7 @@ defmodule ApathyDrive.Ability do
 
     Mobile.send_scroll(
       caster,
-      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-        Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()
-      }</span></p>"
+      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()}</span></p>"
     )
 
     TimerManager.send_after(
@@ -1456,9 +1447,7 @@ defmodule ApathyDrive.Ability do
       if is_integer(script) do
         Mobile.send_scroll(
           room.mobiles[caster.ref],
-          "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{
-            ability.name
-          })</span>"
+          "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{ability.name})</span>"
         )
 
         room
@@ -1784,9 +1773,7 @@ defmodule ApathyDrive.Ability do
         if is_integer(script) do
           Mobile.send_scroll(
             room.mobiles[caster_ref],
-            "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{
-              ability.name
-            })</span>"
+            "<p><span class='red'>Not Implemented: Script##{script} for Ability##{ability.id} (#{ability.name})</span>"
           )
 
           room
@@ -2218,7 +2205,9 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent + penetration
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier =
+              Mobile.ability_value(target, "Resist#{type}") +
+                Mobile.ability_value(target, "ElementalResist")
 
             damage = damage * (1 - modifier / 100)
 
@@ -2239,7 +2228,9 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier =
+              Mobile.ability_value(target, "Resist#{type}") +
+                Mobile.ability_value(target, "ElementalResist")
 
             damage = damage * (1 - modifier / 100)
 
@@ -2564,7 +2555,9 @@ defmodule ApathyDrive.Ability do
     if Mobile.has_ability?(target, "PoisonImmunity") do
       Map.put(effects, "Damage", 0)
     else
-      modifier = Mobile.ability_value(target, "ResistPoison")
+      modifier =
+        Mobile.ability_value(target, "ResistPoison") +
+          Mobile.ability_value(target, "ElementalResist")
 
       amount = amount * (1 - modifier / 100)
 
@@ -2617,7 +2610,9 @@ defmodule ApathyDrive.Ability do
 
             damage = damage + bonus_damage
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier =
+              Mobile.ability_value(target, "Resist#{type}") +
+                Mobile.ability_value(target, "ElementalResist")
 
             damage = damage * (1 - modifier / 100)
 
@@ -2643,7 +2638,9 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent + penetration
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier =
+              Mobile.ability_value(target, "Resist#{type}") +
+                Mobile.ability_value(target, "ElementalResist")
 
             damage = damage * (1 - modifier / 100)
 
@@ -2669,7 +2666,9 @@ defmodule ApathyDrive.Ability do
 
             damage = damage * resist_percent + penetration
 
-            modifier = Mobile.ability_value(target, "Resist#{type}")
+            modifier =
+              Mobile.ability_value(target, "Resist#{type}") +
+                Mobile.ability_value(target, "ElementalResist")
 
             damage = damage * (1 - modifier / 100)
 

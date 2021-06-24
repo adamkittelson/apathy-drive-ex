@@ -52,6 +52,13 @@ defmodule ApathyDrive.Commands.Protection do
 
     modifier = Mobile.ability_value(character, "Resist#{damage_type}")
 
+    modifier =
+      if damage_type != "Physical" do
+        modifier + Mobile.ability_value(character, "ElementalResist")
+      else
+        modifier
+      end
+
     if modifier >= 100 do
       modifier / 100
     else
@@ -100,11 +107,7 @@ defmodule ApathyDrive.Commands.Protection do
 
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-blue'>|</span> <span class='yellow'>#{
-          damage_type |> String.pad_trailing(16)
-        }</span><span class='dark-blue'>|</span> <span class='#{color}'>#{
-          String.pad_trailing(protection, 24)
-        }</span><span class='dark-blue'>|</span></p>"
+        "<p><span class='dark-blue'>|</span> <span class='yellow'>#{damage_type |> String.pad_trailing(16)}</span><span class='dark-blue'>|</span> <span class='#{color}'>#{String.pad_trailing(protection, 24)}</span><span class='dark-blue'>|</span></p>"
       )
     end)
 

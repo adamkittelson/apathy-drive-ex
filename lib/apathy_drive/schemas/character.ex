@@ -256,19 +256,9 @@ defmodule ApathyDrive.Character do
   end
 
   def encumbrance(%Character{} = character) do
-    equipment_weight =
-      Enum.reduce(character.equipment, 0, fn item, weight ->
-        multiplier = 1 - character.level / 100
-
-        weight + trunc(item.weight * multiplier)
-      end)
-
-    inventory_weight =
-      Enum.reduce(character.inventory, 0, fn item, weight ->
-        weight + item.weight
-      end)
-
-    equipment_weight + inventory_weight
+    Enum.reduce(character.inventory, 0, fn item, weight ->
+      weight + item.weight
+    end)
   end
 
   def max_encumbrance(%Character{} = character) do
@@ -1168,7 +1158,7 @@ defmodule ApathyDrive.Character do
 
     damage_per_30 = damage_percent_per_30 * Mobile.max_hp_at_level(character, character.level)
 
-    hp_regen = Float.round(hp_regen - damage_per_30, 2)
+    hp_regen = Float.round((hp_regen - damage_per_30) / 3, 2)
 
     powerstone =
       Enum.reduce(character.inventory, 0, fn item, powerstone ->
@@ -1196,7 +1186,7 @@ defmodule ApathyDrive.Character do
       hp_regen: hp_regen,
       max_hp: max_hp,
       mana: mana_at_level(character, character.level),
-      mana_regen: Float.round(Mobile.mana_regen_per_30(character), 2),
+      mana_regen: Float.round(Mobile.mana_regen_per_30(character) / 3, 2),
       max_mana: Mobile.max_mana_at_level(character, character.level) + powerstone,
       energy: character.energy,
       max_energy: character.max_energy,
