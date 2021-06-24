@@ -1922,8 +1922,12 @@ defmodule ApathyDrive.Ability do
             %{"Thorns" => damages}, updated_room ->
               damage =
                 damages
-                |> Enum.reduce(0, fn %{"min" => min, "max" => max}, damage ->
-                  damage + Enum.random(min..max)
+                |> Enum.reduce(0, fn
+                  %{"min" => min, "max" => max}, damage ->
+                    damage + Enum.random(min..max)
+
+                  amount, damage ->
+                    damage + amount
                 end)
 
               reaction = %Ability{
