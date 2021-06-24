@@ -112,8 +112,6 @@ defmodule ApathyDrive.Commands.Use do
         |> Match.one(:name_contains, target)
         |> case do
           %Item{name: name} = item ->
-            IO.inspect(item.sockets)
-
             if socket = Enum.find(item.sockets, &is_nil(&1.socketed_item_id)) do
               socket
               |> Ecto.Changeset.change(%{

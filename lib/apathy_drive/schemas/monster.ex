@@ -475,7 +475,7 @@ defmodule ApathyDrive.Monster do
         # drop jewelry, runes, gems etc
         if :rand.uniform(100) < chance do
           item =
-            Item.random_accessory()
+            Item.random_accessory(level)
             |> Item.load_item_types()
 
           Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")

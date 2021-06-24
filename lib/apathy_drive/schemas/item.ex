@@ -446,13 +446,12 @@ defmodule ApathyDrive.Item do
     |> Enum.map(& &1.item_type_id)
   end
 
-  def random_accessory() do
+  def random_accessory(level) do
     item_types = accessory_ids()
-
-    IO.inspect(item_types)
+    level = div(level, 2)
 
     __MODULE__
-    |> Ecto.Query.where([i], i.type_id in ^item_types)
+    |> Ecto.Query.where([i], i.type_id in ^item_types and i.quality_level <= ^level)
     |> ApathyDrive.Repo.all()
     |> case do
       list ->
@@ -833,7 +832,22 @@ defmodule ApathyDrive.Item do
       |> Enum.reject(&is_nil/1)
       |> Enum.max(fn -> 0 end)
 
-    trunc(level * modifier)
+    gem_level =
+      if Enum.any?(item.sockets) do
+        item.sockets
+        |> Enum.map(fn
+          %Socket{socketed_item: nil} ->
+            0
+
+          %Socket{socketed_item: %Item{} = socketed_item} ->
+            socketed_item.quality_level
+        end)
+        |> Enum.max()
+      else
+        0
+      end
+
+    trunc(max(level, gem_level) * modifier)
   end
 
   def too_high_level_for_character?(character, %Item{type: "Scroll"} = scroll) do
