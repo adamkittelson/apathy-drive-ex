@@ -17,15 +17,15 @@ defmodule ApathyDrive.Skills.SwordMastery do
     }
   end
 
-  def help(character) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
+  def help(character, skill) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
   end
 
-  def tooltip(character) do
+  def tooltip(character, skill) do
     """
       <span style="color: lime">Sword Mastery</span>
       Increases damage, attack rating, and critical hit chance while wielding a sword.
-      #{current_skill_level(character)}#{next_skill_level(character)}
+      #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
 
@@ -42,10 +42,10 @@ defmodule ApathyDrive.Skills.SwordMastery do
     end
   end
 
-  defp next_skill_level(character) do
+  defp next_skill_level(character, skill) do
     level = skill_level(character) + 1
 
-    if level <= Skill.max_level() do
+    if level <= skill.max_level do
       "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Damage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nCrit Bonus: #{crit_percent(level)}%"
     end
   end

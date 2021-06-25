@@ -7,7 +7,7 @@ defmodule ApathyDrive.Commands.Skills do
   def execute(%Room{} = room, %Character{} = character, []) do
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-magenta'>Skill                Level</span></p>"
+      "<p><span class='dark-magenta'>Skill                Rank</span></p>"
     )
 
     character.skills
@@ -19,7 +19,7 @@ defmodule ApathyDrive.Commands.Skills do
 
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-cyan item-name'>#{name} #{skill.level}<span class='item tooltip'>#{skill.module.tooltip(character)}</span></span></p>"
+        "<p><span class='dark-cyan item-name'>#{name} #{skill.level}<span class='item tooltip'>#{skill.module.tooltip(character, skill.skill)}</span></span></p>"
       )
     end)
 

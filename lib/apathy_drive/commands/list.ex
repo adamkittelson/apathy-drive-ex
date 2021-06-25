@@ -95,22 +95,29 @@ defmodule ApathyDrive.Commands.List do
         "<p><span class='white'>The following abilities may be trained here:</span></p>"
       )
       |> Mobile.send_scroll(
-        "<p><span class='dark-magenta'>Level       Ability                 Prerequisite</span></p>"
+        "<p><span class='dark-magenta'>Rank  Ability                  Requirements</span></p>"
       )
 
-      Enum.each(room.trainable_skills, fn %Skill{} = skill ->
+      room.trainable_skills
+      |> Enum.sort_by(& &1.required_level)
+      |> Enum.each(fn %Skill{} = skill ->
         name = String.pad_trailing(skill.name, 24)
 
         level =
-          skill.required_level
+          "#{Skill.module(skill.name).skill_level(character)}/#{skill.max_level}"
           |> to_string()
-          |> String.pad_trailing(11)
+          |> String.pad_trailing(5)
 
         prereq = Skill.module(skill.name).prereq() && Skill.module(skill.name).prereq().name()
 
+        prereq =
+          ["Level #{skill.required_level}", prereq]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.join(", ")
+
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-cyan'>#{level} #{name}#{prereq}</span></p>"
+          "<p><span class='dark-cyan'>#{level} #{name} #{prereq}</span></p>"
         )
       end)
     else

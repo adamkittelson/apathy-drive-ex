@@ -26,17 +26,17 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
     }
   end
 
-  def help(character) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
+  def help(character, skill) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
   end
 
-  def tooltip(character) do
+  def tooltip(character, skill) do
     """
       <span style="color: lime">Amplify Damage</span>
       This deceptively potent curse rapidly advances the age and putridity of any wound.
     Ordinary blows will cut through flesh and carve particularly vicious wounds that fester and
     seethe.
-      #{current_skill_level(character)}#{next_skill_level(character)}
+      #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
 
@@ -52,10 +52,10 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
     end
   end
 
-  defp next_skill_level(character) do
+  defp next_skill_level(character, skill) do
     level = skill_level(character) + 1
 
-    if level <= Skill.max_level() do
+    if level <= skill.max_level() do
       "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Duration: #{duration(level)} seconds\nMana Cost: #{mana(level)}"
     end
   end

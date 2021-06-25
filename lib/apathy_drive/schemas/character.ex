@@ -316,11 +316,14 @@ defmodule ApathyDrive.Character do
           name: skill.skill.name,
           level: skill.level,
           module: Skill.module(skill.skill.name),
-          auto: skill.auto
+          auto: skill.auto,
+          skill: skill.skill
         }
 
         Map.put(skills, command, skill)
       end)
+
+    IO.inspect(skills)
 
     put_in(character.skills, skills)
   end

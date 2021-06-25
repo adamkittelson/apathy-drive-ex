@@ -290,23 +290,17 @@ defmodule ApathyDrive.Commands.Help do
 
     Mobile.send_scroll(
       character,
-      "\n\n<p><span class='dark-green'>Strength:</span>  <span class='dark-cyan'>#{race.strength}</span>  <span class='dark-green'>Agility:</span> <span class='dark-cyan'>#{
-        race.agility
-      }</span></p>"
+      "\n\n<p><span class='dark-green'>Strength:</span>  <span class='dark-cyan'>#{race.strength}</span>  <span class='dark-green'>Agility:</span> <span class='dark-cyan'>#{race.agility}</span></p>"
     )
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Intellect:</span> <span class='dark-cyan'>#{race.intellect}</span>  <span class='dark-green'>Health:</span>  <span class='dark-cyan'>#{
-        race.health
-      }</span></p>"
+      "<p><span class='dark-green'>Intellect:</span> <span class='dark-cyan'>#{race.intellect}</span>  <span class='dark-green'>Health:</span>  <span class='dark-cyan'>#{race.health}</span></p>"
     )
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Willpower:</span> <span class='dark-cyan'>#{race.willpower}</span>  <span class='dark-green'>Charm:</span>   <span class='dark-cyan'>#{
-        race.charm
-      }</span></p>"
+      "<p><span class='dark-green'>Willpower:</span> <span class='dark-cyan'>#{race.willpower}</span>  <span class='dark-green'>Charm:</span>   <span class='dark-cyan'>#{race.charm}</span></p>"
     )
 
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Traits:</span></p>")
@@ -328,9 +322,7 @@ defmodule ApathyDrive.Commands.Help do
 
     Mobile.send_scroll(
       character,
-      "<p>  <span class='dark-green'>Stealth:</span> <span class='dark-cyan'>#{
-        if race.stealth, do: "Yes", else: "No"
-      }</span></p>"
+      "<p>  <span class='dark-green'>Stealth:</span> <span class='dark-cyan'>#{if race.stealth, do: "Yes", else: "No"}</span></p>"
     )
 
     Mobile.send_scroll(
@@ -368,9 +360,7 @@ defmodule ApathyDrive.Commands.Help do
 
     Mobile.send_scroll(
       character,
-      "<p> <span class='white'>#{String.pad_trailing(class.name, 48)}</span><span class='dark-green'>Exp Modifier:</span>  <span class='dark-cyan'>#{
-        class.exp_modifier
-      }%</p>"
+      "<p> <span class='white'>#{String.pad_trailing(class.name, 48)}</span><span class='dark-green'>Exp Modifier:</span>  <span class='dark-cyan'>#{class.exp_modifier}%</p>"
     )
 
     Mobile.send_scroll(
@@ -426,7 +416,7 @@ defmodule ApathyDrive.Commands.Help do
     )
   end
 
-  def help(character, %Skill{name: name}) do
+  def help(character, %Skill{name: name} = skill) do
     name =
       name
       |> String.split(~r/[^\w]+/)
@@ -435,8 +425,8 @@ defmodule ApathyDrive.Commands.Help do
 
     module = Module.concat([ApathyDrive, Skills, name])
 
-    if function_exported?(module, :help, 1) do
-      module.help(character)
+    if function_exported?(module, :help, 2) do
+      module.help(character, skill)
     else
       Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
     end
@@ -458,9 +448,7 @@ defmodule ApathyDrive.Commands.Help do
     if ability.kind != "passive" do
       Mobile.send_scroll(
         character,
-        "\n\n<p><span class='dark-green'>Command:</span> <span class='dark-cyan'>#{
-          ability.command
-        }</span></p>"
+        "\n\n<p><span class='dark-green'>Command:</span> <span class='dark-cyan'>#{ability.command}</span></p>"
       )
     end
 
@@ -491,9 +479,7 @@ defmodule ApathyDrive.Commands.Help do
         ability.duration > 0 ->
           Mobile.send_scroll(
             character,
-            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{
-              ability.duration
-            } seconds</span></p>"
+            "<p><span class='dark-green'>Duration:</span> <span class='dark-cyan'>#{ability.duration} seconds</span></p>"
           )
 
         ability.duration == -1 ->
@@ -517,12 +503,8 @@ defmodule ApathyDrive.Commands.Help do
     if ability.cast_time do
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>Enchant Time: </span><span class='dark-cyan'>#{
-          Float.round(
-            Enchantment.total_enchantment_time(character, %Enchantment{ability: ability}) / 60,
-            2
-          )
-        } minutes</span></p>"
+        "<p><span class='dark-green'>Enchant Time: </span><span class='dark-cyan'>#{Float.round(Enchantment.total_enchantment_time(character, %Enchantment{ability: ability}) / 60,
+        2)} minutes</span></p>"
       )
     end
 
@@ -546,9 +528,7 @@ defmodule ApathyDrive.Commands.Help do
     if Enum.any?(classes) do
       Mobile.send_scroll(
         character,
-        "<p><span class='dark-green'>Classes: </span><span class='dark-cyan'>#{
-          ApathyDrive.Commands.Inventory.to_sentence(classes)
-        }</span></p>"
+        "<p><span class='dark-green'>Classes: </span><span class='dark-cyan'>#{ApathyDrive.Commands.Inventory.to_sentence(classes)}</span></p>"
       )
     end
 
@@ -586,45 +566,35 @@ defmodule ApathyDrive.Commands.Help do
       if ability.user_message do
         Mobile.send_scroll(
           character,
-          "<p>\n<span class='dark-green'>User Message: </span><span class='dark-cyan'>#{
-            ability.user_message
-          }</span></p>"
+          "<p>\n<span class='dark-green'>User Message: </span><span class='dark-cyan'>#{ability.user_message}</span></p>"
         )
       end
 
       if ability.target_message do
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-green'>Target Message: </span><span class='dark-cyan'>#{
-            ability.target_message
-          }</span></p>"
+          "<p><span class='dark-green'>Target Message: </span><span class='dark-cyan'>#{ability.target_message}</span></p>"
         )
       end
 
       if ability.spectator_message do
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-green'>Spectator Message: </span><span class='dark-cyan'>#{
-            ability.spectator_message
-          }</span></p>"
+          "<p><span class='dark-green'>Spectator Message: </span><span class='dark-cyan'>#{ability.spectator_message}</span></p>"
         )
       end
 
       if traits["RemoveMessage"] do
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-green'>Remove Message: </span><span class='dark-cyan'>#{
-            traits["RemoveMessage"]
-          }</span></p>"
+          "<p><span class='dark-green'>Remove Message: </span><span class='dark-cyan'>#{traits["RemoveMessage"]}</span></p>"
         )
       end
 
       if traits["StatusMessage"] do
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-green'>Status Message: </span><span class='dark-cyan'>#{
-            traits["StatusMessage"]
-          }</span></p>"
+          "<p><span class='dark-green'>Status Message: </span><span class='dark-cyan'>#{traits["StatusMessage"]}</span></p>"
         )
       end
     end

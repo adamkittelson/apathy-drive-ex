@@ -45,9 +45,7 @@ defmodule ApathyDrive.Commands.Bash do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} bash open the #{name} #{
-            ApathyDrive.Exit.direction_description(room_exit["direction"])
-          }.</p>",
+          "<p>You see #{Mobile.colored_name(mobile)} bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>",
           [mobile]
         )
 
@@ -59,9 +57,7 @@ defmodule ApathyDrive.Commands.Bash do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} attempt to bash open the #{name} #{
-            ApathyDrive.Exit.direction_description(room_exit["direction"])
-          }.</p>",
+          "<p>You see #{Mobile.colored_name(mobile)} attempt to bash open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>",
           [mobile]
         )
 

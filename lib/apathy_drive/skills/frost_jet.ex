@@ -30,15 +30,15 @@ defmodule ApathyDrive.Skills.FrostJet do
     }
   end
 
-  def help(character) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
+  def help(character, skill) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
   end
 
-  def tooltip(character) do
+  def tooltip(character, skill) do
     """
       <span style="color: lime">Ice Bolt</span>
       This spell shoots a bolt of pure ice at the target, causing minor damage.
-      #{current_skill_level(character)}#{next_skill_level(character)}
+      #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
 
@@ -54,10 +54,10 @@ defmodule ApathyDrive.Skills.FrostJet do
     end
   end
 
-  defp next_skill_level(character) do
+  defp next_skill_level(character, skill) do
     level = skill_level(character) + 1
 
-    if level <= Skill.max_level() do
+    if level <= skill.max_level do
       "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Cold Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
