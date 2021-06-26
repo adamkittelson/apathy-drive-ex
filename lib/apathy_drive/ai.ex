@@ -376,9 +376,9 @@ defmodule ApathyDrive.AI do
         mobile.abilities
         |> Map.values()
         |> List.flatten()
+        |> Kernel.++(Ability.skill_abilities(mobile))
         |> Enum.filter(&(!is_nil(&1.traits["Freedom"])))
         |> Ability.useable(mobile)
-        |> Enum.sort_by(&(-&1.level))
         |> Enum.reject(&(!&1.auto))
         |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
         |> reject_item_if_monster(mobile)
@@ -411,11 +411,12 @@ defmodule ApathyDrive.AI do
 
       ability =
         mobile.abilities
+        |> IO.inspect()
         |> Map.values()
         |> List.flatten()
+        |> Kernel.++(Ability.skill_abilities(mobile))
         |> Enum.filter(&(&1.traits["DispelMagic"] == 107))
         |> Ability.useable(mobile)
-        |> Enum.sort_by(&(-&1.level))
         |> Enum.reject(&(!&1.auto))
         |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
         |> reject_item_if_monster(mobile)
@@ -452,7 +453,6 @@ defmodule ApathyDrive.AI do
         |> List.flatten()
         |> Enum.filter(&(&1.traits["DispelMagic"] == 19))
         |> Ability.useable(mobile)
-        |> Enum.sort_by(&(-&1.level))
         |> Enum.reject(&(!&1.auto))
         |> reject_self_only_if_not_targetting_self(mobile, member_to_free)
         |> reject_item_if_monster(mobile)
