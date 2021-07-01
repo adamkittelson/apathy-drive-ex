@@ -324,6 +324,7 @@ defmodule ApathyDrive.RoomServer do
         |> Character.set_title()
         |> Character.set_lore()
         |> Character.load_materials()
+        |> Character.load_attunements()
         |> TimerManager.send_after(
           {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
         )
@@ -417,9 +418,7 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       Room.send_scroll(
         room,
-        "<p>The #{String.downcase(mirror_exit["kind"])} #{
-          ApathyDrive.Exit.direction_description(mirror_exit["direction"])
-        } just locked!</p>"
+        "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just locked!</p>"
       )
 
       {:noreply, Room.lock!(room, mirror_exit["direction"])}
@@ -434,9 +433,7 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       Room.send_scroll(
         room,
-        "<p>The #{String.downcase(mirror_exit["kind"])} #{
-          ApathyDrive.Exit.direction_description(mirror_exit["direction"])
-        } just closed!</p>"
+        "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just closed!</p>"
       )
 
       {:noreply, Room.close!(room, mirror_exit["direction"])}
@@ -451,9 +448,7 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       Room.send_scroll(
         room,
-        "<p>The #{String.downcase(mirror_exit["kind"])} #{
-          ApathyDrive.Exit.direction_description(mirror_exit["direction"])
-        } just opened!</p>"
+        "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just opened!</p>"
       )
 
       {:noreply, Room.open!(room, mirror_exit["direction"])}
@@ -468,9 +463,7 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       Room.send_scroll(
         room,
-        "<p>The #{String.downcase(mirror_exit["kind"])} #{
-          ApathyDrive.Exit.direction_description(mirror_exit["direction"])
-        } just flew open!</p>"
+        "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} just flew open!</p>"
       )
 
       {:noreply, Room.open!(room, mirror_exit["direction"])}
@@ -485,9 +478,7 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       Room.send_scroll(
         room,
-        "<p>The #{String.downcase(mirror_exit["kind"])} #{
-          ApathyDrive.Exit.direction_description(mirror_exit["direction"])
-        } shudders from an impact, but it holds!</p>"
+        "<p>The #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])} shudders from an impact, but it holds!</p>"
       )
     end
 
@@ -500,9 +491,7 @@ defmodule ApathyDrive.RoomServer do
     if mirror_exit["kind"] == room_exit["kind"] do
       Room.send_scroll(
         room,
-        "<p>Someone tries to open the #{String.downcase(mirror_exit["kind"])} #{
-          ApathyDrive.Exit.direction_description(mirror_exit["direction"])
-        }, but it's locked.</p>"
+        "<p>Someone tries to open the #{String.downcase(mirror_exit["kind"])} #{ApathyDrive.Exit.direction_description(mirror_exit["direction"])}, but it's locked.</p>"
       )
     end
 

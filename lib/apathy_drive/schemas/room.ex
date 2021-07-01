@@ -1040,6 +1040,7 @@ defmodule ApathyDrive.Room do
       |> Character.load_items()
       |> Character.set_title()
       |> Character.set_lore()
+      |> Character.load_attunements()
 
     Mobile.update_prompt(character, room)
 

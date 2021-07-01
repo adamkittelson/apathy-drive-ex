@@ -2609,22 +2609,7 @@ defmodule ApathyDrive.Ability do
 
       damage_percent =
         Enum.reduce(damages, 0, fn
-          %{kind: "raw", min: min, max: max, damage_type: type}, damage_percent ->
-            damage = Enum.random(min..max)
-
-            damage = damage + bonus_damage
-
-            modifier =
-              Mobile.ability_value(target, "Resist#{type}") +
-                Mobile.ability_value(target, "ElementalResist")
-
-            damage = damage * (1 - modifier / 100)
-
-            percent = damage / Mobile.max_hp_at_level(target, target.level)
-
-            damage_percent + percent
-
-          %{kind: "physical", min: min, max: max, damage_type: type}, damage_percent ->
+          %{min: min, max: max, damage_type: "Physical"}, damage_percent ->
             min = trunc(min)
             max = trunc(max)
 
@@ -2643,7 +2628,7 @@ defmodule ApathyDrive.Ability do
             damage = damage * resist_percent + penetration
 
             modifier =
-              Mobile.ability_value(target, "Resist#{type}") +
+              Mobile.ability_value(target, "ResistPhysical") +
                 Mobile.ability_value(target, "ElementalResist")
 
             damage = damage * (1 - modifier / 100)
@@ -2652,7 +2637,10 @@ defmodule ApathyDrive.Ability do
 
             damage_percent + percent
 
-          %{kind: "magical", min: min, max: max, damage_type: type}, damage_percent ->
+          %{min: _min, max: _max, damage_type: "Drain"}, damage_percent ->
+            damage_percent
+
+          %{min: min, max: max, damage_type: type}, damage_percent ->
             min = trunc(min)
             max = trunc(max)
 
@@ -2679,9 +2667,6 @@ defmodule ApathyDrive.Ability do
             percent = damage / Mobile.max_hp_at_level(target, target.level)
 
             damage_percent + percent
-
-          %{kind: "drain", min: _min, max: _max, damage_type: _type}, damage_percent ->
-            damage_percent
         end)
 
       rounds = :timer.seconds(duration) / 5000

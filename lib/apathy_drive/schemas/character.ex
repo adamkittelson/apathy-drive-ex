@@ -8,6 +8,7 @@ defmodule ApathyDrive.Character do
     AbilityDamageType,
     AbilityTrait,
     AI,
+    Attunement,
     ChannelHistory,
     Character,
     CharacterClass,
@@ -78,6 +79,7 @@ defmodule ApathyDrive.Character do
     field(:chat_tab, :string)
     field(:experience, :integer)
 
+    field(:attunements, :any, virtual: true, default: [])
     field(:title, :string, virtual: true)
     field(:level, :integer, virtual: true)
     field(:hate, :map, virtual: true, default: %{})
@@ -323,8 +325,6 @@ defmodule ApathyDrive.Character do
         Map.put(skills, command, skill)
       end)
 
-    IO.inspect(skills)
-
     put_in(character.skills, skills)
   end
 
@@ -551,6 +551,10 @@ defmodule ApathyDrive.Character do
 
   def load_materials(%Character{} = character) do
     CharacterMaterial.load_for_character(character)
+  end
+
+  def load_attunements(%Character{} = character) do
+    Attunement.load(character)
   end
 
   def load_items(%Character{} = character) do
