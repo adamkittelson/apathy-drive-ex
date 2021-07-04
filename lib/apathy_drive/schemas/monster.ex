@@ -1207,8 +1207,16 @@ defmodule ApathyDrive.Monster do
             monster.death_ability_id
             |> Ability.find()
             |> Map.put(:energy, 0)
+            |> Map.put(:on_hit?, true)
 
-          Ability.execute(room, monster.ref, ability, [monster.ref])
+          targets =
+            if ability.targets in ["full party area", "full attack area"] do
+              Ability.get_targets(room, monster.ref, ability, "")
+            else
+              [monster.ref]
+            end
+
+          Ability.execute(room, monster.ref, ability, targets)
         else
           room
         end

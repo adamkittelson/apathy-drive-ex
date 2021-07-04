@@ -1547,15 +1547,9 @@ defmodule ApathyDrive.Character do
       "<span class='#{color(character)}'>#{name}</span>"
     end
 
-    def crits_at_level(character, level) do
+    def crits_at_level(character, _level) do
       weapon = Character.weapon(character)
-      intellect = attribute_at_level(character, :intellect, level)
-      charm = attribute_at_level(character, :charm, level)
-
-      base = div(intellect * 3 + charm, 6) + level * 2
-
-      trunc(base / (250 + base) * 100) + ability_value(character, "Crits") +
-        Character.mastery_value(character, weapon, "Crits")
+      ability_value(character, "Crits") + Character.mastery_value(character, weapon, "Crits")
     end
 
     def description(%Character{} = character, %Character{} = observer) do
