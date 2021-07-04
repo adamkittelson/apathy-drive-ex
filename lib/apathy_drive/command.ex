@@ -154,20 +154,21 @@ defmodule ApathyDrive.Command do
           ability = monster.abilities[String.downcase(command)] ->
             Ability.execute(room, monster.ref, ability, Enum.join(arguments, " "))
 
-          emote = Emote.match_by_name(command, arguments) ->
-            target = Enum.join(arguments, " ")
-            Emote.execute(emote, room, monster, target)
-
-            room
-
           true ->
             case Match.all(Enum.map(all(), & &1.to_struct), :keyword_starts_with, command) do
               %__MODULE__{} = cmd ->
                 cmd.module.execute(room, monster, arguments)
 
               nil ->
-                Mobile.send_scroll(monster, "<p>Your command had no effect.</p>")
-                room
+                if emote = Emote.match_by_name(command, arguments) do
+                  target = Enum.join(arguments, " ")
+                  Emote.execute(emote, room, monster, target)
+
+                  room
+                else
+                  Mobile.send_scroll(monster, "<p>Your command had no effect.</p>")
+                  room
+                end
 
               commands ->
                 Mobile.send_scroll(
