@@ -281,11 +281,14 @@ defmodule ApathyDrive.Commands.Help do
       "<p><span class='dark-cyan'>+------------------------------------------------------------------+</span></p>"
     )
 
-    Mobile.send_scroll(character, "<p><span class='dark-cyan'>#{race.name}</span></p>")
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-cyan'>#{race.name |> to_string |> String.pad_trailing(51)}</span> <span class='dark-green'>Exp Penalty:</span> <span class='dark-cyan'>#{race.exp_modifier}%</span></p>"
+    )
 
     Mobile.send_scroll(
       character,
-      "<p>    #{race.description}</p>"
+      "<p style='max-width: 1475px;'>    #{race.description}</p>"
     )
 
     Mobile.send_scroll(
@@ -306,7 +309,7 @@ defmodule ApathyDrive.Commands.Help do
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Traits:</span></p>")
 
     traits
-    |> Enum.map(&massage_trait(&1, character))
+    |> Enum.map(&massage_trait(&1))
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.each(fn
@@ -371,7 +374,7 @@ defmodule ApathyDrive.Commands.Help do
     Mobile.send_scroll(character, "\n\n<p><span class='white'>Traits:</span></p>")
 
     traits
-    |> Enum.map(&massage_trait(&1, character))
+    |> Enum.map(&massage_trait(&1))
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.each(fn
@@ -602,7 +605,7 @@ defmodule ApathyDrive.Commands.Help do
     Mobile.send_scroll(character, "\n\n<p><span class='dark-green'>Effects:</span></p>")
 
     traits
-    |> Enum.map(&massage_trait(&1, character))
+    |> Enum.map(&massage_trait(&1))
     |> List.flatten()
     |> Enum.reject(&is_nil/1)
     |> Enum.each(fn
@@ -630,7 +633,7 @@ defmodule ApathyDrive.Commands.Help do
     |> Match.all(:keyword_starts_with, query)
   end
 
-  defp massage_trait({"RemoveSpells", ids}, _character) do
+  def massage_trait({"RemoveSpells", ids}) do
     spells =
       ids
       |> Enum.map(fn id ->
@@ -643,56 +646,56 @@ defmodule ApathyDrive.Commands.Help do
     end
   end
 
-  defp massage_trait({"Heal", %{"max" => max, "min" => min}}, _character) do
+  def massage_trait({"Heal", %{"max" => max, "min" => min}}) do
     {"Restores", "#{min}-#{max} HP"}
   end
 
-  defp massage_trait({"Damage", damages}, _character) do
+  def massage_trait({"Damage", damages}) do
     Enum.map(damages, fn %{damage_type: type, kind: kind, max: max, min: min} ->
       {"Damage", "#{min}-#{max} #{kind} damage (#{String.downcase(type)})"}
     end)
   end
 
-  defp massage_trait({"Dodge", amount}, _character) do
+  def massage_trait({"Dodge", amount}) do
     {"Modifies Dodge Skill By", amount}
   end
 
-  defp massage_trait({"EndCast", id}, _character) do
+  def massage_trait({"EndCast", id}) do
     name = Repo.get(Ability, id).name
     {"EndCast", name}
   end
 
-  defp massage_trait({"ClassCombatLevel", value}, _character) do
+  def massage_trait({"ClassCombatLevel", value}) do
     {"Combat Proficiency", Character.combat_proficiency(value)}
   end
 
-  defp massage_trait({"MaxHP", amount}, _character) do
+  def massage_trait({"MaxHP", amount}) do
     {"Bonus HP per level", amount}
   end
 
-  defp massage_trait({"MaxMana", amount}, _character) do
+  def massage_trait({"MaxMana", amount}) do
     {"Bonus Mana per level", amount}
   end
 
-  defp massage_trait({"Defense%", amount}, _character) do
+  def massage_trait({"Defense%", amount}) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
     {"Defense", ac_from_percent}
   end
 
-  defp massage_trait({"Powerstone", _value}, _character) do
+  def massage_trait({"Powerstone"}) do
     {"<span class='dark-cyan'>Transforms a stone or gem into a mana granting powerstone</span>",
      nil}
   end
 
-  defp massage_trait({"MR%", amount}, _character) do
+  def massage_trait({"MR%", amount}) do
     ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
     {"MR", ac_from_percent}
   end
 
-  defp massage_trait({"AffectsLiving", _}, _character), do: {"Only affects living targets", nil}
-  defp massage_trait({"StatusMessage", _}, _character), do: nil
-  defp massage_trait({"RemoveMessage", _}, _character), do: nil
-  defp massage_trait({name, value}, _character), do: {name, inspect(value)}
+  def massage_trait({"AffectsLiving", _}), do: {"Only affects living targets", nil}
+  def massage_trait({"StatusMessage", _}), do: nil
+  def massage_trait({"RemoveMessage", _}), do: nil
+  def massage_trait({name, value}), do: {name, inspect(value)}
 
   defp ability_name(character, %{ability_id: id, auto_learn: auto_learn}) do
     name = Ability.find(id).name

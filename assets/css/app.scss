@@ -38,6 +38,9 @@ body.app {
     }
   }
 
+  .races {
+    font-family: "Courier Prime", "Courier New", "Inconsolata", "Andale Mono", Monospace;
+  }
 
   .header {
     margin-top: 6rem;
@@ -131,7 +134,7 @@ body.app {
   form {
     border: 2px solid #fff;
     padding: 20px;
-    max-width: 500px;
+    max-width: 750px;
   }
   .tabrow {
     left: 20px;
@@ -211,4 +214,61 @@ body.app {
   }
 }
 
+.dark-cyan {
+  color: teal; }
+
+.cyan {
+  color: cyan; }
+
+.dark-red {
+  color: maroon; }
+
+.red {
+  color: red; }
+
+.dark-magenta {
+  color: darkmagenta; }
+
+.magenta {
+  color: magenta; }
+
+.attacker {
+  color: #5555ff;
+}
+
+.target {
+  color: #ff3333;
+}
+
+.spectator {
+  color: #ff55ff;
+}
+
+
+.white {
+  color: white; }
+
+.dark-yellow {
+  color: olive; }
+
+.yellow {
+  color: yellow; }
+
+.dark-blue {
+  color: #0000aa; }
+
+.blue {
+  color: blue; }
+
+.dark-green {
+  color: green; }
+
+.green {
+  color: chartreuse; }
+
+.grey {
+  color: silver; }
+
+.dark-grey {
+  color: gray; }
 
