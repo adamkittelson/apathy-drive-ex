@@ -6,7 +6,8 @@ defmodule ApathyDrive.Commands.Train do
     CharacterSkill,
     Match,
     Repo,
-    Skill
+    Skill,
+    Trait
   }
 
   def keywords, do: ["train"]
@@ -75,6 +76,8 @@ defmodule ApathyDrive.Commands.Train do
 
   def train(room, character, skill_id) do
     Room.update_mobile(room, character.ref, fn _room, character ->
+      attribute_levels = attribute_levels(character)
+
       character_skill =
         CharacterSkill
         |> Repo.get_by(%{character_id: character.id, skill_id: skill_id})
@@ -102,15 +105,36 @@ defmodule ApathyDrive.Commands.Train do
         |> Character.load_abilities()
         |> Character.set_title()
         |> Character.update_exp_bar()
+        |> Character.set_attribute_levels()
 
       Mobile.send_scroll(
         character,
         "<p><span class='yellow'>Your #{character_skill.skill.name} level has increased to #{character_skill.level}!</span></p>"
       )
 
+      Trait.bust_cache(character)
+
+      updated_attribute_levels = attribute_levels(character)
+
+      updated_attribute_levels
+      |> Enum.each(fn {attribute, level} ->
+        if level > attribute_levels[attribute] do
+          message = "<p><span class='yellow'>Your #{attribute} increased to #{level}!</span></p>"
+
+          Mobile.send_scroll(character, message)
+        end
+      end)
+
       ApathyDrive.Commands.Help.execute(room, character, [character_skill.skill.name])
 
       character
+    end)
+  end
+
+  defp attribute_levels(character) do
+    [:strength, :agility, :intellect, :willpower, :health, :charm]
+    |> Enum.reduce(%{}, fn attribute, levels ->
+      Map.put(levels, attribute, Mobile.attribute_at_level(character, attribute, character.level))
     end)
   end
 end

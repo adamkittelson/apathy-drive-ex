@@ -9,6 +9,7 @@ defmodule ApathyDrive.Skills.AxeMastery do
       kind: "mastery",
       targets: "self",
       name: "Axe Mastery",
+      attributes: ["strength"],
       traits: %{
         "Damage%" => damage_percent(level),
         "AttackRating%" => attack_percent(level),
@@ -25,6 +26,7 @@ defmodule ApathyDrive.Skills.AxeMastery do
     """
       <span style="color: lime">Axe Mastery</span>
       Increases damage, attack rating, and critical hit chance while wielding an axe.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

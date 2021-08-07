@@ -56,6 +56,7 @@ defmodule ApathyDrive.Skills.Bash do
     """
       <span style="color: lime">Bash</span>
       Strike an enemy with great strength, doing increased damage and knocking them back.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

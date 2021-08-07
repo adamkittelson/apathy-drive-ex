@@ -38,6 +38,7 @@ defmodule ApathyDrive.Skills.FrostJet do
     """
       <span style="color: lime">Ice Bolt</span>
       This spell shoots a bolt of pure ice at the target, causing minor damage.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

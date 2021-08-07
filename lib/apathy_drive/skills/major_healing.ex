@@ -42,6 +42,7 @@ defmodule ApathyDrive.Skills.MajorHealing do
     """
       <span style="color: lime">Major Healing</span>
       Heals major damage for a moderate mana cost.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

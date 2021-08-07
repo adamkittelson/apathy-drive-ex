@@ -40,6 +40,7 @@ defmodule ApathyDrive.Skills.MinorHealing do
     """
       <span style="color: lime">Minor Healing</span>
       Heals minor damage for a small mana cost.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

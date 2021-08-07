@@ -42,6 +42,7 @@ defmodule ApathyDrive.Skills.Godheal do
     """
       <span style="color: lime">#{name()}</span>
       Heals a huge amount of damage at a very high mana cost.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

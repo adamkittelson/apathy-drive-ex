@@ -39,6 +39,7 @@ defmodule ApathyDrive.Skills.CureBlindness do
     """
       <span style="color: lime">#{name()}</span>
       This spell restores sight to those who have been blinded.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}
     """
   end

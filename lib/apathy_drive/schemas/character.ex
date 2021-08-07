@@ -319,7 +319,8 @@ defmodule ApathyDrive.Character do
           level: skill.level,
           module: Skill.module(skill.skill.name),
           auto: skill.auto,
-          skill: skill.skill
+          skill: skill.skill,
+          attributes: Skill.module(skill.skill.name).ability(1).attributes
         }
 
         Map.put(skills, command, skill)
@@ -483,25 +484,48 @@ defmodule ApathyDrive.Character do
   end
 
   def set_attribute_levels(%Character{} = character) do
-    [:strength, :agility, :intellect, :willpower, :health, :charm]
-    |> Enum.reduce(character, fn stat, character ->
-      exp = get_in(character, [Access.key!(:race), Access.key!(:"#{stat}_experience")])
+    character =
+      [:strength, :agility, :intellect, :willpower, :health, :charm]
+      |> Enum.reduce(character, fn stat, character ->
+        exp = get_in(character, [Access.key!(:race), Access.key!(:"#{stat}_experience")])
 
-      modifier = (100 + character.race.race.exp_modifier) / 100
+        modifier = (100 + character.race.race.exp_modifier) / 100
 
-      level = Level.level_at_exp(exp, modifier)
+        level = Level.level_at_exp(exp, modifier)
 
-      character =
+        character =
+          character
+          |> put_in([Access.key!(:attribute_levels), stat], level)
+          |> put_in(
+            [Access.key!(stat)],
+            get_in(character, [Access.key!(:race), Access.key!(:race), Access.key!(stat)]) + level
+          )
+
+        Character.update_attribute_bar(character, stat)
         character
-        |> put_in([Access.key!(:attribute_levels), stat], level)
-        |> put_in(
-          [Access.key!(stat)],
-          get_in(character, [Access.key!(:race), Access.key!(:race), Access.key!(stat)]) + level
-        )
+      end)
 
-      Character.update_attribute_bar(character, stat)
-      character
-    end)
+    effect = %{
+      "stack_key" => "training-attributes",
+      "stack_count" => 1
+    }
+
+    effect =
+      character.skills
+      |> Enum.reduce(effect, fn {_, skill}, effect ->
+        skill.attributes
+        |> Enum.reduce(effect, fn attribute, effect ->
+          effect
+          |> Map.put_new(String.capitalize(attribute), 0)
+          |> update_in(
+            [String.capitalize(attribute)],
+            &(&1 + trunc(5 * skill.level / length(skill.attributes)))
+          )
+        end)
+      end)
+
+    character
+    |> Systems.Effect.add(effect)
   end
 
   def load_classes(%Character{} = character) do

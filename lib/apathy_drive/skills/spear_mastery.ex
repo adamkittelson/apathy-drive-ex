@@ -9,6 +9,7 @@ defmodule ApathyDrive.Skills.SpearMastery do
       kind: "mastery",
       targets: "self",
       name: "Spear Mastery",
+      attributes: ["strength", "agility"],
       traits: %{
         "Damage%" => damage_percent(level),
         "AttackRating%" => attack_percent(level),
@@ -25,6 +26,7 @@ defmodule ApathyDrive.Skills.SpearMastery do
     """
       <span style="color: lime">Spear Mastery</span>
       Increases damage, attack rating, and critical hit chance while wielding a spear.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

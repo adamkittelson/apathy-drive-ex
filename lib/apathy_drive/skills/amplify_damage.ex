@@ -36,6 +36,7 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
       This deceptively potent curse rapidly advances the age and putridity of any wound.
     Ordinary blows will cut through flesh and carve particularly vicious wounds that fester and
     seethe.
+    Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

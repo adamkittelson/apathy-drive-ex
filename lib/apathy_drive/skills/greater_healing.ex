@@ -43,6 +43,7 @@ defmodule ApathyDrive.Skills.GreaterHealing do
     """
       <span style="color: lime">#{name()}</span>
       Heals a large amount of damage at a high mana cost.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

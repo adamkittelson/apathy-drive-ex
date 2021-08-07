@@ -38,6 +38,7 @@ defmodule ApathyDrive.Skills.LightningBolt do
     """
       <span style="color: lime">Charged Bolt</span>
       This spell unleashes a blast of blue-white lightning to assault a foe.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

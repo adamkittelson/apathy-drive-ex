@@ -9,6 +9,7 @@ defmodule ApathyDrive.Skills.SwordMastery do
       kind: "mastery",
       targets: "self",
       name: "Sword Mastery",
+      attributes: ["strength", "agility"],
       traits: %{
         "Damage%" => damage_percent(level),
         "AttackRating%" => attack_percent(level),
@@ -25,6 +26,7 @@ defmodule ApathyDrive.Skills.SwordMastery do
     """
       <span style="color: lime">Sword Mastery</span>
       Increases damage, attack rating, and critical hit chance while wielding a sword.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

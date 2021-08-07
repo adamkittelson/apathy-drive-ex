@@ -67,6 +67,12 @@ defmodule ApathyDrive.Skill do
         end
       end
 
+      def attributes() do
+        ability(1).attributes
+        |> Enum.map(&String.capitalize/1)
+        |> Enum.join(", ")
+      end
+
       defoverridable(prereq: 0)
     end
   end

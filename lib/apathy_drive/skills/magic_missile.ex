@@ -38,6 +38,7 @@ defmodule ApathyDrive.Skills.MagicMissile do
     """
       <span style="color: lime">Magic Missile</span>
       This spell shoots a shimmering dart of pure mana at the target, causing minor damage.
+      Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
