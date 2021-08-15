@@ -7,20 +7,15 @@ defmodule ApathyDrive.Skills.Godheal do
   def ability(%Character{} = character) do
     level = skill_level(character)
 
-    level
-    |> ability()
-    |> Map.put(:auto, character.skills["gdhe"].auto)
-  end
-
-  def ability(level) do
     %Ability{
       kind: "heal",
-      command: "grhe",
+      command: "gdhe",
       targets: "self or single",
       energy: 600,
       name: "godheal",
       attributes: ["willpower"],
       mana: mana(),
+      auto: !!get_in(character, [:skills, "gdhe", :auto]),
       spell?: true,
       user_message: "You cast godheal on {{target}}, healing {{amount}} damage!",
       target_message: "{{user}} casts godheal on you, healing {{amount}} damage!",

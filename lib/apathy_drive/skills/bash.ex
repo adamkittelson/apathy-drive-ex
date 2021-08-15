@@ -12,7 +12,7 @@ defmodule ApathyDrive.Skills.Bash do
     |> Map.put(:name, "bash")
     |> Map.put(:targets, "monster or single")
     |> Map.put(:mana, mana(level))
-    |> Map.put(:auto, character.skills["bash"].auto)
+    |> Map.put(:auto, !!get_in(character, [:skills, "bash", :auto]))
     |> Map.put(:attributes, ["strength"])
     |> Map.put(
       :user_message,

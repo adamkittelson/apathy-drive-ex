@@ -5,12 +5,6 @@ defmodule ApathyDrive.Skills.MinorHealing do
   def ability(%Character{} = character) do
     level = skill_level(character)
 
-    level
-    |> ability()
-    |> Map.put(:auto, character.skills["mihe"].auto)
-  end
-
-  def ability(level) do
     %Ability{
       kind: "heal",
       command: "mihe",
@@ -19,6 +13,7 @@ defmodule ApathyDrive.Skills.MinorHealing do
       name: "minor healing",
       attributes: ["willpower"],
       mana: mana(),
+      auto: !!get_in(character, [:skills, "mihe", :auto]),
       spell?: true,
       user_message: "You cast minor healing on {{target}}, healing {{amount}} damage!",
       target_message: "{{user}} casts minor healing on you, healing {{amount}} damage!",

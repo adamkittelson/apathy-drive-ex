@@ -14,7 +14,7 @@ defmodule ApathyDrive.Skills.MagicMissile do
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["mmis"].auto,
+      auto: !!get_in(character, [:skills, "mmis", :auto]),
       user_message: "You fire a magic missile at {{target}} for {{amount}} damage!",
       target_message: "{{user}} fires a magic missile at you for {{amount}} damage!",
       spectator_message: "{{user}} fires a magic missile at {{target}} for {{amount}} damage!",

@@ -14,7 +14,7 @@ defmodule ApathyDrive.Skills.FireBolt do
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["fbol"] && character.skills["fbol"].auto,
+      auto: !!get_in(character, [:skills, "fbol", :auto]),
       user_message: "You cast a fire bolt at {{target}} for {{amount}} damage!",
       target_message: "{{user}} casts fire bolt at you for {{amount}} damage!",
       spectator_message: "{{user}} cast fire bolt at {{target}} for {{amount}} damage!",

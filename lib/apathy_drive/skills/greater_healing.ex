@@ -7,12 +7,6 @@ defmodule ApathyDrive.Skills.GreaterHealing do
   def ability(%Character{} = character) do
     level = skill_level(character)
 
-    level
-    |> ability()
-    |> Map.put(:auto, character.skills["grhe"].auto)
-  end
-
-  def ability(level) do
     %Ability{
       kind: "heal",
       command: "grhe",
@@ -21,6 +15,7 @@ defmodule ApathyDrive.Skills.GreaterHealing do
       name: "greater healing",
       attributes: ["willpower"],
       mana: mana(),
+      auto: !!get_in(character, [:skills, "grhe", :auto]),
       spell?: true,
       user_message: "You cast greater healing on {{target}}, healing {{amount}} damage!",
       target_message: "{{user}} casts greater healing on you, healing {{amount}} damage!",

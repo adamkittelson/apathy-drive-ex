@@ -14,7 +14,7 @@ defmodule ApathyDrive.Skills.ChainLightning do
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["cbol"] && character.skills["cbol"].auto,
+      auto: !!get_in(character, [:skills, "cbol", :auto]),
       user_message: "Blue lightning streaks out and sears {{target}} for {{amount}} damage!",
       target_message: "Blue lightning streaks out and sears you for {{amount}} damage!",
       spectator_message: "{{user}} fires a lightning bolt at {{target}} for {{amount}} damage!",

@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.FrostJet do
+defmodule ApathyDrive.Skills.IceBolt do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -14,7 +14,7 @@ defmodule ApathyDrive.Skills.FrostJet do
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["ibol"] && character.skills["ibol"].auto,
+      auto: !!get_in(character, [:skills, "ibol", :auto]),
       user_message: "You fire an ice bolt at {{target}} for {{amount}} damage!",
       target_message: "{{user}} fires an ice bolt at you for {{amount}} damage!",
       spectator_message: "{{user}} fires an ice bolt at {{target}} for {{amount}} damage!",

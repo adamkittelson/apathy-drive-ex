@@ -15,7 +15,7 @@ defmodule ApathyDrive.Skills.AmplifyDamage do
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["ampd"] && character.skills["ampd"].auto,
+      auto: !!get_in(character, [:skills, "ampd", :auto]),
       user_message: "You cast amplify damage on {{target}}!",
       target_message: "{{user}} casts amplify damage on you!",
       spectator_message: "{{user}} casts amplify damage on {{target}}!",

@@ -7,12 +7,6 @@ defmodule ApathyDrive.Skills.CureBlindness do
   def ability(%Character{} = character) do
     level = skill_level(character)
 
-    level
-    |> ability()
-    |> Map.put(:auto, character.skills["site"].auto)
-  end
-
-  def ability(level) do
     %Ability{
       kind: "util",
       command: "site",
@@ -21,6 +15,7 @@ defmodule ApathyDrive.Skills.CureBlindness do
       name: "cure blindness",
       attributes: ["willpower"],
       mana: mana(level),
+      auto: !!get_in(character, [:skills, "site", :auto]),
       spell?: true,
       user_message: "You cast cure blindness on {{target}}!",
       target_message: "{{user}} casts cure blindness upon you!",

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Skill do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{CharacterSkill, Match}
+  alias ApathyDrive.{Character, CharacterSkill, Match}
 
   schema "skills" do
     field(:name, :string)
@@ -68,7 +68,7 @@ defmodule ApathyDrive.Skill do
       end
 
       def attributes() do
-        ability(1).attributes
+        ability(%Character{level: 1}).attributes
         |> Enum.map(&String.capitalize/1)
         |> Enum.join(", ")
       end

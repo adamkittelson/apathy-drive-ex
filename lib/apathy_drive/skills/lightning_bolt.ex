@@ -14,7 +14,7 @@ defmodule ApathyDrive.Skills.LightningBolt do
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      auto: character.skills["cbol"] && character.skills["cbol"].auto,
+      auto: !!get_in(character, [:skills, "lbol", :auto]),
       user_message: "You fire a lightning bolt at {{target}} for {{amount}} damage!",
       target_message: "{{user}} fire a lightning bolt at you for {{amount}} damage!",
       spectator_message: "{{user}} fires a lightning bolt at {{target}} for {{amount}} damage!",
@@ -36,7 +36,7 @@ defmodule ApathyDrive.Skills.LightningBolt do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Charged Bolt</span>
+      <span style="color: lime">Lightning Bolt</span>
       This spell unleashes a blast of blue-white lightning to assault a foe.
       Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}

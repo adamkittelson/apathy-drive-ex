@@ -320,7 +320,7 @@ defmodule ApathyDrive.Character do
           module: Skill.module(skill.skill.name),
           auto: skill.auto,
           skill: skill.skill,
-          attributes: Skill.module(skill.skill.name).ability(1).attributes
+          attributes: Skill.module(skill.skill.name).ability(character).attributes
         }
 
         Map.put(skills, command, skill)
