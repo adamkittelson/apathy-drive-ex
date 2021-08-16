@@ -44,7 +44,7 @@
 <div id="player-bars">
   <div class="progress-bar hp"></div>
   <div class="progress-bar energy">
-    <div class="yellow"></div>
+    <div class="yellow" style="width: 0px;"></div>
   </div>
   <div class="progress-bar mana"></div>
 </div>

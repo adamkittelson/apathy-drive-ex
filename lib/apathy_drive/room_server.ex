@@ -1115,12 +1115,25 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    if mobile.energy >= mobile.max_energy do
+    if mobile.name == "Cole" do
+      IO.puts("casting #{ability.name} in #{ability.cast_time}")
+    end
+
+    ability =
+      ability
+      |> Map.put(
+        :cast_time,
+        max(0, ability.cast_time - ApathyDrive.Regeneration.tick_time(mobile))
+      )
+
+    if ability.cast_time == 0 do
       mobile = Map.put(mobile, :casting, nil)
       room = put_in(room.mobiles[mobile.ref], mobile)
+      Mobile.send_scroll(mobile, "<p><span class='cyan'>You cast your spell.</span></p>")
       Ability.execute(room, mobile.ref, %Ability{} = ability, ability.target_list)
     else
       mobile
+      |> Map.put(:casting, ability)
     end
   end
 

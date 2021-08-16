@@ -673,7 +673,8 @@ defmodule ApathyDrive.Ability do
     room
   end
 
-  def execute(%Room{} = room, caster_ref, %Ability{} = ability, query) when is_binary(query) do
+  def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query)
+      when is_binary(query) and (is_nil(time) or time == 0) do
     case get_targets(room, caster_ref, ability, query) do
       [] ->
         case query do
@@ -877,7 +878,6 @@ defmodule ApathyDrive.Ability do
 
             Room.update_moblist(room)
 
-            Room.update_energy_bar(room, caster.ref)
             Room.update_hp_bar(room, caster.ref)
             Room.update_mana_bar(room, caster.ref)
 
@@ -1014,7 +1014,6 @@ defmodule ApathyDrive.Ability do
               Mobile.update_prompt(caster, room)
               room = put_in(room.mobiles[caster_ref], caster)
 
-              Room.update_energy_bar(room, caster_ref)
               Room.update_hp_bar(room, caster_ref)
               Room.update_mana_bar(room, caster_ref)
 
@@ -1032,9 +1031,94 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) when is_list(targets) do
+  def execute(
+        %Room{} = room,
+        caster_ref,
+        %Ability{} = ability,
+        {:scry, %{room_id: _, ref: _}} = targets
+      ) do
     Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
+        mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
+          mobile
+
+        can_execute?(room, caster, ability) ->
+          display_pre_cast_message(room, caster, targets, ability)
+
+          {caster, ability} = crit(caster, ability)
+
+          room = put_in(room.mobiles[caster_ref], caster)
+
+          room =
+            Room.update_mobile(room, caster.ref, fn _room, caster ->
+              caster =
+                caster
+                |> apply_cooldowns(ability)
+                |> Mobile.subtract_mana(ability)
+                |> Mobile.subtract_energy(ability)
+
+              Mobile.update_prompt(caster, room)
+            end)
+
+          room = apply_ability(room, room.mobiles[caster.ref], targets, ability)
+
+          Room.update_hp_bar(room, caster.ref)
+          Room.update_mana_bar(room, caster.ref)
+
+          room
+
+        :else ->
+          Room.update_mobile(room, caster_ref, fn _room, caster ->
+            Mobile.subtract_energy(caster, ability)
+          end)
+      end
+    end)
+  end
+
+  def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) do
+    Room.update_mobile(room, caster_ref, fn room, caster ->
+      cond do
+        ability.spell? && ability.cast_time && ability.cast_time > 0 ->
+          cond do
+            caster.casting && caster.casting.cast_time <= 500 ->
+              ApathyDrive.Command.enqueue_ability(room, caster_ref, caster.casting.command, [
+                targets
+              ])
+
+            caster.casting ->
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
+              )
+
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='cyan'>You begin your casting.</span></p>"
+              )
+
+              ability =
+                ability
+                |> Map.put(:target_list, targets)
+
+              Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
+
+              Map.put(caster, :casting, ability)
+
+            :else ->
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='cyan'>You begin your casting.</span></p>"
+              )
+
+              ability =
+                ability
+                |> Map.put(:target_list, targets)
+
+              Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
+
+              Map.put(caster, :casting, ability)
+          end
+
         mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
           IO.puts("#{caster.name} not enough energy for #{ability.name}")
           mobile
@@ -1116,7 +1200,6 @@ defmodule ApathyDrive.Ability do
               end
             end)
 
-          Room.update_energy_bar(room, caster.ref)
           Room.update_hp_bar(room, caster.ref)
           Room.update_mana_bar(room, caster.ref)
 
@@ -1241,51 +1324,6 @@ defmodule ApathyDrive.Ability do
     end)
   end
 
-  def execute(
-        %Room{} = room,
-        caster_ref,
-        %Ability{} = ability,
-        {:scry, %{room_id: _, ref: _}} = targets
-      ) do
-    Room.update_mobile(room, caster_ref, fn room, caster ->
-      cond do
-        mobile = not_enough_energy(caster, Map.put(ability, :target_list, targets)) ->
-          mobile
-
-        can_execute?(room, caster, ability) ->
-          display_pre_cast_message(room, caster, targets, ability)
-
-          {caster, ability} = crit(caster, ability)
-
-          room = put_in(room.mobiles[caster_ref], caster)
-
-          room =
-            Room.update_mobile(room, caster.ref, fn _room, caster ->
-              caster =
-                caster
-                |> apply_cooldowns(ability)
-                |> Mobile.subtract_mana(ability)
-                |> Mobile.subtract_energy(ability)
-
-              Mobile.update_prompt(caster, room)
-            end)
-
-          room = apply_ability(room, room.mobiles[caster.ref], targets, ability)
-
-          Room.update_energy_bar(room, caster.ref)
-          Room.update_hp_bar(room, caster.ref)
-          Room.update_mana_bar(room, caster.ref)
-
-          room
-
-        :else ->
-          Room.update_mobile(room, caster_ref, fn _room, caster ->
-            Mobile.subtract_energy(caster, ability)
-          end)
-      end
-    end)
-  end
-
   def start_enchantment(caster, item, ability) do
     enchantment =
       %Enchantment{items_instances_id: item.instance_id, ability_id: ability.id}
@@ -1310,13 +1348,6 @@ defmodule ApathyDrive.Ability do
 
   def not_enough_energy(%{energy: energy} = caster, %{energy: _req_energy} = ability) do
     if energy < caster.max_energy && !ability.on_hit? do
-      # if caster.casting do
-      #   Mobile.send_scroll(
-      #     caster,
-      #     "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
-      #   )
-      # end
-
       # if ability.spell? do
       #   Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
       # else
@@ -1406,11 +1437,7 @@ defmodule ApathyDrive.Ability do
             charm: 0.1
           })
 
-        room = put_in(room.mobiles[target.ref], target)
-
-        Room.update_energy_bar(room, target.ref)
-
-        room
+        put_in(room.mobiles[target.ref], target)
 
       blocked?(caster, target, ability, room) ->
         room = add_evil_points(room, ability, caster, target)
@@ -1434,11 +1461,7 @@ defmodule ApathyDrive.Ability do
           })
           |> update_in([:energy], &(&1 - block_energy))
 
-        room = put_in(room.mobiles[target.ref], target)
-
-        Room.update_energy_bar(room, target.ref)
-
-        room
+        put_in(room.mobiles[target.ref], target)
 
       # disable crits
       # |> apply_criticals(caster.ref, target.ref, ability)

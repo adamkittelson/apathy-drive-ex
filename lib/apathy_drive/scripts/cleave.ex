@@ -44,8 +44,6 @@ defmodule ApathyDrive.Scripts.Cleave do
 
         room = put_in(room.mobiles[character.ref], character)
 
-        Room.update_energy_bar(room, character.ref)
-
         Mobile.send_scroll(
           character,
           "<p><span class='red'>You swing your weapon in a wide arc...</span></p>"

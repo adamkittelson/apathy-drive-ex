@@ -136,10 +136,10 @@ chan.on("update attribute bar", function (data) {
 
 chan.on("update energy bar", function (data) {
   if (data.player) {
-    energy_progress($("#player-bars .energy"), data.percentage, data.round_length)
+    energy_progress($("#player-bars .energy"), data)
   }
 
-  energy_progress($("#" + data.ref + "-bars .energy"), data.percentage, data.round_length)
+  energy_progress($("#" + data.ref + "-bars .energy"), data)
 })
 
 chan.on("update mana bar", function (data) {
@@ -429,25 +429,8 @@ window.progress = function (elem, percent, secondary_percent) {
 }
 
 
-window.energy_progress = function (elem, percent, round_length) {
-  var time_to_full = round_length * (100 - percent) / 100;
-  if (time_to_full) {
-    if (time_to_full > 0) {
-      var currentWidth = percent * elem.width() / 100;
-
-
-
-      if (currentWidth >= 0) {
-        elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: elem.width() }, { duration: time_to_full, easing: "linear" });
-      }
-    }
-    else {
-      var currentWidth = percent * elem.width() / 100;
-
-      if (currentWidth >= 0) {
-        elem.find('div').finish().animate({ width: currentWidth }, { duration: 0 }).animate({ width: 0 }, { duration: -time_to_full, easing: "linear" });
-      }
-    }
+window.energy_progress = function (elem, data) {
+  if (data.time_to_full) {
+    elem.find('div').finish().animate({ width: 0 }, { duration: 0 }).animate({ width: elem.width() }, { duration: data.time_to_full, easing: "linear" }).animate({ width: 0 }, { duration: 0 });
   }
-
 }

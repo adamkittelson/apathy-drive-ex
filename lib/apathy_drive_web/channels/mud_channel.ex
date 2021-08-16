@@ -227,8 +227,6 @@ defmodule ApathyDriveWeb.MUDChannel do
   end
 
   def handle_in("command", %{}, socket) do
-    # socket = add_command_to_queue(socket, {"l", []})
-
     execute_command(socket, "l", [])
 
     {:noreply, socket}
@@ -241,7 +239,6 @@ defmodule ApathyDriveWeb.MUDChannel do
         {:noreply, socket}
 
       [] ->
-        # socket = add_command_to_queue(socket, {"l", []})
         execute_command(socket, "l", [])
         {:noreply, socket}
     end

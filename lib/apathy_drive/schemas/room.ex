@@ -189,25 +189,11 @@ defmodule ApathyDrive.Room do
         Enum.each(room.mobiles, fn {ref, _mobile} ->
           Room.update_hp_bar(room, ref)
           Room.update_mana_bar(room, ref)
-          Room.update_energy_bar(room, ref)
         end)
 
       _ ->
         :noop
     end)
-  end
-
-  def update_energy_bar(%Room{} = room, ref) do
-    if mobile = room.mobiles[ref] do
-      room.mobiles
-      |> Enum.each(fn
-        {_ref, %Character{} = character} ->
-          Character.update_energy_bar(character, mobile)
-
-        _ ->
-          :noop
-      end)
-    end
   end
 
   def update_hp_bar(%Room{} = room, ref) do
@@ -252,7 +238,6 @@ defmodule ApathyDrive.Room do
           sneaking: mobile.sneaking,
           hp_percent: trunc(mobile.hp * 100),
           mana_percent: trunc(mobile.mana * 100),
-          energy_percent: trunc(mobile.energy / mobile.max_energy * 100),
           detected:
             mobile.sneaking &&
               (mobile.ref == character.ref or mobile.ref in character.detected_characters)
@@ -289,9 +274,6 @@ defmodule ApathyDrive.Room do
                 <span class="<%= mob.color %>"><%= mob.name %></span>
                 <div id="<%= mob.ref %>-bars">
                   <div class="progress-bar hp"></div>
-                  <div class="progress-bar energy">
-                    <div class="yellow"></div>
-                  </div>
                   <div class="progress-bar mana"></div>
                 </div>
               </li>
@@ -363,8 +345,6 @@ defmodule ApathyDrive.Room do
       |> Map.put(:current_command, nil)
 
     room = put_in(room.mobiles[mobile.ref], mobile)
-
-    Room.update_energy_bar(room, mobile.ref)
 
     if kind == Character, do: ApathyDrive.Commands.Look.execute(room, mobile, [])
 

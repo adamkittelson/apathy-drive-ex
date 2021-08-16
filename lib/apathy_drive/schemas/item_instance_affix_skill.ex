@@ -32,7 +32,7 @@ defmodule ApathyDrive.ItemInstanceAffixSkill do
 
         Trait.merge_traits(skills, trait)
 
-      %ItemInstanceAffixSkill{value: %{} = value, affix_skill: %{skill: %{} = _skill}}, skills ->
+      %ItemInstanceAffixSkill{value: %{} = _value, affix_skill: %{skill: %{} = _skill}}, skills ->
         skills
     end)
   end

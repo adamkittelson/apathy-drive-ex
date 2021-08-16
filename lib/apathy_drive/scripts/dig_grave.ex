@@ -22,8 +22,6 @@ defmodule ApathyDrive.Scripts.DigGrave do
           update_in(mobile.energy, &(&1 - 1000))
         end)
 
-      Room.update_energy_bar(room, mobile.ref)
-
       Mobile.send_scroll(
         mobile,
         "<p>You use your shovel and dig up a grave, to find...</p>"

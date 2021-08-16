@@ -1485,5 +1485,9 @@ defmodule ApathyDrive.Monster do
       Room.update_mana_bar(room, monster.ref)
       monster
     end
+
+    def update_energy_bar(%Monster{} = monster, _args) do
+      monster
+    end
   end
 end

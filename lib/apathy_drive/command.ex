@@ -109,6 +109,21 @@ defmodule ApathyDrive.Command do
     end)
   end
 
+  def enqueue_ability(%Room{} = room, mobile_ref, command, arguments) do
+    Room.update_mobile(room, mobile_ref, fn _room, mobile ->
+      Logger.info("Enqueueing command for #{mobile.name}: #{inspect({command, arguments})}")
+
+      case :queue.out(mobile.commands) do
+        {{:value, {^command, ^arguments}}, _commands} ->
+          mobile
+
+        _ ->
+          update_in(mobile.commands, &:queue.in({command, arguments}, &1))
+          |> TimerManager.send_after({:execute_command, 0, {:execute_command, mobile_ref}})
+      end
+    end)
+  end
+
   def execute(%Room{} = room, monster_ref, command, arguments) do
     full_command = Enum.join([command | arguments], " ")
 

@@ -1091,24 +1091,6 @@ defmodule ApathyDrive.Character do
     send(socket, :show_talent_tree)
   end
 
-  def update_energy_bar(%Character{socket: socket} = character, mobile) do
-    percent = mobile.energy / mobile.max_energy
-
-    send(
-      socket,
-      {:update_energy_bar,
-       %{
-         ref: mobile.ref,
-         player: mobile.ref == character.ref,
-         percentage: max(0, trunc(percent * 100)),
-         round_length: Regeneration.round_length(mobile),
-         max_percent: 100
-       }}
-    )
-
-    character
-  end
-
   def update_mana_bar(%Character{socket: socket} = character, mobile, _room) do
     mana = mana_at_level(character, character.level)
 
@@ -2218,6 +2200,21 @@ defmodule ApathyDrive.Character do
       perception = perception_at_level(character, level, room)
       modifier = ability_value(character, "Tracking")
       perception * (modifier / 100)
+    end
+
+    def update_energy_bar(%Character{socket: socket} = character, args) do
+      send(
+        socket,
+        {:update_energy_bar,
+         %{
+           ref: character.ref,
+           player: true,
+           time_to_full: args[:time_to_full],
+           time_to_empty: args[:time_to_empty]
+         }}
+      )
+
+      character
     end
 
     def update_prompt(%Character{socket: socket} = character, room) do
