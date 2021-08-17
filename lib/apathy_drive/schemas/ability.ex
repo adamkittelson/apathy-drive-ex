@@ -674,7 +674,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query)
-      when is_binary(query) and (is_nil(time) or time == 0) do
+      when is_binary(query) and (is_nil(time) or time == 0 or ability.spell? != true) do
     case get_targets(room, caster_ref, ability, query) do
       [] ->
         case query do
@@ -696,7 +696,7 @@ defmodule ApathyDrive.Ability do
               room
               |> Room.get_mobile(caster_ref)
               |> Mobile.send_scroll(
-                "<p><span class='cyan'>Can't find #{query} here! Your spell fails.</span></p>"
+                "<p><span class='red'>You don't see #{query} here!</span></p>"
               )
             end
 
@@ -1078,6 +1078,23 @@ defmodule ApathyDrive.Ability do
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) do
     Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
+        caster.gcd && caster.gcd > 0 ->
+          if caster.gcd <= 500 do
+            targets =
+              if is_list(targets) do
+                Enum.map(targets, &(room.mobiles[&1].name || &1))
+              else
+                List.wrap(targets)
+              end
+
+            ApathyDrive.Command.enqueue_ability(room, caster_ref, ability.command, targets)
+          else
+            Mobile.send_scroll(
+              caster,
+              "<p><span class='dark-red'>You can't do that yet.</span></p>"
+            )
+          end
+
         ability.spell? && ability.cast_time && ability.cast_time > 0 ->
           cond do
             caster.casting && caster.casting.cast_time <= 500 ->
@@ -1125,6 +1142,19 @@ defmodule ApathyDrive.Ability do
 
         can_execute?(room, caster, ability) ->
           IO.puts("#{caster.name} using #{ability.name} on targets: #{inspect(targets)}")
+
+          caster =
+            if caster.casting && caster.casting.spell? do
+              Mobile.send_scroll(
+                caster,
+                "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
+              )
+
+              Map.put(caster, :casting, nil)
+            else
+              caster
+            end
+
           display_pre_cast_message(room, caster, targets, ability)
 
           {caster, ability} = crit(caster, ability)
@@ -1170,6 +1200,27 @@ defmodule ApathyDrive.Ability do
                 |> apply_cooldowns(ability)
                 |> Mobile.subtract_mana(ability)
                 |> Mobile.subtract_energy(ability)
+
+              caster =
+                if ability.cast_time && !ability.spell? do
+                  Map.put(caster, :gcd, ability.cast_time)
+                else
+                  caster
+                end
+
+              ability =
+                ability
+                |> Map.put(:target_list, targets)
+
+              if ability.cast_time do
+                if ability.spell? do
+                  Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
+                else
+                  Mobile.update_energy_bar(caster, time_to_empty: ability.cast_time)
+                end
+              end
+
+              Map.put(caster, :casting, ability)
 
               Mobile.update_prompt(caster, room)
 
@@ -1347,7 +1398,7 @@ defmodule ApathyDrive.Ability do
   end
 
   def not_enough_energy(%{energy: energy} = caster, %{energy: _req_energy} = ability) do
-    if energy < caster.max_energy && !ability.on_hit? do
+    if !is_nil(ability.cast_time) && energy < caster.max_energy && !ability.on_hit? do
       # if ability.spell? do
       #   Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
       # else

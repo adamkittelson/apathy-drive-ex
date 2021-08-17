@@ -47,8 +47,13 @@ defmodule ApathyDrive.Regeneration do
     |> regenerate_bubble()
     |> regenerate_powerstones()
     |> regenerate_mana(room)
+    |> subtract_gcd()
     |> Map.put(:last_tick_at, now)
     |> Mobile.update_prompt(room)
+  end
+
+  def subtract_gcd(mobile) do
+    Map.put(mobile, :gcd, max(0, mobile.gcd - ApathyDrive.Regeneration.tick_time(mobile)))
   end
 
   def energy_per_tick(mobile) do

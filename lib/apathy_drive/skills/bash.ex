@@ -14,6 +14,9 @@ defmodule ApathyDrive.Skills.Bash do
     |> Map.put(:mana, mana(level))
     |> Map.put(:auto, !!get_in(character, [:skills, "bash", :auto]))
     |> Map.put(:attributes, ["strength"])
+    |> Map.put(:cast_time, 2500)
+    |> Map.put(:energy, 0)
+    |> Map.put(:spell?, false)
     |> Map.put(
       :user_message,
       "You bash {{target}} with your #{weapon.name} for {{amount}} damage!"

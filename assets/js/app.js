@@ -431,6 +431,17 @@ window.progress = function (elem, percent, secondary_percent) {
 
 window.energy_progress = function (elem, data) {
   if (data.time_to_full) {
+    console.log('time to full: ' + data.time_to_full)
+    elem.find('div').removeClass('yellow')
+    elem.find('div').removeClass('cyan')
+    elem.find('div').addClass('cyan')
     elem.find('div').finish().animate({ width: 0 }, { duration: 0 }).animate({ width: elem.width() }, { duration: data.time_to_full, easing: "linear" }).animate({ width: 0 }, { duration: 0 });
+  }
+  else if (data.time_to_empty) {
+    console.log('time to empty: ' + data.time_to_empty)
+    elem.find('div').removeClass('yellow')
+    elem.find('div').removeClass('cyan')
+    elem.find('div').addClass('yellow')
+    elem.find('div').finish().animate({ width: elem.width() }, { duration: 0 }).animate({ width: 0 }, { duration: data.time_to_empty, easing: "linear" }).animate({ width: 0 }, { duration: 0 });
   }
 }
