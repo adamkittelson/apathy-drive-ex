@@ -19,8 +19,6 @@ defmodule ApathyDrive.Scripts.Teleport do
           end
 
         other ->
-          IO.inspect(other)
-
           Mobile.send_scroll(
             character,
             "<p><span class='dark-yellow'>You must scry a target before you can teleport!</span></p>"

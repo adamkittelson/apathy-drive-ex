@@ -411,7 +411,6 @@ defmodule ApathyDrive.AI do
 
       ability =
         mobile.abilities
-        |> IO.inspect()
         |> Map.values()
         |> List.flatten()
         |> Kernel.++(Ability.skill_abilities(mobile))
@@ -548,7 +547,7 @@ defmodule ApathyDrive.AI do
       attack = Mobile.attack_ability(mobile)
 
       if attack do
-        if mobile.energy >= mobile.max_energy && !mobile.casting && auto_attack?(mobile) do
+        if mobile.energy >= mobile.max_energy && auto_attack?(mobile) do
           room
           |> Room.update_mobile(mobile.ref, fn _room, mobile ->
             Map.put(mobile, :last_auto_attack_at, DateTime.utc_now())

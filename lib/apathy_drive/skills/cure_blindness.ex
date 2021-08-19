@@ -30,12 +30,12 @@ defmodule ApathyDrive.Skills.CureBlindness do
     Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
   end
 
-  def tooltip(character, _skill) do
+  def tooltip(character, skill) do
     """
       <span style="color: lime">#{name()}</span>
       This spell restores sight to those who have been blinded.
       Attribute(s): #{attributes()}
-      #{current_skill_level(character)}
+      #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
 
@@ -48,6 +48,14 @@ defmodule ApathyDrive.Skills.CureBlindness do
       Cures Blindness
       Mana Cost: #{mana(level)}
       """
+    end
+  end
+
+  defp next_skill_level(character, skill) do
+    level = skill_level(character) + 1
+
+    if level <= skill.max_level do
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Cures Blindness\nMana Cost: #{mana(level)}"
     end
   end
 

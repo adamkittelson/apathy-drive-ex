@@ -62,7 +62,7 @@ defmodule ApathyDrive.Commands.Train do
         room
 
       module.prereq() &&
-          module.prereq().skill_level(character) < module.prereq().max_skill_level(character) ->
+          module.prereq().skill_level(character) < level ->
         message =
           "<p>You must have #{module.prereq().name()} fully trained before training #{skill.name}.</p>"
 

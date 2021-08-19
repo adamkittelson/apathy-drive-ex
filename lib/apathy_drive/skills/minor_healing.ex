@@ -9,12 +9,13 @@ defmodule ApathyDrive.Skills.MinorHealing do
       kind: "heal",
       command: "mihe",
       targets: "self or single",
-      energy: 600,
       name: "minor healing",
       attributes: ["willpower"],
       mana: mana(),
       auto: !!get_in(character, [:skills, "mihe", :auto]),
       spell?: true,
+      cast_time: 2500,
+      energy: 0,
       user_message: "You cast minor healing on {{target}}, healing {{amount}} damage!",
       target_message: "{{user}} casts minor healing on you, healing {{amount}} damage!",
       spectator_message: "{{user}} casts minor healing on {{target}}, healing {{amount}} damage!",
@@ -36,6 +37,7 @@ defmodule ApathyDrive.Skills.MinorHealing do
       <span style="color: lime">Minor Healing</span>
       Heals minor damage for a small mana cost.
       Attribute(s): #{attributes()}
+      Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end

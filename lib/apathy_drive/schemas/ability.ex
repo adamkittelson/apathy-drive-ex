@@ -1231,8 +1231,7 @@ defmodule ApathyDrive.Ability do
 
               Mobile.update_prompt(caster, room)
 
-              if ability.kind in ["attack", "curse"] and !(caster.ref in targets) and
-                   (ability.energy > 0 or (ability.cast_time > 0 and !is_nil(ability.cast_time))) do
+              if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
                 if targets == [] do
                   caster
                 else

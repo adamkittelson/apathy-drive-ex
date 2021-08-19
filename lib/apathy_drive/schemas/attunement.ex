@@ -20,7 +20,6 @@ defmodule ApathyDrive.Attunement do
           name: attunement.obelisk.room.area.name
         }
       end)
-      |> IO.inspect()
 
     put_in(character.attunements, attunements)
   end

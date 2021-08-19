@@ -103,12 +103,19 @@ defmodule ApathyDrive.Commands.List do
       |> Enum.each(fn %Skill{} = skill ->
         name = String.pad_trailing(skill.name, 24)
 
+        current_level = Skill.module(skill.name).skill_level(character)
+
         level =
-          "#{Skill.module(skill.name).skill_level(character)}/#{skill.max_level}"
+          "#{current_level}/#{skill.max_level}"
           |> to_string()
           |> String.pad_trailing(5)
 
         prereq = Skill.module(skill.name).prereq() && Skill.module(skill.name).prereq().name()
+
+        prereq =
+          if prereq do
+            prereq <> " Rank #{current_level + 1}"
+          end
 
         prereq =
           ["Level #{skill.required_level}", prereq]

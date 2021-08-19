@@ -2,6 +2,8 @@ defmodule ApathyDrive.Skills.LightningBolt do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
+  def prereq(), do: ApathyDrive.Skills.MagicMissile
+
   def ability(character, level \\ nil) do
     level = level || skill_level(character)
 
@@ -9,11 +11,12 @@ defmodule ApathyDrive.Skills.LightningBolt do
       kind: "attack",
       command: "lbol",
       targets: "monster or single",
-      energy: 500,
       name: "lightning bolt",
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
+      energy: 0,
+      cast_time: 2500,
       auto: !!get_in(character, [:skills, "lbol", :auto]),
       user_message: "You fire a lightning bolt at {{target}} for {{amount}} damage!",
       target_message: "{{user}} fire a lightning bolt at you for {{amount}} damage!",
