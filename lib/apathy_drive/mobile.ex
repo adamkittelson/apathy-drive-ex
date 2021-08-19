@@ -5,6 +5,7 @@ defprotocol ApathyDrive.Mobile do
   def attack_rating(mobile)
   def attribute_at_level(mobile, attribute, level)
   def auto_attack_target(mobile, room)
+  def cast_time(mobile, ability)
   def colored_name(mobile)
   def color(mobile)
   def confused(mobile, room)

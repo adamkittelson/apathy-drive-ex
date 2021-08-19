@@ -1115,10 +1115,6 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def execute_casting_ability(%{casting: %Ability{} = ability} = mobile, room) do
-    if mobile.name == "Cole" do
-      IO.puts("casting #{ability.name} in #{ability.cast_time}")
-    end
-
     ability =
       ability
       |> Map.put(

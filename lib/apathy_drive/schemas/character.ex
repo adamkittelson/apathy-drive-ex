@@ -1496,6 +1496,12 @@ defmodule ApathyDrive.Character do
       if room.mobiles[target], do: target
     end
 
+    def cast_time(%Character{} = character, %Ability{} = ability) do
+      ics = ability_value(character, "IncreasedCastSpeed")
+      multiplier = min(75, trunc(ics * 120 / (ics + 120)))
+      ability.cast_time * ((100 - multiplier) / 100)
+    end
+
     def confused(%Character{effects: effects} = character, %Room{} = room) do
       effects
       |> Map.values()

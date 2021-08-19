@@ -165,6 +165,7 @@ defmodule ApathyDrive.Ability do
     "HPRegen",
     "Intellect",
     "IncreasedAttackSpeed",
+    "IncreasedCastSpeed",
     "Light",
     "MagicDR",
     "MaxBubble",
@@ -1078,7 +1079,7 @@ defmodule ApathyDrive.Ability do
   def execute(%Room{} = room, caster_ref, %Ability{} = ability, targets) do
     Room.update_mobile(room, caster_ref, fn room, caster ->
       cond do
-        caster.gcd && caster.gcd > 0 ->
+        caster.gcd && caster.gcd > 0 && ability.cast_time && ability.cast_time > 0 ->
           if caster.gcd <= 500 do
             targets =
               if is_list(targets) do
@@ -1113,11 +1114,14 @@ defmodule ApathyDrive.Ability do
                 "<p><span class='cyan'>You begin your casting.</span></p>"
               )
 
+              cast_time = Mobile.cast_time(caster, ability)
+
               ability =
                 ability
                 |> Map.put(:target_list, targets)
+                |> Map.put(:cast_time, cast_time)
 
-              Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
+              Mobile.update_energy_bar(caster, time_to_full: cast_time)
 
               Map.put(caster, :casting, ability)
 
@@ -1127,11 +1131,14 @@ defmodule ApathyDrive.Ability do
                 "<p><span class='cyan'>You begin your casting.</span></p>"
               )
 
+              cast_time = Mobile.cast_time(caster, ability)
+
               ability =
                 ability
                 |> Map.put(:target_list, targets)
+                |> Map.put(:cast_time, cast_time)
 
-              Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
+              Mobile.update_energy_bar(caster, time_to_full: cast_time)
 
               Map.put(caster, :casting, ability)
           end
@@ -1225,7 +1232,7 @@ defmodule ApathyDrive.Ability do
               Mobile.update_prompt(caster, room)
 
               if ability.kind in ["attack", "curse"] and !(caster.ref in targets) and
-                   ability.energy > 0 do
+                   (ability.energy > 0 or (ability.cast_time > 0 and !is_nil(ability.cast_time))) do
                 if targets == [] do
                   caster
                 else
@@ -1397,8 +1404,9 @@ defmodule ApathyDrive.Ability do
     |> Map.put(:enchantment, enchantment)
   end
 
-  def not_enough_energy(%{energy: energy} = caster, %{energy: _req_energy} = ability) do
-    if !is_nil(ability.cast_time) && energy < caster.max_energy && !ability.on_hit? do
+  def not_enough_energy(%{energy: energy} = caster, %{energy: req_energy} = ability) do
+    if !is_nil(ability.cast_time) && energy < caster.max_energy && !ability.on_hit? and
+         req_energy > 0 and !is_nil(req_energy) do
       # if ability.spell? do
       #   Mobile.send_scroll(caster, "<p><span class='cyan'>You begin your casting.</span></p>")
       # else
@@ -3501,22 +3509,22 @@ defmodule ApathyDrive.Ability do
 
   def display_pre_cast_message(_room, _caster, _targets, _ability), do: :noop
 
-  def message_color(%Ability{kind: kind}, %Character{} = character, :caster)
+  def message_color(%Ability{kind: kind} = ability, %Character{} = character, :caster)
       when kind in ["attack", "critical"] do
-    character.attack_color
+    ability.traits["Color"] || character.attack_color
   end
 
-  def message_color(%Ability{kind: kind}, %Character{} = character, :spectator)
+  def message_color(%Ability{kind: kind} = ability, %Character{} = character, :spectator)
       when kind in ["attack", "critical"],
-      do: character.spectator_color
+      do: ability.traits["Color"] || character.spectator_color
 
-  def message_color(%Ability{kind: kind}, %Character{} = character, :target)
+  def message_color(%Ability{kind: kind} = ability, %Character{} = character, :target)
       when kind in ["attack", "critical"],
-      do: character.target_color
+      do: ability.traits["Color"] || character.target_color
 
-  def message_color(%Ability{kind: kind}, _mobile, _perspective)
+  def message_color(%Ability{kind: kind} = ability, _mobile, _perspective)
       when kind in ["attack", "critical"],
-      do: "red"
+      do: ability.traits["Color"] || "red"
 
   def message_color(%Ability{kind: "curse"}, _, :target), do: "olive"
 

@@ -32,6 +32,7 @@ defmodule ApathyDrive.Skills.Bash do
     |> update_in([Access.key!(:traits)], fn traits ->
       traits
       |> Map.put("Attack%", attack_percent(level))
+      |> Map.put("Color", "magenta")
       |> update_in(["Damage"], fn damages ->
         Enum.reduce(damages, [], fn
           %{kind: "physical"} = damage, damages ->

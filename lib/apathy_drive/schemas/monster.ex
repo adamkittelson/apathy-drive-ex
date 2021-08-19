@@ -1060,6 +1060,12 @@ defmodule ApathyDrive.Monster do
       Monster.auto_attack_target(monster, room)
     end
 
+    def cast_time(%Monster{} = character, %Ability{} = ability) do
+      ics = ability_value(character, "IncreasedCastSpeed")
+      multiplier = min(75, trunc(ics * 120 / (ics + 120)))
+      ability.cast_time * ((100 - multiplier) / 100)
+    end
+
     def color(%Monster{alignment: "evil"}), do: "magenta"
     def color(%Monster{alignment: "neutral"}), do: "dark-cyan"
     def color(%Monster{alignment: "good"}), do: "grey"

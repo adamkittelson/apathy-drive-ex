@@ -9,17 +9,18 @@ defmodule ApathyDrive.Skills.MagicMissile do
       kind: "attack",
       command: "mmis",
       targets: "monster or single",
-      energy: 500,
+      energy: 0,
       name: "magic missile",
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
-      cast_time: 2500,
+      cast_time: 4000,
       auto: !!get_in(character, [:skills, "mmis", :auto]),
       user_message: "You fire a magic missile at {{target}} for {{amount}} damage!",
       target_message: "{{user}} fires a magic missile at you for {{amount}} damage!",
       spectator_message: "{{user}} fires a magic missile at {{target}} for {{amount}} damage!",
       traits: %{
+        "Color" => "magenta",
         "Damage" => [
           %{
             damage_type: "Magical",
@@ -40,6 +41,7 @@ defmodule ApathyDrive.Skills.MagicMissile do
       <span style="color: lime">Magic Missile</span>
       This spell shoots a shimmering dart of pure mana at the target, causing minor damage.
       Attribute(s): #{attributes()}
+      Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
