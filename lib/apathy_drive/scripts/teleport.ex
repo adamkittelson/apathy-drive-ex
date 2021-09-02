@@ -18,7 +18,7 @@ defmodule ApathyDrive.Scripts.Teleport do
             teleport_fail(character)
           end
 
-        other ->
+        _other ->
           Mobile.send_scroll(
             character,
             "<p><span class='dark-yellow'>You must scry a target before you can teleport!</span></p>"

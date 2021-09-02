@@ -5,24 +5,28 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
     monster = Repo.get!(Monster, 1121)
 
     Room.update_mobile(room, mobile_ref, fn room, mobile ->
-      failure = Enum.random([:return, :attack, :roam])
+      ability = ApathyDrive.Skills.SummonLesserDemon.ability(mobile)
 
-      spellcasting =
-        Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["intellect"]})
+      control_chance = control_chance(room, mobile, ability.traits["ControlChance"])
+
+      IO.puts("control chance: #{control_chance}")
+      duration = ability.traits["Duration"]
+
+      failure = Enum.random([:return, :attack, :roam])
 
       %Room{} =
         cond do
-          :rand.uniform(100) < spellcasting + 15 ->
+          :rand.uniform(100) <= control_chance ->
             owner_id = Map.get(mobile, :room_monster_id) || Map.get(mobile, :id)
 
             monster =
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 1,
+                level: mobile.level,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                delete_at: Timex.shift(DateTime.utc_now(), minutes: 24),
+                delete_at: Timex.shift(DateTime.utc_now(), seconds: duration),
                 owner_id: owner_id
               }
               |> Monster.from_room_monster()
@@ -60,10 +64,10 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 5,
+                level: mobile.level,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                delete_at: Timex.shift(DateTime.utc_now(), minutes: 1)
+                delete_at: Timex.shift(DateTime.utc_now(), seconds: duration)
               }
               |> Monster.from_room_monster()
 
@@ -91,10 +95,10 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
               %RoomMonster{
                 room_id: room.id,
                 monster_id: monster.id,
-                level: 5,
+                level: mobile.level,
                 spawned_at: nil,
                 zone_spawned_at: nil,
-                delete_at: Timex.shift(DateTime.utc_now(), minutes: 24)
+                delete_at: Timex.shift(DateTime.utc_now(), seconds: duration)
               }
               |> Monster.from_room_monster()
               |> Map.put(:lawful, true)
@@ -119,5 +123,15 @@ defmodule ApathyDrive.Scripts.SummonLesserDemon do
             ApathyDrive.AI.move(monster, room, true) || room
         end
     end)
+  end
+
+  defp control_chance(room, mobile, chance) do
+    controlled_demons =
+      room.mobiles
+      |> Map.values()
+      |> Enum.filter(&(IO.inspect(&1[:owner_id]) == mobile.id))
+      |> length()
+
+    chance - controlled_demons * 15
   end
 end

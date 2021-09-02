@@ -70,7 +70,7 @@ defmodule ApathyDrive.MonsterSpawning do
     monster_count =
       room.mobiles
       |> Map.values()
-      |> Enum.filter(&(&1.__struct__ == Monster))
+      |> Enum.filter(&(&1.__struct__ == Monster and is_nil(&1[:owner_id])))
       |> length()
 
     monster_count > 5
