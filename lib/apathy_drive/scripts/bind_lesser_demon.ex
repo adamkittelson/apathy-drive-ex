@@ -24,36 +24,36 @@ defmodule ApathyDrive.Scripts.BindLesserDemon do
   end
 
   def bind_lesser_demon(room, mobile, demon) do
-    spellcasting =
-      Mobile.spellcasting_at_level(mobile, mobile.level, %{attributes: ["intellect"]})
+    ability = ApathyDrive.Skills.BindLesserDemon.ability(mobile)
 
-    if :rand.uniform(100) < spellcasting + 15 do
+    control_chance = ability.traits["ControlChance"]
+    defense = ability.traits["Defense"]
+    replenishment = IO.inspect(ability.traits)["Replenishment"]
+    IO.puts("replenishment: #{inspect(replenishment)}")
+    duration = ability.traits["Duration"]
+
+    if :rand.uniform(100) < control_chance do
       effects =
         %{
-          # "Bubble%" => 10,
-          # "BubbleRegen%PerSecond" => 0.5,
-          "StatusMessage" => "A #{demon.name} is bound to your skin.",
-          "Defense%" => 5,
-          "MR%" => 10,
-          "DarkVision" => 225,
-          "Encumbrance" => 10,
+          "StatusMessage" => "A #{demon.name} is bound to your soul.",
+          "Defense" => defense,
+          "Replenishment" => replenishment,
           # "Grant" => abilities,
-          "RemoveMessage" =>
-            "The #{Mobile.colored_name(demon)} bound to your skin returns to its plane.",
+          "RemoveMessage" => "The bound #{Mobile.colored_name(demon)} returns to its plane.",
           "stack_key" => "bind-demon",
           "stack_count" => 1
         }
         |> Map.put("effect_ref", make_ref())
-        |> Ability.process_duration_traits(mobile, mobile, :timer.minutes(80))
+        |> Ability.process_duration_traits(mobile, mobile, :timer.seconds(duration))
 
       Mobile.send_scroll(
         mobile,
-        "<p>You successfully bind the #{Mobile.colored_name(demon)} to your skin.</p>"
+        "<p>You successfully bind the #{Mobile.colored_name(demon)}.</p>"
       )
 
       mobile =
         mobile
-        |> Systems.Effect.add(effects, :timer.minutes(80))
+        |> Systems.Effect.add(effects, :timer.seconds(duration))
 
       RoomMonster
       |> Repo.get(demon.room_monster_id)
