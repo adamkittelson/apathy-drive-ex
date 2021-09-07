@@ -23,7 +23,7 @@ defmodule ApathyDrive.Commands.List do
     room
   end
 
-  def list(%Room{shop: %Shop{} = shop} = room, character) do
+  def list(%Room{shop: %Shop{} = shop} = _room, character) do
     character
     |> Mobile.send_scroll(
       "<p><span class='dark-green'>Item</span>                          <span class='dark-cyan'>Quantity</span>    <span class='dark-cyan'>Price</span></p>"
@@ -32,7 +32,7 @@ defmodule ApathyDrive.Commands.List do
       "<p><span class='dark-cyan'>------------------------------------------------------</span></p>"
     )
 
-    CharacterShop.restock!(room, character)
+    # CharacterShop.restock!(room, character)
 
     IO.puts("done restocking!")
 

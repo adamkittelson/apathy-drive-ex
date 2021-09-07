@@ -7,6 +7,7 @@ defmodule ApathyDrive.Commands.Buy do
     Currency,
     Match,
     Mobile,
+    Monster,
     Item,
     ItemInstance,
     Repo,
@@ -85,21 +86,41 @@ defmodule ApathyDrive.Commands.Buy do
               room.shop.item_instances
               |> Enum.find(&(&1.item_id == shop_item.item_id))
 
+            quality = determine_item_quality(character, item_instance.item)
+
             Room.update_mobile(room, character.ref, fn _room, char ->
-              item_instance
-              |> Ecto.Changeset.change(%{
-                shop_id: nil,
-                character_id: char.id,
-                equipped: false,
-                hidden: false,
-                level: char.level
-              })
-              |> Repo.update!()
+              item_instance =
+                item_instance
+                |> Ecto.Changeset.change(%{
+                  shop_id: nil,
+                  character_id: char.id,
+                  equipped: false,
+                  hidden: false,
+                  quality: quality,
+                  level: char.level
+                })
+                |> Repo.update!()
+                |> update_in([Access.key!(:item)], fn _item ->
+                  item_instance
+                  |> Item.from_assoc()
+                  |> Item.load_item_types()
+                end)
+
+              item = item_instance.item
 
               currency = Currency.set_value(price_in_copper)
               char_currency = Currency.subtract(char, price_in_copper)
 
+              affix_level =
+                min(item.quality_level, character.level)
+                |> IO.inspect()
+
+              Monster.item_affixes(item_instance, affix_level)
+              |> IO.inspect()
+
               item = Item.from_assoc(item_instance)
+
+              IO.inspect(item.effects)
 
               if price_in_copper == 0 do
                 Mobile.send_scroll(
@@ -155,6 +176,7 @@ defmodule ApathyDrive.Commands.Buy do
         end
 
       %Item{} = item ->
+        IO.puts("item")
         price_in_copper = Shop.buy_price(room.shop, character, item)
 
         cond do
@@ -265,6 +287,26 @@ defmodule ApathyDrive.Commands.Buy do
         end)
 
         room
+    end
+  end
+
+  def determine_item_quality(character, item) do
+    magic_find =
+      Mobile.ability_value(character, "MagicFind") +
+        Mobile.attribute_at_level(character, :charm, character.level)
+
+    cond do
+      Monster.rare?(character.level, item.quality_level, magic_find) ->
+        IO.puts("dropped rare!")
+        "rare"
+
+      Monster.magic?(character.level, item.quality_level, magic_find) ->
+        IO.puts("dropped magic!")
+        "magic"
+
+      :else ->
+        IO.puts("dropped normal!")
+        "normal"
     end
   end
 end

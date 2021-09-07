@@ -1,4 +1,5 @@
 defmodule ApathyDrive.Currency do
+  def copper_value(nil), do: 0
   def copper_value(:copper), do: 1
   def copper_value(:silver), do: 10
   def copper_value(:gold), do: 100

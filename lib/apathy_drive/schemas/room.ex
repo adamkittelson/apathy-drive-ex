@@ -753,9 +753,16 @@ defmodule ApathyDrive.Room do
         Match.one(items, :keyword_starts_with, item)
       end
 
+    character_item =
+      (character.inventory ++ character.equipment)
+      |> Match.one(:keyword_starts_with, item)
+
     cond do
       actual_item ->
         actual_item.item
+
+      character_item ->
+        character_item
 
       shop_item ->
         case shop_item do

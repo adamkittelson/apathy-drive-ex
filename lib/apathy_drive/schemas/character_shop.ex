@@ -79,8 +79,6 @@ defmodule ApathyDrive.CharacterShop do
 
           quality = sit.quality
 
-          ac = Monster.ac_for_item(item, quality)
-
           item_instance =
             %ItemInstance{
               item_id: item.id,
@@ -89,7 +87,6 @@ defmodule ApathyDrive.CharacterShop do
               character_shop_id: cs.id,
               equipped: false,
               hidden: false,
-              ac: ac,
               name: item.name,
               quality: quality,
               level: item_level
@@ -142,8 +139,6 @@ defmodule ApathyDrive.CharacterShop do
 
             quality = sit.quality
 
-            ac = Monster.ac_for_item(item, quality)
-
             item_instance =
               %ItemInstance{
                 item_id: item.id,
@@ -152,7 +147,6 @@ defmodule ApathyDrive.CharacterShop do
                 character_shop_id: cs.id,
                 equipped: false,
                 hidden: false,
-                ac: ac,
                 name: item.name,
                 quality: quality,
                 level: item_level

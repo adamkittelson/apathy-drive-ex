@@ -4,6 +4,7 @@ defmodule ApathyDrive.Item do
   alias ApathyDrive.{
     Ability,
     Character,
+    Currency,
     Enchantment,
     Item,
     ItemAbility,
@@ -11,6 +12,7 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemInstanceAffixTrait,
     ItemInstanceAffixSkill,
+    ItemTrait,
     ItemType,
     ItemTypeParent,
     ItemRace,
@@ -19,7 +21,6 @@ defmodule ApathyDrive.Item do
     PubSub,
     Regeneration,
     RoomServer,
-    Shop,
     ShopItem,
     Socket,
     Trait
@@ -80,6 +81,7 @@ defmodule ApathyDrive.Item do
     field(:block_chance, :integer)
     field(:socketable, :boolean)
 
+    field(:ac, :any, virtual: true, default: 0)
     field(:sockets, :any, virtual: true, default: [])
     field(:item_type_ids, :any, virtual: true, default: [])
     field(:item_types, :any, virtual: true, default: [])
@@ -371,9 +373,9 @@ defmodule ApathyDrive.Item do
   def delete_at(_), do: Timex.shift(DateTime.utc_now(), minutes: 1)
 
   def with_traits(%Item{} = item) do
-    # item_traits =
-    #   item.id
-    #   |> ItemTrait.load_traits()
+    item_traits =
+      item.id
+      |> ItemTrait.load_traits()
 
     instance_traits =
       item.instance_id
@@ -401,7 +403,8 @@ defmodule ApathyDrive.Item do
       |> ItemInstanceAffixSkill.load_skills(item)
 
     instance_traits =
-      instance_traits
+      item_traits
+      |> Trait.merge_traits(instance_traits)
       |> Trait.merge_traits(instance_skills)
       |> Trait.merge_traits(socket_traits)
 
@@ -562,6 +565,10 @@ defmodule ApathyDrive.Item do
     min(div(level, 10) + 1, 5)
   end
 
+  def color(%Item{type: type, quality_level: nil}, _opts)
+      when type in ["Armour", "Shield", "Weapon"],
+      do: "red"
+
   def color(%Item{type: type} = item, _opts)
       when type in ["Armour", "Shield", "Weapon"] do
     case item.quality do
@@ -581,7 +588,7 @@ defmodule ApathyDrive.Item do
         "orange"
 
       "normal" ->
-        "white"
+        "teal"
 
       "superior" ->
         "#FFFFFF"
@@ -630,8 +637,7 @@ defmodule ApathyDrive.Item do
 
         items ->
           Enum.any?(items, fn worn_item ->
-            Shop.sell_price(%Shop{cost_multiplier: 1}, character, item) >
-              Shop.sell_price(%Shop{cost_multiplier: 1}, character, worn_item)
+            item.quality_level > worn_item.quality_level
           end)
       end
     end
@@ -702,9 +708,21 @@ defmodule ApathyDrive.Item do
           name
       end
 
+    sockets =
+      item.sockets
+      |> Enum.filter(&is_nil(&1.socketed_item))
+      |> length()
+
     name =
       if item.unfinished do
         "unfinished " <> name
+      else
+        name
+      end
+
+    name =
+      if sockets > 0 do
+        name <> " (#{sockets})"
       else
         name
       end
@@ -742,46 +760,7 @@ defmodule ApathyDrive.Item do
   end
 
   def cost_in_copper(%Item{} = item) do
-    quality_level = item.quality_level || 0
-
-    quality_multiplier =
-      case item.quality do
-        "unique" ->
-          5000
-
-        "set" ->
-          2500
-
-        "crafted" ->
-          1000
-
-        "rare" ->
-          1000
-
-        "magic" ->
-          500
-
-        "superior" ->
-          250
-
-        "normal" ->
-          100
-
-        "low" ->
-          50
-
-        _ ->
-          0
-      end
-
-    affix_quality_levels =
-      item.affix_traits
-      |> Enum.map(& &1.affix_trait.affix.level)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.sum()
-
-    Enum.max([1, quality_level]) * Enum.max([1, quality_multiplier]) *
-      Enum.max([1, affix_quality_levels])
+    item.cost_value || 0 * Currency.copper_value(item.cost_currency)
   end
 
   def has_ability?(%Item{} = item, ability_name) do

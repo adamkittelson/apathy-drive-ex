@@ -146,7 +146,6 @@ defmodule ApathyDrive.Ability do
     "DarkVision",
     "Damage%",
     "Defense",
-    "Defense%",
     "DeusExMachina",
     "Dodge",
     "DefensePerLevel",
@@ -175,7 +174,6 @@ defmodule ApathyDrive.Ability do
     "MaxHP",
     "MaxHP%",
     "MR",
-    "MR%",
     "ManaPerKill",
     "ManaRegen",
     "MagicFind",
@@ -332,12 +330,6 @@ defmodule ApathyDrive.Ability do
         mobile
       end
     end)
-  end
-
-  def ac_for_mitigation_at_level(mitigation_percent) do
-    level = 25
-    percent = mitigation_percent / 100
-    trunc(Float.round(-(50 * level * percent / (percent - 1))))
   end
 
   def data_for_admin_index do
@@ -2776,26 +2768,10 @@ defmodule ApathyDrive.Ability do
     end
   end
 
-  def process_duration_trait({"Defense%", percent}, effects, _target, _caster, _duration) do
-    ac_from_percent = ac_for_mitigation_at_level(percent)
-
-    effects
-    |> Map.put("Defense", ac_from_percent)
-    |> Map.delete("Defense%")
-  end
-
   def process_duration_trait({"DefensePerLevel", defense}, effects, target, _caster, _duration) do
     effects
     |> Map.put("Defense", target.level * defense)
     |> Map.delete("DefensePerLevel")
-  end
-
-  def process_duration_trait({"MR%", percent}, effects, _target, _caster, _duration) do
-    mr_from_percent = ac_for_mitigation_at_level(percent)
-
-    effects
-    |> Map.put("MR", mr_from_percent)
-    |> Map.delete("MR%")
   end
 
   def process_duration_trait(

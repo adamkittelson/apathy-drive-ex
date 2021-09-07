@@ -1,6 +1,6 @@
 defmodule ApathyDrive.ItemTrait do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Item, ItemTrait, ItemResistance, Trait}
+  alias ApathyDrive.{Item, ItemResistance, ItemTrait, Trait}
 
   schema "items_traits" do
     field(:value, ApathyDrive.JSONB)

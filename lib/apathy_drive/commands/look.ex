@@ -496,8 +496,8 @@ defmodule ApathyDrive.Commands.Look do
       value <= 0 ->
         ""
 
-      value > item.ac ->
-        "\nDefense: <span style='color: #4850B8'>#{value}</span>"
+      # value > item.ac ->
+      #   "\nDefense: <span style='color: #4850B8'>#{value}</span>"
 
       item.quality == "low" ->
         "\nDefense: <span class='dark-red'>#{value}</span>"
@@ -768,28 +768,10 @@ defmodule ApathyDrive.Commands.Look do
     end)
   end
 
-  def display_trait(character, _item, {"Defense%", value}, indent) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(value)
-
-    Mobile.send_scroll(
-      character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>AC:</span> <span class='dark-cyan'>#{ac_from_percent}</span></p>"
-    )
-  end
-
   def display_trait(character, item, {"Powerstone", _}, indent) do
     Mobile.send_scroll(
       character,
       "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>Powerstone:</span> <span class='dark-cyan'>#{trunc(item.uses)}/#{item.max_uses} mana</span></p>"
-    )
-  end
-
-  def display_trait(character, _item, {"MR%", value}, indent) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(value)
-
-    Mobile.send_scroll(
-      character,
-      "<p>#{String.pad_trailing("", indent)}<span class='dark-green'>MR:</span> <span class='dark-cyan'>#{ac_from_percent}</span></p>"
     )
   end
 

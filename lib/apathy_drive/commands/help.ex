@@ -677,19 +677,9 @@ defmodule ApathyDrive.Commands.Help do
     {"Bonus Mana per level", amount}
   end
 
-  def massage_trait({"Defense%", amount}) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
-    {"Defense", ac_from_percent}
-  end
-
   def massage_trait({"Powerstone"}) do
     {"<span class='dark-cyan'>Transforms a stone or gem into a mana granting powerstone</span>",
      nil}
-  end
-
-  def massage_trait({"MR%", amount}) do
-    ac_from_percent = Ability.ac_for_mitigation_at_level(amount)
-    {"MR", ac_from_percent}
   end
 
   def massage_trait({"AffectsLiving", _}), do: {"Only affects living targets", nil}

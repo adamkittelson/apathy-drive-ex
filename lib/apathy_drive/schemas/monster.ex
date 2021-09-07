@@ -397,7 +397,7 @@ defmodule ApathyDrive.Monster do
         room
       end)
 
-    drop_random_loot_for_character(room, monster, character)
+    # drop_random_loot_for_character(room, monster, character)
 
     room
     |> Room.load_items()
@@ -430,8 +430,6 @@ defmodule ApathyDrive.Monster do
 
         quality = quality || determine_item_quality(character, monster, item)
 
-        ac = ac_for_item(item, quality)
-
         item_instance =
           %ItemInstance{
             item_id: item.id,
@@ -439,7 +437,6 @@ defmodule ApathyDrive.Monster do
             character_id: nil,
             equipped: false,
             hidden: false,
-            ac: ac,
             name: item.name,
             quality: quality,
             level: max(1, monster.level),
@@ -525,17 +522,6 @@ defmodule ApathyDrive.Monster do
         end
       end
     end)
-  end
-
-  def ac_for_item(%{min_ac: nil, max_ac: nil}, _quality), do: nil
-
-  def ac_for_item(item, "low") do
-    ac = Enum.random(item.min_ac..item.max_ac)
-    trunc(ac * 0.75)
-  end
-
-  def ac_for_item(item, _quality) do
-    Enum.random(item.min_ac..item.max_ac)
   end
 
   def affix_level(quality_level, monster_level, magic_level) do
@@ -972,18 +958,12 @@ defmodule ApathyDrive.Monster do
     :rand.uniform(chance) < 128
   end
 
-  def magic?(monster_level, %Item{quality_level: quality_level} = item, magic_find) do
-    item_types = Enum.map(item.item_types, & &1.name)
+  def magic?(monster_level, quality_level, magic_find) do
+    chance = (34 - (monster_level - quality_level) / 3) * 128
 
-    if "Ring" in item_types or "Amulet" in item_types do
-      true
-    else
-      chance = (34 - (monster_level - quality_level) / 3) * 128
-
-      chance = max(192, trunc(chance * 100 / (100 + magic_find))) |> max(1)
-      IO.puts("magic chance: #{128 / chance * 100}%")
-      :rand.uniform(chance) < 128
-    end
+    chance = max(192, trunc(chance * 100 / (100 + magic_find))) |> max(1)
+    IO.puts("magic chance: #{128 / chance * 100}%")
+    :rand.uniform(chance) < 128
   end
 
   def high?(monster_level, quality_level, magic_find) do
