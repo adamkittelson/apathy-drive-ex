@@ -494,10 +494,16 @@ defmodule ApathyDrive.Commands.Look do
 
     cond do
       value <= 0 ->
-        ""
+        case Item.ac_for_item(item) do
+          %{min: 0, max: 0} ->
+            ""
 
-      # value > item.ac ->
-      #   "\nDefense: <span style='color: #4850B8'>#{value}</span>"
+          %{min: min, max: max} ->
+            "\nDefense: #{min}-#{max}"
+        end
+
+      value > item.ac ->
+        "\nDefense: <span style='color: #4850B8'>#{value}</span>"
 
       item.quality == "low" ->
         "\nDefense: <span class='dark-red'>#{value}</span>"

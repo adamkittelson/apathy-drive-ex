@@ -41,6 +41,14 @@ defmodule ApathyDrive.Item do
     "Weapon"
   ]
 
+  @armour_type_modifiers %{
+    "platemail armour" => 1,
+    "scalemail armour" => 0.875,
+    "chainmail armour" => 0.75,
+    "leather armour" => 0.625,
+    "cloth armour" => 0.5
+  }
+
   require Logger
   require Ecto.Query
 
@@ -230,6 +238,56 @@ defmodule ApathyDrive.Item do
   end
 
   def skill_for_character(_character, _item), do: 1
+
+  def ac_for_item(%Item{type: "Armour"} = item) do
+    %{min: min, max: max} = ac_for_item(item.quality_level, item.worn_on)
+
+    min = max(1, trunc(min * @armour_type_modifiers[item.armour_type]))
+    max = max(1, trunc(max * @armour_type_modifiers[item.armour_type]))
+
+    Logger.info("Quality Level #{item.quality_level} #{item.armour_type}: #{min}-#{max} ac")
+
+    %{min: min, max: max}
+  end
+
+  def ac_for_item(_item), do: %{min: 0, max: 0}
+
+  def ac_for_item(nil, _slot), do: %{min: 0, max: 0}
+
+  def ac_for_item(quality, "Head") do
+    max = 4 + trunc(1.9 * quality)
+    min = trunc(max * 0.675)
+
+    %{min: min, max: max}
+  end
+
+  def ac_for_item(quality, "Off-Hand") do
+    max = 4 + trunc(2.23 * quality)
+    min = trunc(max * 0.92) - 1
+
+    %{min: min, max: max}
+  end
+
+  def ac_for_item(quality, type) when type in ["Feet", "Hands", "Waist"] do
+    max = 1 + trunc(0.825 * quality)
+    min = trunc(max * 0.875)
+
+    %{min: min, max: max}
+  end
+
+  def ac_for_item(quality, "Torso") do
+    max = 4 + trunc(7.02 * quality)
+    min = trunc(max * 0.8125)
+
+    %{min: min, max: max}
+  end
+
+  def ac_for_item(quality, "Legs") do
+    max = 4 + trunc(2 * quality)
+    min = trunc(max * 0.8125)
+
+    %{min: min, max: max}
+  end
 
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     item =

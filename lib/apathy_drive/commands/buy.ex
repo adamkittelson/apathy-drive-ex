@@ -89,6 +89,8 @@ defmodule ApathyDrive.Commands.Buy do
             quality = determine_item_quality(character, item_instance.item)
 
             Room.update_mobile(room, character.ref, fn _room, char ->
+              %{min: min, max: max} = Item.ac_for_item(item_instance.item)
+
               item_instance =
                 item_instance
                 |> Ecto.Changeset.change(%{
@@ -97,6 +99,7 @@ defmodule ApathyDrive.Commands.Buy do
                   equipped: false,
                   hidden: false,
                   quality: quality,
+                  ac: Enum.random(min..max),
                   level: char.level
                 })
                 |> Repo.update!()
