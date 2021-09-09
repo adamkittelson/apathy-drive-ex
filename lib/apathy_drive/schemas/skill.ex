@@ -55,7 +55,7 @@ defmodule ApathyDrive.Skill do
 
       def prereq(character, level) do
         if prereq() && prereq().skill_level(character) < level do
-          "<span class='red'>Prerequisite: #{prereq().name()} Level #{level}</span>\n"
+          "<span class='red'>Prerequisite: #{prereq().name()} Rank #{level}</span>\n"
         end
       end
 

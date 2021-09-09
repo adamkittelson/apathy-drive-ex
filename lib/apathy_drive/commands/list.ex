@@ -118,9 +118,13 @@ defmodule ApathyDrive.Commands.List do
           end
 
         prereq =
-          ["Level #{skill.required_level}", prereq]
-          |> Enum.reject(&is_nil/1)
-          |> Enum.join(", ")
+          if skill.required_level > 1 do
+            ["Level #{skill.required_level}", prereq]
+            |> Enum.reject(&is_nil/1)
+            |> Enum.join(", ")
+          else
+            prereq
+          end
 
         Mobile.send_scroll(
           character,

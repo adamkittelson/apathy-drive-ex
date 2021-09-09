@@ -163,6 +163,8 @@ defmodule ApathyDrive.Commands.Buy do
                 end)
               end
 
+              ApathyDrive.Commands.Look.look_at_item(char, item)
+
               char
               |> Ecto.Changeset.change(%{
                 runic: char_currency.runic,

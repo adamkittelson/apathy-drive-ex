@@ -79,8 +79,6 @@ defmodule ApathyDrive.Item do
     field(:global_drop_rarity, :string)
     field(:level, :integer)
     field(:quality_level, :integer)
-    field(:min_ac, :integer)
-    field(:max_ac, :integer)
     field(:max_sockets, :integer)
     field(:required_str, :integer)
     field(:required_agi, :integer)
@@ -518,6 +516,13 @@ defmodule ApathyDrive.Item do
     |> Enum.map(& &1.item_type_id)
   end
 
+  def gem_ids() do
+    Item
+    |> Ecto.Query.where(type: "Stone")
+    |> Repo.all()
+    |> Enum.map(& &1.id)
+  end
+
   def random_accessory(level) do
     item_types = accessory_ids()
     level = div(level, 2)
@@ -529,6 +534,16 @@ defmodule ApathyDrive.Item do
       list ->
         list
     end
+    |> Enum.random()
+  end
+
+  def random_gem(level) do
+    ids = gem_ids()
+    level = div(level, 2)
+
+    __MODULE__
+    |> Ecto.Query.where([i], i.id in ^ids and i.quality_level <= ^level)
+    |> ApathyDrive.Repo.all()
     |> Enum.random()
   end
 

@@ -398,6 +398,7 @@ defmodule ApathyDrive.Monster do
       end)
 
     # drop_random_loot_for_character(room, monster, character)
+    drop_gem(room, monster, character)
 
     room
     |> Room.load_items()
@@ -522,6 +523,47 @@ defmodule ApathyDrive.Monster do
         end
       end
     end)
+  end
+
+  def drop_gem(%Room{} = room, monster, %Character{} = character) do
+    level = (div(monster.level, 3) + 1) * 3
+
+    magic_find =
+      Mobile.ability_value(character, "MagicFind") +
+        Mobile.attribute_at_level(character, :charm, character.level)
+
+    if Monster.magic?(monster.level, level, magic_find) do
+      item =
+        Item.random_gem(level)
+        |> Item.load_item_types()
+
+      Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+
+      item_instance =
+        %ItemInstance{
+          item_id: item.id,
+          room_id: room.id,
+          character_id: nil,
+          equipped: false,
+          hidden: false,
+          ac: 0,
+          name: item.name,
+          level: level,
+          delete_at: Item.delete_at("magic")
+        }
+        |> Repo.insert!()
+        |> Repo.preload(:item)
+        |> update_in([Access.key!(:item)], &Item.load_item_types/1)
+
+      item =
+        item_instance
+        |> Item.from_assoc()
+
+      Mobile.send_scroll(
+        character,
+        "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+      )
+    end
   end
 
   def affix_level(quality_level, monster_level, magic_level) do
