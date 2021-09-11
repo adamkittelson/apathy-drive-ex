@@ -130,8 +130,15 @@ defmodule ApathyDrive.Commands.Look do
         look_at_mobile(target, character)
 
       target = Room.find_item(room, character, Enum.join(arguments, " ")) ->
-        target = Map.put(target, :level, target.level || character.level)
-        look_at_item(character, target)
+        case target do
+          {:shop_item, target} ->
+            target = Map.put(target, :level, target.level || character.level)
+            look_at_item(character, target, shop_item: true)
+
+          target ->
+            target = Map.put(target, :level, target.level || character.level)
+            look_at_item(character, target)
+        end
 
       true ->
         look_at_item(character, Enum.join(arguments, " "))
@@ -487,20 +494,19 @@ defmodule ApathyDrive.Commands.Look do
 
   def affix_description(_character, _trait, description, _val), do: description
 
-  def defense(item, character) do
+  def defense(item, character, opts) do
     value =
       Systems.Effect.effect_bonus(item, "Defense") +
         Systems.Effect.effect_bonus(item, "DefensePerLevel") * character.level
 
-    cond do
-      value <= 0 ->
-        case Item.ac_for_item(item) do
-          %{min: 0, max: 0} ->
-            ""
+    %{min: min, max: max} = Item.ac_for_item(item)
 
-          %{min: min, max: max} ->
-            "\nDefense: #{min}-#{max}"
-        end
+    cond do
+      opts[:shop_item] ->
+        "\nDefense: #{min + value}-#{max + value}"
+
+      value <= 0 ->
+        ""
 
       value > item.ac ->
         "\nDefense: <span style='color: #4850B8'>#{value}</span>"
@@ -620,15 +626,34 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def weapon_speed(%Item{speed: nil}), do: ""
+  def weapon_speed(_character, %Item{speed: nil}), do: ""
 
-  def weapon_speed(%Item{speed: _speed, type_id: nil} = _item), do: ""
+  def weapon_speed(_character, %Item{speed: _speed, type_id: nil} = _item), do: ""
 
-  def weapon_speed(%Item{speed: speed, type_id: type_id} = item) do
+  def weapon_speed(%Character{} = character, %Item{type_id: type_id} = weapon) do
     type = Repo.get(ItemType, type_id).name
+
+    level = character.level
+    encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
+    agility = Mobile.attribute_at_level(character, :agility, level)
+
+    combat_level = Character.combat_level(character)
+
+    cost =
+      weapon.speed * 1000 /
+        ((level * (combat_level + 2) + 45) * (agility + 150) *
+           1500 /
+           9000.0)
+
+    speed =
+      trunc(
+        cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
+      )
+
     desc = weapon_speeds(speed)
 
-    ias = Systems.Effect.effect_bonus(item, "IncreasedAttackSpeed") || 0
+    ias = Mobile.ability_value(character, "IncreasedAttackSpeed") || 0
 
     ias_multiplier = (100 - ias) / 100
 
@@ -643,13 +668,15 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def weapon_speeds(energy) when energy > 800, do: "Very Slow"
-  def weapon_speeds(energy) when energy > 500 and energy <= 800, do: "Slow"
-  def weapon_speeds(energy) when energy > 330 and energy <= 500, do: "Normal"
-  def weapon_speeds(energy) when energy > 250 and energy <= 330, do: "Fast"
-  def weapon_speeds(energy) when energy <= 250, do: "Very Fast"
+  def weapon_speeds(energy) when energy > 500, do: "Very Slow"
+  def weapon_speeds(energy) when energy > 333 and energy <= 800, do: "Slow"
+  def weapon_speeds(energy) when energy > 250 and energy <= 500, do: "Normal"
+  def weapon_speeds(energy) when energy > 200 and energy <= 330, do: "Fast"
+  def weapon_speeds(energy) when energy <= 200, do: "Very Fast"
 
-  def item_tooltip(%Character{} = character, %Item{} = item) do
+  def item_tooltip(character, item, opts \\ [])
+
+  def item_tooltip(%Character{} = character, %Item{} = item, opts) do
     value =
       %Shop{cost_multiplier: 1}
       |> Shop.sell_price(character, item)
@@ -661,39 +688,41 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     """
-    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(item)}#{sockets(item)}
+    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character, opts)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(character, item)}#{sockets(item)}
     <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
     Sells For: #{value}
     """
   end
 
-  def item_tooltip(%Character{} = _character, _item), do: ""
+  def item_tooltip(%Character{} = _character, _item, _opts), do: ""
 
-  def look_at_item(%Character{} = character, %Item{type: "Sign"} = item) do
+  def look_at_item(character, item, opts \\ [])
+
+  def look_at_item(%Character{} = character, %Item{type: "Sign"} = item, _opts) do
     Mobile.send_scroll(
       character,
       "<p>#{item.description}</p>"
     )
   end
 
-  def look_at_item(%Character{} = character, %Item{getable: false, hidden: true} = item) do
+  def look_at_item(%Character{} = character, %Item{getable: false, hidden: true} = item, _opts) do
     Mobile.send_scroll(
       character,
       "<p>#{item.description}</p>"
     )
   end
 
-  def look_at_item(%Character{} = character, %Item{} = item) do
-    item = item_tooltip(character, item)
+  def look_at_item(%Character{} = character, %Item{} = item, opts) do
+    item = item_tooltip(character, item, opts)
     Mobile.send_scroll(character, "<p class='item'>#{item}</span>")
   end
 
-  def look_at_item(mobile, %{description: description}) do
+  def look_at_item(mobile, %{description: description}, _opts) do
     Mobile.send_scroll(mobile, "<p>#{description}</p>")
   end
 
-  def look_at_item(%Character{} = mobile, item_name) do
+  def look_at_item(%Character{} = mobile, item_name, _opts) do
     case find_item(mobile, item_name) do
       nil ->
         Mobile.send_scroll(mobile, "<p>You do not notice that here.</p>")

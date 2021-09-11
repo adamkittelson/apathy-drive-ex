@@ -544,15 +544,27 @@ defmodule ApathyDrive.AI do
 
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do
-      attack = Mobile.attack_ability(mobile)
+      if mobile.energy == mobile.max_energy && (!mobile.casting or mobile.casting == :auto_attack) do
+        {attacks, _energy} =
+          Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
+            attack = Mobile.attack_ability(mobile)
 
-      if attack do
-        if mobile.energy >= mobile.max_energy && auto_attack?(mobile) do
-          room
-          |> Room.update_mobile(mobile.ref, fn _room, mobile ->
-            Map.put(mobile, :last_auto_attack_at, DateTime.utc_now())
+            if attack && attack.energy <= energy do
+              {[attack | attacks], energy - attack.energy}
+            else
+              {attacks, energy}
+            end
           end)
-          |> Ability.execute(mobile.ref, attack, [target_ref])
+
+        if Enum.any?(attacks) do
+          room =
+            Room.update_mobile(room, mobile.ref, fn _room, mobile ->
+              Map.put(mobile, :casting, nil)
+            end)
+
+          Enum.reduce(attacks, room, fn attack, room ->
+            Ability.execute(room, mobile.ref, attack, [target_ref])
+          end)
         end
       end
     end

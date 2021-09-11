@@ -18,10 +18,6 @@ defmodule ApathyDrive.ItemTrait do
     |> preload([:trait])
     |> Repo.all()
     |> Enum.reduce(%{}, fn
-      %{trait: %{name: "Defense"}, value: _value}, abilities ->
-        # remove defense for now
-        abilities
-
       %{trait: %{name: name}, value: value}, abilities ->
         trait = %{name => value}
         Trait.merge_traits(abilities, trait)

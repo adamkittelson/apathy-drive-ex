@@ -114,16 +114,11 @@ defmodule ApathyDrive.Commands.Buy do
               currency = Currency.set_value(price_in_copper)
               char_currency = Currency.subtract(char, price_in_copper)
 
-              affix_level =
-                min(item.quality_level, character.level)
-                |> IO.inspect()
+              affix_level = min(item.quality_level, character.level)
 
               Monster.item_affixes(item_instance, affix_level)
-              |> IO.inspect()
 
               item = Item.from_assoc(item_instance)
-
-              IO.inspect(item.effects)
 
               if price_in_copper == 0 do
                 Mobile.send_scroll(

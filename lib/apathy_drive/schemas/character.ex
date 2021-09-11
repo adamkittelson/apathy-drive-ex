@@ -1256,12 +1256,29 @@ defmodule ApathyDrive.Character do
 
   def energy_per_swing(character, weapon \\ nil) do
     weapon = weapon || Character.weapon(character)
+    level = character.level
+    encumbrance = Character.encumbrance(character)
+    max_encumbrance = Character.max_encumbrance(character)
+    agility = Mobile.attribute_at_level(character, :agility, level)
+
+    combat_level = Character.combat_level(character)
+
+    cost =
+      weapon.speed * 1000 /
+        ((level * (combat_level + 2) + 45) * (agility + 150) *
+           1500 /
+           9000.0)
+
+    energy =
+      trunc(
+        cost * (Float.floor(Float.floor(encumbrance / max_encumbrance * 100) / 2.0) + 75) / 100.0
+      )
 
     ias = Mobile.ability_value(character, "IncreasedAttackSpeed")
 
     ias_multiplier = (100 - ias) / 100
 
-    max(200, min(1000, trunc(weapon.speed * ias_multiplier)))
+    max(200, min(1000, trunc(energy * ias_multiplier)))
   end
 
   def spell_energy_per_swing(character, weapon, ability) do

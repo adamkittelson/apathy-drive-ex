@@ -819,7 +819,7 @@ defmodule ApathyDrive.Item do
       |> String.pad_leading(opts[:pad_leading] || 0)
 
     if opts[:character] && !opts[:no_tooltip] do
-      "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{ApathyDrive.Commands.Look.item_tooltip(opts[:character], item)}</span></span>"
+      "<span class='item-name' style='color: #{color(item, opts)};'>#{name}<span class='item tooltip'>#{ApathyDrive.Commands.Look.item_tooltip(opts[:character], item, opts)}</span></span>"
     else
       "<span style='color: #{color(item, opts)};'>#{name}</span>"
     end
@@ -833,7 +833,7 @@ defmodule ApathyDrive.Item do
   end
 
   def cost_in_copper(%Item{} = item) do
-    item.cost_value || 0 * Currency.copper_value(item.cost_currency)
+    (item.cost_value || 0) * Currency.copper_value(item.cost_currency)
   end
 
   def has_ability?(%Item{} = item, ability_name) do

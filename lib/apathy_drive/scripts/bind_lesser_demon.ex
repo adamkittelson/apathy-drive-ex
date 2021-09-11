@@ -28,8 +28,7 @@ defmodule ApathyDrive.Scripts.BindLesserDemon do
 
     control_chance = ability.traits["ControlChance"]
     defense = ability.traits["Defense"]
-    replenishment = IO.inspect(ability.traits)["Replenishment"]
-    IO.puts("replenishment: #{inspect(replenishment)}")
+    replenishment = ability.traits["Replenishment"]
     duration = ability.traits["Duration"]
 
     if :rand.uniform(100) < control_chance do

@@ -767,10 +767,10 @@ defmodule ApathyDrive.Room do
       shop_item ->
         case shop_item do
           %Item{} = item ->
-            item
+            {:shop_item, item}
 
           shop_item ->
-            shop_item.item
+            {:shop_item, shop_item.item}
         end
 
       true ->

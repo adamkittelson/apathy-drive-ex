@@ -61,7 +61,7 @@ defmodule ApathyDrive.Commands.List do
 
       Mobile.send_scroll(
         character,
-        "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{String.pad_trailing(items |> length() |> to_string(), 12)}</span><span class='dark-cyan'>#{value} #{Shop.item_disclaimer(item, character)}</span></p>"
+        "<p>#{Item.colored_name(item, pad_trailing: padding, character: character, shop_item: true)}<span class='dark-cyan'>#{String.pad_trailing(items |> length() |> to_string(), 12)}</span><span class='dark-cyan'>#{value} #{Shop.item_disclaimer(item, character)}</span></p>"
       )
     end)
 
@@ -76,12 +76,12 @@ defmodule ApathyDrive.Commands.List do
         if item.cost_value do
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{String.pad_trailing(to_string(shop_item.count), 12)}</span><span class='dark-cyan'>#{trunc(item.cost_value * shop.cost_multiplier)} #{item.cost_currency}s #{Shop.item_disclaimer(item, character)}</span></p>"
+            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character, shop_item: true)}<span class='dark-cyan'>#{String.pad_trailing(to_string(shop_item.count), 12)}</span><span class='dark-cyan'>#{trunc(item.cost_value * shop.cost_multiplier)} #{item.cost_currency}s #{Shop.item_disclaimer(item, character)}</span></p>"
           )
         else
           Mobile.send_scroll(
             character,
-            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character)}<span class='dark-cyan'>#{String.pad_trailing(to_string(shop_item.count), 12)}</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
+            "<p>#{Item.colored_name(item, pad_trailing: padding, character: character, shop_item: true)}<span class='dark-cyan'>#{String.pad_trailing(to_string(shop_item.count), 12)}</span><span class='dark-cyan'>FREE</span> #{Shop.item_disclaimer(item, character)}</p>"
           )
         end
       end
