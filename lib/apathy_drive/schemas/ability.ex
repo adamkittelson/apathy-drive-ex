@@ -1288,10 +1288,7 @@ defmodule ApathyDrive.Ability do
             if ability.traits["OnHit"] && Enum.any?(ability.traits["OnHit"]) &&
                  is_nil(Process.get(:ability_result)) do
               Enum.reduce(ability.traits["OnHit"], room, fn on_hit, room ->
-                IO.inspect(ability.traits["OnHit"])
-                IO.puts("rolling for #{on_hit["chance"]}")
-
-                if IO.inspect(:rand.uniform(100)) <= on_hit["chance"] do
+                if :rand.uniform(100) <= on_hit["chance"] do
                   Process.delete(:ability_result)
 
                   skill =
@@ -1325,10 +1322,7 @@ defmodule ApathyDrive.Ability do
           room =
             if ability.traits["OnAttack"] && Enum.any?(ability.traits["OnAttack"]) do
               Enum.reduce(ability.traits["OnAttack"], room, fn on_hit, room ->
-                IO.inspect(ability.traits["OnAttack"])
-                IO.puts("rolling for #{on_hit["chance"]}")
-
-                if IO.inspect(:rand.uniform(100)) <= on_hit["chance"] do
+                if :rand.uniform(100) <= on_hit["chance"] do
                   Process.delete(:ability_result)
 
                   skill =

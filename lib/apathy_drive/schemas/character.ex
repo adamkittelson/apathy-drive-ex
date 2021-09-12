@@ -1239,7 +1239,29 @@ defmodule ApathyDrive.Character do
   end
 
   def combat_level(%Character{} = character) do
-    Mobile.ability_value(character, "CombatLevel")
+    weapon = Character.weapon(character)
+
+    skill =
+      case weapon.weapon_type do
+        "blade" ->
+          ApathyDrive.Skills.BladeMastery.skill_level(character)
+
+        "blunt" ->
+          ApathyDrive.Skills.BluntMastery.skill_level(character)
+
+        "two handed blade" ->
+          (ApathyDrive.Skills.BladeMastery.skill_level(character) +
+             ApathyDrive.Skills.TwoHandedMastery.skill_level(character)) / 2
+
+        "two handed blunt" ->
+          (ApathyDrive.Skills.BluntMastery.skill_level(character) +
+             ApathyDrive.Skills.TwoHandedMastery.skill_level(character)) / 2
+
+        nil ->
+          3
+      end
+
+    trunc(1 + skill * 0.67)
   end
 
   def magic_level(%Character{} = character) do
@@ -1249,10 +1271,10 @@ defmodule ApathyDrive.Character do
     )
   end
 
-  def combat_proficiency(combat_level) when combat_level > 4.5, do: "Excellent"
-  def combat_proficiency(combat_level) when combat_level > 3.5, do: "Good"
-  def combat_proficiency(combat_level) when combat_level > 2.5, do: "Average"
-  def combat_proficiency(combat_level) when combat_level > 1.5, do: "Fair"
+  def combat_proficiency(combat_level) when combat_level >= 5, do: "Excellent"
+  def combat_proficiency(combat_level) when combat_level >= 4, do: "Good"
+  def combat_proficiency(combat_level) when combat_level >= 3, do: "Average"
+  def combat_proficiency(combat_level) when combat_level >= 2, do: "Fair"
   def combat_proficiency(_combat_level), do: "Poor"
 
   def energy_per_swing(character, weapon \\ nil) do
@@ -1263,6 +1285,8 @@ defmodule ApathyDrive.Character do
     agility = Mobile.attribute_at_level(character, :agility, level)
 
     combat_level = Character.combat_level(character)
+
+    IO.puts("combat level: #{inspect(combat_level)}")
 
     cost =
       weapon.speed * 1000 /

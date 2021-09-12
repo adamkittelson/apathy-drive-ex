@@ -10,7 +10,6 @@ defmodule ApathyDrive.Commands.Look do
     Doors,
     Regeneration,
     Item,
-    ItemType,
     Match,
     Mobile,
     Repo,
@@ -503,7 +502,11 @@ defmodule ApathyDrive.Commands.Look do
 
     cond do
       opts[:shop_item] ->
-        "\nDefense: #{min + value}-#{max + value}"
+        if min + value <= 0 and max + value <= 0 do
+          ""
+        else
+          "\nDefense: #{min + value}-#{max + value}"
+        end
 
       value <= 0 ->
         ""
@@ -630,8 +633,8 @@ defmodule ApathyDrive.Commands.Look do
 
   def weapon_speed(_character, %Item{speed: _speed, type_id: nil} = _item), do: ""
 
-  def weapon_speed(%Character{} = character, %Item{type_id: type_id} = weapon) do
-    type = Repo.get(ItemType, type_id).name
+  def weapon_speed(%Character{} = character, %Item{} = weapon) do
+    type = Item.titleize(weapon.weapon_type)
 
     level = character.level
     encumbrance = Character.encumbrance(character)
@@ -662,9 +665,9 @@ defmodule ApathyDrive.Commands.Look do
     enhanced_desc = weapon_speeds(ias_energy)
 
     if enhanced_desc != desc do
-      "\n#{type} Class: <span style='color: #908858'>#{enhanced_desc} Attack Speed</span>"
+      "\n#{type}: <span style='color: #908858'>#{enhanced_desc} Attack Speed</span>"
     else
-      "\n#{type} Class: #{enhanced_desc} Attack Speed"
+      "\n#{type}: #{enhanced_desc} Attack Speed"
     end
   end
 
