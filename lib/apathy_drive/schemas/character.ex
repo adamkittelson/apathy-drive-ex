@@ -1286,8 +1286,6 @@ defmodule ApathyDrive.Character do
 
     combat_level = Character.combat_level(character)
 
-    IO.puts("combat level: #{inspect(combat_level)}")
-
     cost =
       weapon.speed * 1000 /
         ((level * (combat_level + 2) + 45) * (agility + 150) *

@@ -562,12 +562,17 @@ defmodule ApathyDrive.AI do
             Room.update_mobile(room, mobile.ref, fn _room, mobile ->
               mobile
               |> Map.put(:casting, nil)
-              |> Map.put(:energy, 0)
-              |> Map.put(:remaining_energy, energy)
             end)
 
-          Enum.reduce(attacks, room, fn attack, room ->
-            Ability.execute(room, mobile.ref, attack, [target_ref])
+          room =
+            Enum.reduce(attacks, room, fn attack, room ->
+              Ability.execute(room, mobile.ref, attack, [target_ref])
+            end)
+
+          Room.update_mobile(room, mobile.ref, fn _room, mobile ->
+            mobile
+            |> Map.put(:energy, 0)
+            |> Map.put(:remaining_energy, energy)
           end)
         end
       end
