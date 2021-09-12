@@ -79,6 +79,7 @@ defmodule ApathyDrive.Character do
     field(:chat_tab, :string)
     field(:experience, :integer)
 
+    field(:remaining_energy, :integer, virtual: true, default: 0)
     field(:gcd, :integer, virtual: true, default: 0)
     field(:attunements, :any, virtual: true, default: [])
     field(:title, :string, virtual: true)

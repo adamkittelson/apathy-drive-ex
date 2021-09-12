@@ -68,6 +68,7 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:remaining_energy, :integer, virtual: true, default: 0)
     field(:gcd, :integer, virtual: true, default: 0)
     field(:hate, :map, virtual: true, default: %{})
     field(:base_name, :string, virtual: true)

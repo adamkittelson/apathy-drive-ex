@@ -545,8 +545,9 @@ defmodule ApathyDrive.AI do
   def auto_attack(mobile, room, target_ref \\ nil) do
     if target_ref = target_ref || Mobile.auto_attack_target(mobile, room) do
       if mobile.energy == mobile.max_energy && (!mobile.casting or mobile.casting == :auto_attack) do
-        {attacks, _energy} =
-          Enum.reduce(1..5, {[], mobile.energy}, fn _n, {attacks, energy} ->
+        {attacks, energy} =
+          Enum.reduce(1..5, {[], mobile.energy + mobile.remaining_energy}, fn _n,
+                                                                              {attacks, energy} ->
             attack = Mobile.attack_ability(mobile)
 
             if attack && attack.energy <= energy do
@@ -559,7 +560,10 @@ defmodule ApathyDrive.AI do
         if Enum.any?(attacks) do
           room =
             Room.update_mobile(room, mobile.ref, fn _room, mobile ->
-              Map.put(mobile, :casting, nil)
+              mobile
+              |> Map.put(:casting, nil)
+              |> Map.put(:energy, 0)
+              |> Map.put(:remaining_energy, energy)
             end)
 
           Enum.reduce(attacks, room, fn attack, room ->
