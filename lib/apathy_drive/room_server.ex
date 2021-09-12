@@ -1041,7 +1041,11 @@ defmodule ApathyDrive.RoomServer do
     room =
       Enum.reduce(room.mobiles, room, fn
         {ref, %Character{}}, room ->
-          Ability.execute(room, ref, room.ability, [ref])
+          ability =
+            room.ability
+            |> Map.put(:spell?, false)
+
+          Ability.execute(room, ref, ability, [ref])
 
         _, room ->
           room

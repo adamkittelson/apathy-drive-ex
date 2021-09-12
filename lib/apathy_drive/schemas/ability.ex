@@ -1143,7 +1143,9 @@ defmodule ApathyDrive.Ability do
           IO.puts("#{caster.name} using #{ability.name} on targets: #{inspect(targets)}")
 
           caster =
-            if caster.casting && caster.casting.spell? do
+            if caster.casting && caster.casting.spell? &&
+                 ((ability.cast_time && ability.cast_time > 0) ||
+                    (ability.energy && ability.energy > 0)) do
               Mobile.send_scroll(
                 caster,
                 "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
@@ -2502,7 +2504,7 @@ defmodule ApathyDrive.Ability do
           false
       end)
       |> Enum.into(%{})
-      |> Map.put("stack_key", ability.traits["StackKey"] || ability.id)
+      |> Map.put("stack_key", ability.traits["StackKey"] || ability.id || ability.name)
       |> Map.put("stack_count", ability.traits["StackCount"] || 1)
       |> process_duration_traits(target, caster, ability.duration)
       |> Map.put("effect_ref", make_ref())
