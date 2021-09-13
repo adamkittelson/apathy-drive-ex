@@ -1304,6 +1304,7 @@ defmodule ApathyDrive.Ability do
                     |> Map.put(:mana, 0)
                     |> Map.put(:energy, 0)
                     |> Map.put(:on_hit?, true)
+                    |> Map.put(:cast_time, 0)
 
                   targets =
                     if ability.targets in ["full party area", "full attack area"] do
@@ -1338,6 +1339,7 @@ defmodule ApathyDrive.Ability do
                     |> Map.put(:mana, 0)
                     |> Map.put(:energy, 0)
                     |> Map.put(:on_hit?, true)
+                    |> Map.put(:cast_time, 0)
 
                   targets =
                     if ability.targets in ["full party area", "full attack area"] do

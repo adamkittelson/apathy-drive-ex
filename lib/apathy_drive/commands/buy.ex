@@ -116,7 +116,17 @@ defmodule ApathyDrive.Commands.Buy do
 
               affix_level = min(item.quality_level, character.level)
 
-              Monster.item_affixes(item_instance, affix_level)
+              {prefixes, suffixes} = Monster.item_affixes(item_instance, affix_level)
+
+              prefixes = Enum.reject(prefixes, &is_nil/1)
+              suffixes = Enum.reject(suffixes, &is_nil/1)
+
+              name = Monster.item_name(item_instance, prefixes, suffixes)
+
+              item_instance =
+                item_instance
+                |> Ecto.Changeset.change(%{name: name})
+                |> Repo.update!()
 
               item = Item.from_assoc(item_instance)
 

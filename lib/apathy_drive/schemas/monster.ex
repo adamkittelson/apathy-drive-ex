@@ -371,7 +371,7 @@ defmodule ApathyDrive.Monster do
         if :rand.uniform(100) <= chance + pity do
           Logger.info("Dropping item##{item_id} for #{character.name} in Room##{room.id}")
 
-          item =
+          item_instance =
             %ItemInstance{
               item_id: item_id,
               room_id: room.id,
@@ -383,12 +383,55 @@ defmodule ApathyDrive.Monster do
             }
             |> Repo.insert!()
             |> Repo.preload(:item)
+
+          item =
+            item_instance
             |> Item.from_assoc()
 
-          Mobile.send_scroll(
-            character,
-            "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
-          )
+          if item.quality_level do
+            quality = ApathyDrive.Commands.Buy.determine_item_quality(character, item)
+
+            %{min: min, max: max} = Item.ac_for_item(item)
+
+            item_instance =
+              item_instance
+              |> Ecto.Changeset.change(%{
+                quality: quality,
+                ac: Enum.random(min..max)
+              })
+              |> Repo.update!()
+              |> update_in([Access.key!(:item)], fn _item ->
+                item_instance
+                |> Item.from_assoc()
+                |> Item.load_item_types()
+              end)
+
+            affix_level = min(item.quality_level, character.level)
+
+            {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+
+            prefixes = Enum.reject(prefixes, &is_nil/1)
+            suffixes = Enum.reject(suffixes, &is_nil/1)
+
+            name = item_name(item_instance, prefixes, suffixes)
+
+            item_instance =
+              item_instance
+              |> Ecto.Changeset.change(%{name: name})
+              |> Repo.update!()
+
+            item = Item.from_assoc(item_instance)
+
+            Mobile.send_scroll(
+              character,
+              "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+            )
+          else
+            Mobile.send_scroll(
+              character,
+              "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+            )
+          end
 
           LootPity.reset_pity(character, drop_id)
         else
@@ -398,7 +441,7 @@ defmodule ApathyDrive.Monster do
         room
       end)
 
-    # drop_random_loot_for_character(room, monster, character)
+    drop_random_loot_for_character(room, monster, character)
     drop_gem(room, monster, character)
 
     room
@@ -415,115 +458,59 @@ defmodule ApathyDrive.Monster do
 
     items = Item.of_quality_level(level)
 
-    picks = if monster.game_limit == 1, do: 5, else: 1
+    roll = :rand.uniform(100)
 
-    Enum.each(1..picks, fn _pick ->
-      roll = :rand.uniform(100)
+    chance = 40
 
-      chance = if monster.game_limit == 1, do: 80, else: 40
+    if Enum.any?(items) and (quality || roll <= chance) do
+      item =
+        items
+        |> Enum.random()
+        |> Item.load_item_types()
 
-      if Enum.any?(items) and (quality || roll <= chance) do
-        item =
-          items
-          |> Enum.random()
-          |> Item.load_item_types()
+      Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
 
-        Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
+      quality = quality || ApathyDrive.Commands.Buy.determine_item_quality(character, item)
 
-        quality = quality || determine_item_quality(character, monster, item)
+      item_instance =
+        %ItemInstance{
+          item_id: item.id,
+          room_id: room.id,
+          character_id: nil,
+          equipped: false,
+          hidden: false,
+          name: item.name,
+          quality: quality,
+          level: max(1, monster.level),
+          delete_at: Item.delete_at(item.quality)
+        }
+        |> Repo.insert!()
+        |> Repo.preload(:item)
+        |> update_in([Access.key!(:item)], &Item.load_item_types/1)
 
-        item_instance =
-          %ItemInstance{
-            item_id: item.id,
-            room_id: room.id,
-            character_id: nil,
-            equipped: false,
-            hidden: false,
-            name: item.name,
-            quality: quality,
-            level: max(1, monster.level),
-            delete_at: Item.delete_at(item.quality)
-          }
-          |> Repo.insert!()
-          |> Repo.preload(:item)
-          |> update_in([Access.key!(:item)], &Item.load_item_types/1)
+      affix_level = affix_level(item.quality_level, monster.level, 0)
 
-        affix_level = affix_level(item.quality_level, monster.level, 0)
+      {prefixes, suffixes} = item_affixes(item_instance, affix_level)
 
-        {prefixes, suffixes} = item_affixes(item_instance, affix_level)
+      prefixes = Enum.reject(prefixes, &is_nil/1)
+      suffixes = Enum.reject(suffixes, &is_nil/1)
 
-        prefixes = Enum.reject(prefixes, &is_nil/1)
-        suffixes = Enum.reject(suffixes, &is_nil/1)
+      name = item_name(item_instance, prefixes, suffixes)
 
-        name = item_name(item_instance, prefixes, suffixes)
+      item_instance =
+        item_instance
+        |> Ecto.Changeset.change(%{name: name})
+        |> Repo.update!()
 
-        item_instance =
-          item_instance
-          |> Ecto.Changeset.change(%{name: name})
-          |> Repo.update!()
+      item =
+        item_instance
+        |> Item.from_assoc()
 
-        item =
-          item_instance
-          |> Item.from_assoc()
-
-        Mobile.send_scroll(
-          character,
-          "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
-        )
-      else
-        chance = if monster.game_limit == 1, do: 60, else: 30
-        # drop jewelry, runes, gems etc
-        if :rand.uniform(100) < chance do
-          item =
-            Item.random_accessory(level)
-            |> Item.load_item_types()
-
-          Logger.info("Dropping item##{item.id} for #{character.name} in Room##{room.id}")
-
-          quality = quality || determine_item_quality(character, monster, item)
-
-          item_instance =
-            %ItemInstance{
-              item_id: item.id,
-              room_id: room.id,
-              character_id: nil,
-              equipped: false,
-              hidden: false,
-              ac: 0,
-              name: item.name,
-              quality: quality,
-              level: max(1, monster.level),
-              delete_at: Item.delete_at(item.quality)
-            }
-            |> Repo.insert!()
-            |> Repo.preload(:item)
-            |> update_in([Access.key!(:item)], &Item.load_item_types/1)
-
-          affix_level = affix_level(item.quality_level, monster.level, character.level)
-
-          {prefixes, suffixes} = item_affixes(item_instance, affix_level)
-
-          prefixes = Enum.reject(prefixes, &is_nil/1)
-          suffixes = Enum.reject(suffixes, &is_nil/1)
-
-          name = item_name(item_instance, prefixes, suffixes)
-
-          item_instance =
-            item_instance
-            |> Ecto.Changeset.change(%{name: name})
-            |> Repo.update!()
-
-          item =
-            item_instance
-            |> Item.from_assoc()
-
-          Mobile.send_scroll(
-            character,
-            "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
-          )
-        end
-      end
-    end)
+      Mobile.send_scroll(
+        character,
+        "<p>A #{Item.colored_name(item, character: character)} drops to the floor.</p>"
+      )
+    end
   end
 
   def drop_gem(%Room{} = room, monster, %Character{} = character) do
@@ -935,45 +922,6 @@ defmodule ApathyDrive.Monster do
 
   def item_name(%ItemInstance{quality: _} = item, _prefixes, _suffixes) do
     item.name
-  end
-
-  def determine_item_quality(_character, _monster, %Item{type: "Stone"}), do: "normal"
-
-  def determine_item_quality(character, monster, item) do
-    magic_find =
-      Mobile.ability_value(character, "MagicFind") +
-        Mobile.attribute_at_level(character, :charm, character.level)
-
-    magic_find = if monster.game_limit == 1, do: 400 + magic_find * 2, else: magic_find
-
-    cond do
-      unique?(monster.level, item.quality_level, magic_find) ->
-        IO.puts("dropped unique!")
-        "rare"
-
-      set?(monster.level, item.quality_level, magic_find) ->
-        IO.puts("dropped set!")
-        "rare"
-
-      rare?(monster.level, item.quality_level, magic_find) ->
-        IO.puts("dropped rare!")
-        "rare"
-
-      magic?(monster.level, item, magic_find) ->
-        IO.puts("dropped magic!")
-        "magic"
-
-      high?(monster.level, item.quality_level, magic_find) ->
-        IO.puts("dropped superior!")
-        "superior"
-
-      normal?(monster.level, item.quality_level, magic_find) ->
-        IO.puts("dropped normal!")
-        "normal"
-
-      :else ->
-        "low"
-    end
   end
 
   def unique?(monster_level, quality_level, magic_find) do

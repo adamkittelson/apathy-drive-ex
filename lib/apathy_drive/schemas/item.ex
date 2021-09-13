@@ -287,6 +287,8 @@ defmodule ApathyDrive.Item do
     %{min: min, max: max}
   end
 
+  def ac_for_item(_quality, _slot), do: %{min: 0, max: 0}
+
   def from_assoc(%ItemInstance{id: id, item: item} = ii) do
     item =
       Repo.preload(item,
