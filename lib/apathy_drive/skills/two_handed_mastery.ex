@@ -45,7 +45,7 @@ defmodule ApathyDrive.Skills.TwoHandedMastery do
   end
 
   defp proficiency(level) do
-    trunc(1 + 0.67 * level)
+    (1 + 0.67 * level)
     |> Character.combat_proficiency()
   end
 end

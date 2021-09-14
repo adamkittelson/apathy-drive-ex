@@ -80,8 +80,6 @@ defmodule ApathyDrive.Item do
     field(:level, :integer)
     field(:quality_level, :integer)
     field(:max_sockets, :integer)
-    field(:required_str, :integer)
-    field(:required_agi, :integer)
     field(:magic_level, :integer)
     field(:type_id, :integer)
     field(:block_chance, :integer)
@@ -236,6 +234,62 @@ defmodule ApathyDrive.Item do
   end
 
   def skill_for_character(_character, _item), do: 1
+
+  def str_for_item(%Item{type: "Armour"} = item) do
+    str_for_armour(item.quality_level, item.armour_type)
+  end
+
+  def str_for_item(%Item{type: "Weapon"} = item) do
+    str_for_weapon(item.quality_level, item.weapon_type)
+  end
+
+  def str_for_item(_item), do: 0
+
+  def str_for_armour(nil, _armour_type), do: 0
+
+  def str_for_armour(quality_level, armour_type) do
+    10 + trunc(2.62 * quality_level * @armour_type_modifiers[armour_type])
+  end
+
+  def str_for_weapon(nil, _armour_type), do: 0
+
+  def str_for_weapon(quality_level, "blade") do
+    trunc(1.75 * quality_level) - 1
+  end
+
+  def str_for_weapon(quality_level, "blunt") do
+    str_for_weapon(quality_level, "blade") * 1.25
+  end
+
+  def str_for_weapon(quality_level, "two handed blade") do
+    str_for_weapon(quality_level, "blade") * 1.75
+  end
+
+  def str_for_weapon(quality_level, "two handed blunt") do
+    str_for_weapon(quality_level, "blunt") * 1.75
+  end
+
+  def agi_for_item(%Item{type: "Weapon"} = item) do
+    agi_for_weapon(item.quality_level, item.weapon_type)
+  end
+
+  def agi_for_item(_item), do: 0
+
+  def agi_for_weapon(quality_level, "blade") do
+    str_for_weapon(quality_level, "blade")
+  end
+
+  def agi_for_weapon(quality_level, "blunt") do
+    agi_for_weapon(quality_level, "blade") * 0.75
+  end
+
+  def agi_for_weapon(quality_level, "two handed blade") do
+    agi_for_weapon(quality_level, "blade") * 0.75
+  end
+
+  def agi_for_weapon(quality_level, "two handed blunt") do
+    agi_for_weapon(quality_level, "blunt") * 0.75
+  end
 
   def ac_for_item(%Item{type: "Armour"} = item) do
     %{min: min, max: max} = ac_for_item(item.quality_level, item.worn_on)
@@ -706,13 +760,23 @@ defmodule ApathyDrive.Item do
 
   def upgrade_for_character?(%Item{} = item, %Character{} = character) do
     unless item in character.equipment do
+      qualities = %{"rare" => 3, "magic" => 2, "normal" => 1}
+
       case items_to_compare(item, character) do
         [] ->
           true
 
         items ->
           Enum.any?(items, fn worn_item ->
-            item.quality_level > worn_item.quality_level
+            item = [qualities[item.quality], item.quality_level, cost_in_copper(item)]
+
+            worn = [
+              qualities[worn_item.quality],
+              worn_item.quality_level,
+              cost_in_copper(worn_item)
+            ]
+
+            item > worn
           end)
       end
     end
@@ -879,12 +943,12 @@ defmodule ApathyDrive.Item do
 
   def required_strength(%Item{} = item) do
     modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
-    trunc((item.required_str || 0) * modifier)
+    trunc(str_for_item(item) * modifier)
   end
 
   def required_agility(%Item{} = item) do
     modifier = 1 + Systems.Effect.effect_bonus(item, "ReduceRequirements") / 100
-    trunc((item.required_agi || 0) * modifier)
+    trunc(agi_for_item(item) * modifier)
   end
 
   def required_level(%Item{} = item) do
@@ -893,7 +957,7 @@ defmodule ApathyDrive.Item do
     level =
       item.affix_traits
       |> Enum.map(& &1.affix_trait.affix.required_level)
-      |> List.insert_at(0, Systems.Effect.effect_bonus(item, "MinLevel"))
+      |> List.insert_at(0, div(item.quality_level || 0, 2))
       |> Enum.reject(&is_nil/1)
       |> Enum.max(fn -> 0 end)
 

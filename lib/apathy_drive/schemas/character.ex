@@ -673,7 +673,7 @@ defmodule ApathyDrive.Character do
           miss_verbs: ["throw a punch", "throws a punch"],
           min_damage: 2,
           max_damage: 7,
-          speed: 500
+          speed: 1150
         }
 
         if damage = Mobile.ability_value(character, "WeaponDamage") do
@@ -1261,7 +1261,7 @@ defmodule ApathyDrive.Character do
           3
       end
 
-    trunc(1 + skill * 0.67)
+    1 + skill * 0.67
   end
 
   def magic_level(%Character{} = character) do
