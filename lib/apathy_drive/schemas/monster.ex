@@ -454,7 +454,14 @@ defmodule ApathyDrive.Monster do
         %Character{} = character,
         quality \\ nil
       ) do
-    level = (div(monster.level, 3) + 1) * 3
+    level =
+      Enum.map(1..(monster.level * 2), fn n ->
+        Enum.map(1..n, fn _x -> n end)
+      end)
+      |> List.flatten()
+      |> Enum.random()
+
+    level = max(3, level)
 
     items = Item.of_quality_level(level)
 

@@ -12,7 +12,6 @@ defmodule ApathyDrive.Item do
     ItemInstance,
     ItemInstanceAffixTrait,
     ItemInstanceAffixSkill,
-    ItemTrait,
     ItemType,
     ItemTypeParent,
     ItemRace,
@@ -485,10 +484,6 @@ defmodule ApathyDrive.Item do
   def delete_at(_), do: Timex.shift(DateTime.utc_now(), minutes: 1)
 
   def with_traits(%Item{} = item) do
-    item_traits =
-      item.id
-      |> ItemTrait.load_traits()
-
     instance_traits =
       item.instance_id
       |> ItemInstanceAffixTrait.load_traits(item)
@@ -515,8 +510,7 @@ defmodule ApathyDrive.Item do
       |> ItemInstanceAffixSkill.load_skills(item)
 
     instance_traits =
-      item_traits
-      |> Trait.merge_traits(instance_traits)
+      instance_traits
       |> Trait.merge_traits(instance_skills)
       |> Trait.merge_traits(socket_traits)
 
@@ -542,13 +536,10 @@ defmodule ApathyDrive.Item do
   end
 
   def of_quality_level(level) do
-    accessory_ids = accessory_ids()
-
     __MODULE__
     |> Ecto.Query.where(
       [i],
-      i.quality_level <= ^level and i.quality_level >= ^level - 3 and
-        i.type_id not in ^accessory_ids
+      i.quality_level <= ^level and i.quality_level >= ^level - 3
     )
     |> ApathyDrive.Repo.all()
     |> case do
@@ -560,37 +551,11 @@ defmodule ApathyDrive.Item do
     end
   end
 
-  def accessory_ids() do
-    misc_id =
-      ItemType
-      |> Repo.get_by(name: "Miscellaneous")
-      |> Map.get(:id)
-
-    ItemTypeParent
-    |> Ecto.Query.where(parent_id: ^misc_id)
-    |> Repo.all()
-    |> Enum.map(& &1.item_type_id)
-  end
-
   def gem_ids() do
     Item
     |> Ecto.Query.where(type: "Stone")
     |> Repo.all()
     |> Enum.map(& &1.id)
-  end
-
-  def random_accessory(level) do
-    item_types = accessory_ids()
-    level = div(level, 2)
-
-    __MODULE__
-    |> Ecto.Query.where([i], i.type_id in ^item_types and i.quality_level <= ^level)
-    |> ApathyDrive.Repo.all()
-    |> case do
-      list ->
-        list
-    end
-    |> Enum.random()
   end
 
   def random_gem(level) do

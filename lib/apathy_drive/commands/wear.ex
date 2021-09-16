@@ -51,9 +51,7 @@ defmodule ApathyDrive.Commands.Wear do
                   {ref, %Character{} = mobile} when ref != char_ref ->
                     Mobile.send_scroll(
                       mobile,
-                      "<p>#{Mobile.colored_name(character)} removes #{
-                        Item.colored_name(item, character: mobile)
-                      }.</p>"
+                      "<p>#{Mobile.colored_name(character)} removes #{Item.colored_name(item, character: mobile)}.</p>"
                     )
 
                   _ ->
@@ -72,9 +70,7 @@ defmodule ApathyDrive.Commands.Wear do
                 {ref, %Character{} = mobile} when ref != char_ref ->
                   Mobile.send_scroll(
                     mobile,
-                    "<p>#{Mobile.colored_name(character)} is now wearing #{
-                      Item.colored_name(item, character: mobile)
-                    }.</p>"
+                    "<p>#{Mobile.colored_name(character)} is now wearing #{Item.colored_name(item, character: mobile)}.</p>"
                   )
 
                 _ ->
@@ -105,9 +101,7 @@ defmodule ApathyDrive.Commands.Wear do
                 {ref, %Character{} = mobile} when ref != char_ref ->
                   Mobile.send_scroll(
                     mobile,
-                    "<p>#{Mobile.colored_name(character)} is now wearing #{
-                      Item.colored_name(item, character: mobile)
-                    }.</p>"
+                    "<p>#{Mobile.colored_name(character)} is now wearing #{Item.colored_name(item, character: mobile)}.</p>"
                   )
 
                 _ ->
@@ -276,6 +270,7 @@ defmodule ApathyDrive.Commands.Wear do
 
   defp conflicting_worn_on("Weapon Hand"), do: ["Two Handed"]
   defp conflicting_worn_on("Two Handed"), do: ["Weapon Hand", "Off-Hand"]
+  defp conflicting_worn_on("Off-Hand"), do: ["Two Handed"]
   defp conflicting_worn_on(_), do: []
 
   def conflicting_items(item, equipment) do
