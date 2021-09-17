@@ -293,8 +293,8 @@ defmodule ApathyDrive.Item do
   def ac_for_item(%Item{type: "Armour"} = item) do
     %{min: min, max: max} = ac_for_item(item.quality_level, item.worn_on)
 
-    min = max(1, trunc(min * @armour_type_modifiers[item.armour_type]))
-    max = max(1, trunc(max * @armour_type_modifiers[item.armour_type]))
+    min = trunc(min * @armour_type_modifiers[item.armour_type])
+    max = trunc(max * @armour_type_modifiers[item.armour_type])
 
     Logger.info("Quality Level #{item.quality_level} #{item.armour_type}: #{min}-#{max} ac")
 
@@ -973,7 +973,7 @@ defmodule ApathyDrive.Item do
 
   defp load_item_abilities(%Item{} = item) do
     item
-    |> ItemAbility.load_abilities()
+    # |> ItemAbility.load_abilities()
     |> Enchantment.load_enchantments()
   end
 end

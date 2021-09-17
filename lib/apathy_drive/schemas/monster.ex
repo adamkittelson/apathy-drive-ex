@@ -479,6 +479,8 @@ defmodule ApathyDrive.Monster do
 
       quality = quality || ApathyDrive.Commands.Buy.determine_item_quality(character, item)
 
+      %{min: min, max: max} = Item.ac_for_item(item)
+
       item_instance =
         %ItemInstance{
           item_id: item.id,
@@ -488,6 +490,7 @@ defmodule ApathyDrive.Monster do
           hidden: false,
           name: item.name,
           quality: quality,
+          ac: Enum.random(min..max),
           level: max(1, monster.level),
           delete_at: Item.delete_at(item.quality)
         }

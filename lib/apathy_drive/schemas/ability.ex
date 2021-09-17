@@ -1507,7 +1507,7 @@ defmodule ApathyDrive.Ability do
             agility: 0.75,
             charm: 0.24
           })
-          |> update_in([:energy], &(&1 - block_energy))
+          |> update_in([:remaining_energy], &max(0, &1 - block_energy))
 
         put_in(room.mobiles[target.ref], target)
 
