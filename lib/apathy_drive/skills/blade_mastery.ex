@@ -4,7 +4,7 @@ defmodule ApathyDrive.Skills.BladeMastery do
 
   def ability(_character) do
     %Ability{
-      kind: "mastery",
+      kind: "passive",
       targets: "self",
       name: "Blade Mastery",
       attributes: ["strength", "agility"],

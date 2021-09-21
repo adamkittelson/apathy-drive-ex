@@ -4,7 +4,7 @@ defmodule ApathyDrive.Skills.BluntMastery do
 
   def ability(_character) do
     %Ability{
-      kind: "mastery",
+      kind: "passive",
       targets: "self",
       name: "Blunt Mastery",
       attributes: ["strength", "agility"],

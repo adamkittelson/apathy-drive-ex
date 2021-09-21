@@ -4,7 +4,7 @@ defmodule ApathyDrive.Skills.TwoHandedMastery do
 
   def ability(_character) do
     %Ability{
-      kind: "mastery",
+      kind: "passive",
       targets: "self",
       name: "Two Handed Mastery",
       attributes: ["strength", "agility"],

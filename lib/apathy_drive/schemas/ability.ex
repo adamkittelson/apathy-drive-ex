@@ -1409,11 +1409,8 @@ defmodule ApathyDrive.Ability do
   def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
-    weapon = Character.weapon(caster)
-
     attack_rating_modifier =
       (100 + Mobile.ability_value(caster, "AttackRating%") +
-         Character.mastery_value(caster, weapon, "AttackRating%") +
          (ability.traits["AttackRating%"] || 0)) / 100
 
     accuracy = accuracy * attack_rating_modifier
@@ -2064,6 +2061,7 @@ defmodule ApathyDrive.Ability do
                   |> Map.put(:mana, 0)
                   |> Map.put(:energy, 0)
                   |> Map.put(:on_hit?, true)
+                  |> Map.put(:cast_time, 0)
 
                 IO.puts("executing #{ability.name}")
 

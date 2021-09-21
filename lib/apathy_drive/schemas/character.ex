@@ -761,9 +761,7 @@ defmodule ApathyDrive.Character do
 
     energy = Character.energy_per_swing(character, weapon)
 
-    modifier =
-      (100 + (Mobile.ability_value(character, "Damage%") || 0) +
-         Character.mastery_value(character, weapon, "Damage%")) / 100
+    modifier = (100 + (Mobile.ability_value(character, "Damage%") || 0)) / 100
 
     {min_dam, max_dam} =
       if modifier > 1 do
@@ -1455,59 +1453,6 @@ defmodule ApathyDrive.Character do
     end
   end
 
-  def mastery(weapon) do
-    weapon
-    |> Map.get(:item_types)
-    |> case do
-      nil ->
-        nil
-
-      types ->
-        types = Enum.map(types, & &1.name)
-
-        cond do
-          "Sword" in types ->
-            "Sword"
-
-          "Axe" in types ->
-            "Axe"
-
-          "Mace" in types ->
-            "Mace"
-
-          "Polearm" in types ->
-            "Polearm"
-
-          "Spear" in types ->
-            "Spear"
-
-          :else ->
-            nil
-        end
-    end
-  end
-
-  def mastery(%{} = _character, _trait), do: 0
-
-  def mastery_value(%Character{} = character, weapon, trait) do
-    if mastery = mastery(weapon) do
-      character
-      |> Ability.masteries()
-      |> Enum.find(&(&1 && &1.name == "#{mastery} Mastery"))
-      |> case do
-        nil ->
-          0
-
-        %Ability{traits: traits} ->
-          traits[trait] || 0
-      end
-    else
-      0
-    end
-  end
-
-  def mastery_value(%{} = _character, _weapon, _trait), do: 0
-
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
       Trait.get_cached(character, ability)
@@ -1607,8 +1552,7 @@ defmodule ApathyDrive.Character do
 
       base = div(intellect * 3 + charm, 6) + level * 2
 
-      trunc(base / (250 + base) * 100) + ability_value(character, "Crits") +
-        Character.mastery_value(character, weapon, "Crits")
+      trunc(base / (250 + base) * 100) + ability_value(character, "Crits")
     end
 
     def description(%Character{} = character, %Character{} = observer) do

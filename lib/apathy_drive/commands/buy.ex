@@ -100,7 +100,8 @@ defmodule ApathyDrive.Commands.Buy do
                   hidden: false,
                   quality: quality,
                   ac: Enum.random(min..max),
-                  level: char.level
+                  level: char.level,
+                  name: item_instance.item.name
                 })
                 |> Repo.update!()
                 |> update_in([Access.key!(:item)], fn _item ->
@@ -168,7 +169,8 @@ defmodule ApathyDrive.Commands.Buy do
                 end)
               end
 
-              ApathyDrive.Commands.Look.look_at_item(char, item)
+              if item.quality in ["magic", "rare", "unique"],
+                do: ApathyDrive.Commands.Look.look_at_item(char, item)
 
               char
               |> Ecto.Changeset.change(%{

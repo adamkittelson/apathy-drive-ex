@@ -7,7 +7,6 @@ defmodule ApathyDrive.Item do
     Currency,
     Enchantment,
     Item,
-    ItemAbility,
     ItemClass,
     ItemInstance,
     ItemInstanceAffixTrait,
@@ -319,7 +318,7 @@ defmodule ApathyDrive.Item do
     %{min: min, max: max}
   end
 
-  def ac_for_item(quality, type) when type in ["Feet", "Hands", "Waist"] do
+  def ac_for_item(quality, type) when type in ["Feet", "Hands", "Waist", "Back"] do
     max = 1 + trunc(0.825 * quality)
     min = trunc(max * 0.875)
 
@@ -800,18 +799,6 @@ defmodule ApathyDrive.Item do
   end
 
   def colored_name(%{name: name} = item, opts) do
-    name =
-      cond do
-        upgrade_for_character?(item, opts[:character]) ->
-          "↑ " <> name
-
-        researchable?(item, opts[:character]) ->
-          "⌕ " <> name
-
-        :else ->
-          name
-      end
-
     sockets =
       item.sockets
       |> Enum.filter(&is_nil(&1.socketed_item))
@@ -864,7 +851,13 @@ defmodule ApathyDrive.Item do
   end
 
   def cost_in_copper(%Item{} = item) do
-    (item.cost_value || 0) * Currency.copper_value(item.cost_currency)
+    affix_bonus =
+      Enum.reduce(item.affix_traits, 0, fn at, cost ->
+        affix = at.affix_trait.affix
+        cost + affix.level * 100
+      end)
+
+    (item.cost_value || 0) * Currency.copper_value(item.cost_currency) + affix_bonus
   end
 
   def has_ability?(%Item{} = item, ability_name) do

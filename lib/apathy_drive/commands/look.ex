@@ -525,9 +525,7 @@ defmodule ApathyDrive.Commands.Look do
   def damage(%{min_damage: nil, max_damage: nil}, _character), do: ""
 
   def damage(%Item{min_damage: min, max_damage: max} = item, character) do
-    modifier =
-      (100 + (Systems.Effect.effect_bonus(item, "Damage%") || 0) +
-         Character.mastery_value(character, item, "Damage%")) / 100
+    modifier = (100 + (Systems.Effect.effect_bonus(item, "Damage%") || 0)) / 100
 
     {min_dam, max_dam} =
       if modifier > 1 do
@@ -691,7 +689,7 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     """
-    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character, opts)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(character, item)}#{sockets(item)}
+    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{description(item)}#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character, opts)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(character, item)}#{sockets(item)}
     <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
     Sells For: #{value}
@@ -699,6 +697,36 @@ defmodule ApathyDrive.Commands.Look do
   end
 
   def item_tooltip(%Character{} = _character, _item, _opts), do: ""
+
+  def description(%Item{description: nil}), do: ""
+
+  def description(%Item{type: "Key", description: description} = item) do
+    require Ecto.Query
+
+    room_exit =
+      ApathyDrive.RoomExit
+      |> Ecto.Query.where(item_id: ^item.id)
+      |> Ecto.Query.preload([:exit, :room, :destination])
+      |> Ecto.Query.first()
+      |> Repo.one()
+
+    if room_exit do
+      door_type =
+        case room_exit.exit.kind do
+          "Gate" ->
+            "gate"
+
+          _ ->
+            "door"
+        end
+
+      "\n#{description} It unlocks the #{door_type} between #{room_exit.room.name} and #{room_exit.destination.name}.\n"
+    else
+      "\n#{description}\n"
+    end
+  end
+
+  def description(%Item{description: description}), do: "\n#{description}\n"
 
   def look_at_item(character, item, opts \\ [])
 
