@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Get do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Currency, Item, ItemInstance, Match, Mobile, Repo}
+  alias ApathyDrive.{Character, CharacterItem, Currency, Item, ItemInstance, Match, Mobile, Repo}
 
   def keywords, do: ["get", "g"]
 
@@ -93,40 +93,67 @@ defmodule ApathyDrive.Commands.Get do
           %Item{instance_id: instance_id} = item ->
             if item.weight <=
                  Character.max_encumbrance(character) - Character.encumbrance(character) do
-              ItemInstance
-              |> Repo.get(instance_id)
-              |> Ecto.Changeset.change(%{
-                room_id: nil,
-                character_id: character.id,
-                equipped: false,
-                class_id: nil,
-                hidden: false
-              })
-              |> Repo.update!()
-
               room =
-                room
-                |> Room.update_mobile(character.ref, fn _room, char ->
-                  char
-                  |> Mobile.send_scroll(
-                    "<p>You took #{Item.colored_name(item, character: char)}.</p>"
-                  )
+                if item.stackable do
+                  ItemInstance
+                  |> Repo.get(instance_id)
+                  |> Repo.delete!()
 
-                  item =
-                    item
-                    |> Map.put(:equipped, false)
-                    |> Map.put(:hidden, false)
+                  room
+                  |> Room.update_mobile(character.ref, fn _room, char ->
+                    CharacterItem
+                    |> Repo.get_by(character_id: character.id, item_id: item.id)
+                    |> case do
+                      %CharacterItem{count: count} = ci ->
+                        ci
+                        |> Ecto.Changeset.change(%{
+                          count: count + 1
+                        })
+                        |> Repo.update!()
 
-                  update_in(char.inventory, &[item | &1])
-                end)
+                      nil ->
+                        %CharacterItem{character_id: character.id, item_id: item.id, count: 1}
+                        |> Repo.insert!()
+                    end
+
+                    char
+                    |> Mobile.send_scroll(
+                      "<p>You took #{Item.colored_name(item, character: char)}.</p>"
+                    )
+                  end)
+                else
+                  ItemInstance
+                  |> Repo.get(instance_id)
+                  |> Ecto.Changeset.change(%{
+                    room_id: nil,
+                    character_id: character.id,
+                    equipped: false,
+                    class_id: nil,
+                    hidden: false
+                  })
+                  |> Repo.update!()
+
+                  room
+                  |> Room.update_mobile(character.ref, fn _room, char ->
+                    char
+                    |> Mobile.send_scroll(
+                      "<p>You took #{Item.colored_name(item, character: char)}.</p>"
+                    )
+
+                    item =
+                      item
+                      |> Map.put(:equipped, false)
+                      |> Map.put(:hidden, false)
+
+                    update_in(char.inventory, &[item | &1])
+                  end)
+                end
 
               room = update_in(room.items, &List.delete(&1, item))
 
               Room.send_scroll(
                 room,
-                "<p><span class='dark-yellow'>#{character.name} picks up #{
-                  Item.colored_name(item)
-                }.</span></p>",
+                "<p><span class='dark-yellow'>#{character.name} picks up #{Item.colored_name(item)}.</span></p>",
                 [character]
               )
 

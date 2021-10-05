@@ -1,6 +1,18 @@
 defmodule ApathyDrive.Commands.Drop do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Currency, Item, ItemInstance, Match, Mobile, TimerManager, Repo}
+  require Ecto.Query
+
+  alias ApathyDrive.{
+    Character,
+    CharacterItem,
+    Currency,
+    Item,
+    ItemInstance,
+    Match,
+    Mobile,
+    TimerManager,
+    Repo
+  }
 
   def keywords, do: ["drop"]
 
@@ -65,7 +77,28 @@ defmodule ApathyDrive.Commands.Drop do
       _ ->
         item_name = Enum.join(arguments, " ")
 
-        character.inventory
+        gems =
+          character
+          |> Ecto.assoc(:characters_items)
+          |> Ecto.Query.preload(
+            item: [
+              socketable_item_affixes: [
+                :item_type,
+                affix: [
+                  affixes_traits: [:trait, :affix]
+                ]
+              ]
+            ]
+          )
+          |> Repo.all()
+          |> Enum.map(fn ci ->
+            ci.item
+            |> Item.with_traits()
+            |> Item.load_required_races_and_classes()
+            |> Item.load_item_abilities()
+          end)
+
+        (character.inventory ++ gems)
         |> Match.one(:name_contains, item_name)
         |> case do
           nil ->
@@ -78,7 +111,49 @@ defmodule ApathyDrive.Commands.Drop do
     end
   end
 
+  def drop_item(room, character, %Item{instance_id: nil} = item) do
+    IO.puts("dropping item with nil instance id")
+
+    room
+    |> Room.update_mobile(character.ref, fn _room, character ->
+      CharacterItem
+      |> Repo.get_by(character_id: character.id, item_id: item.id)
+      |> case do
+        %CharacterItem{count: count} = ci when count > 0 ->
+          ci
+          |> Ecto.Changeset.change(%{
+            count: count - 1
+          })
+          |> Repo.update!()
+      end
+
+      item_instance =
+        %ItemInstance{
+          item_id: item.id,
+          room_id: room.id,
+          character_id: nil,
+          equipped: false,
+          hidden: false,
+          quality: "normal",
+          ac: 0,
+          name: item.name,
+          delete_at: Item.delete_at("magic")
+        }
+        |> Repo.insert!()
+        |> Repo.preload([:item])
+        |> update_in([Access.key!(:item)], &Item.load_item_types/1)
+
+      item =
+        item_instance
+        |> Item.from_assoc()
+
+      drop_item(room, character, item)
+    end)
+  end
+
   def drop_item(room, character, %Item{instance_id: instance_id} = item) do
+    IO.puts("dropping item with instance id #{instance_id}")
+
     ItemInstance
     |> Repo.get(instance_id)
     |> Ecto.Changeset.change(%{

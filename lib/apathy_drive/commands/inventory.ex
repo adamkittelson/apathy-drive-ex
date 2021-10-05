@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Inventory do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Currency, Item, Mobile}
+  alias ApathyDrive.{Character, Currency, Item, Mobile, Repo}
 
   @slot_order [
     "Head",
@@ -48,9 +48,7 @@ defmodule ApathyDrive.Commands.Inventory do
 
         Mobile.send_scroll(
           character,
-          "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{
-            Item.colored_name(item, character: character)
-          }</span></p>"
+          "<p><span class='dark-cyan'>#{worn_on}</span><span class='dark-green'>#{Item.colored_name(item, character: character)}</span></p>"
         )
       end)
 
@@ -86,17 +84,18 @@ defmodule ApathyDrive.Commands.Inventory do
     if Enum.any?(mats) do
       Mobile.send_scroll(
         character,
-        "<p>You have the following crafting materials: #{
-          Enum.map(mats, &(to_string(&1.amount) <> " " <> &1.material.name)) |> to_sentence()
-        }</p>"
+        "<p>You have the following crafting materials: #{Enum.map(mats, &(to_string(&1.amount) <> " " <> &1.material.name)) |> to_sentence()}</p>"
       )
     end
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Wealth:</span> <span class='dark-cyan'>#{
-        Currency.wealth(character)
-      } copper farthings</span></p>"
+      "<p><span class='dark-green'>Wealth:</span> <span class='dark-cyan'>#{Currency.wealth(character)} copper farthings</span></p>"
+    )
+
+    Mobile.send_scroll(
+      character,
+      "<p><span class='dark-green'>Gems:</span> <span class='dark-cyan'>#{gems(character)}</span></p>"
     )
 
     current_encumbrance = Character.encumbrance(character)
@@ -121,9 +120,7 @@ defmodule ApathyDrive.Commands.Inventory do
 
     Mobile.send_scroll(
       character,
-      "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{
-        current_encumbrance
-      }/#{max_encumbrance} -</span> #{encumbrance}</p>"
+      "<p><span class='dark-green'>Encumbrance:</span> <span class='dark-cyan'>#{current_encumbrance}/#{max_encumbrance} -</span> #{encumbrance}</p>"
     )
 
     room
@@ -162,5 +159,17 @@ defmodule ApathyDrive.Commands.Inventory do
         {last, list} = List.pop_at(list, -1)
         Enum.join(list, ", ") <> " and " <> last
     end
+  end
+
+  defp gems(character) do
+    require Ecto.Query
+
+    character
+    |> Ecto.assoc(:characters_items)
+    |> Ecto.Query.preload([:item])
+    |> Repo.all()
+    |> Enum.filter(&(&1.item.type == "Stone"))
+    |> Enum.map(& &1.count)
+    |> Enum.sum()
   end
 end

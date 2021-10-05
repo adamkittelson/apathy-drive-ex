@@ -135,6 +135,7 @@ defmodule ApathyDrive.Character do
     belongs_to(:room, Room)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
+    has_many(:characters_items, ApathyDrive.CharacterItem)
 
     has_many(:characters_skills, ApathyDrive.CharacterSkill)
     has_many(:trained_skills, through: [:characters_skills, :skill])
@@ -1546,7 +1547,6 @@ defmodule ApathyDrive.Character do
     end
 
     def crits_at_level(character, level) do
-      weapon = Character.weapon(character)
       intellect = attribute_at_level(character, :intellect, level)
       charm = attribute_at_level(character, :charm, level)
 

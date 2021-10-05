@@ -56,6 +56,7 @@ defmodule ApathyDrive.Command do
       Commands.Emote,
       Commands.Experience,
       Commands.Forget,
+      Commands.Gems,
       Commands.Get,
       Commands.Give,
       Commands.Go,

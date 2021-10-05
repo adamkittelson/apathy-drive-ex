@@ -1,5 +1,7 @@
 defmodule ApathyDrive.Commands.Look do
   require Logger
+  require Ecto.Query
+
   use ApathyDrive.Command
 
   alias ApathyDrive.{
@@ -909,9 +911,30 @@ defmodule ApathyDrive.Commands.Look do
 
   def display_enchantment(_character, %Item{}), do: :noop
 
-  defp find_item(%Character{inventory: items, equipment: equipment}, item) do
+  defp find_item(%Character{inventory: items, equipment: equipment} = character, item) do
+    gems =
+      character
+      |> Ecto.assoc(:characters_items)
+      |> Ecto.Query.preload(
+        item: [
+          socketable_item_affixes: [
+            :item_type,
+            affix: [
+              affixes_traits: [:trait, :affix]
+            ]
+          ]
+        ]
+      )
+      |> Repo.all()
+      |> Enum.map(fn ci ->
+        ci.item
+        |> Item.with_traits()
+        |> Item.load_required_races_and_classes()
+        |> Item.load_item_abilities()
+      end)
+
     item =
-      (items ++ equipment)
+      (items ++ equipment ++ gems)
       |> Match.one(:keyword_starts_with, item)
 
     case item do

@@ -82,6 +82,7 @@ defmodule ApathyDrive.Item do
     field(:type_id, :integer)
     field(:block_chance, :integer)
     field(:socketable, :boolean)
+    field(:stackable, :boolean)
 
     field(:ac, :any, virtual: true, default: 0)
     field(:sockets, :any, virtual: true, default: [])
@@ -958,13 +959,13 @@ defmodule ApathyDrive.Item do
     character.level < required_level(item)
   end
 
-  defp load_required_races_and_classes(%Item{} = item) do
+  def load_required_races_and_classes(%Item{} = item) do
     item
     |> ItemClass.load_classes()
     |> ItemRace.load_races()
   end
 
-  defp load_item_abilities(%Item{} = item) do
+  def load_item_abilities(%Item{} = item) do
     item
     # |> ItemAbility.load_abilities()
     |> Enchantment.load_enchantments()
