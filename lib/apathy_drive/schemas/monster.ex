@@ -549,7 +549,7 @@ defmodule ApathyDrive.Monster do
       Mobile.ability_value(character, "MagicFind") +
         Mobile.attribute_at_level(character, :charm, character.level)
 
-    if Monster.magic?(monster.level, level, magic_find) do
+    if Monster.rare?(monster.level, level, magic_find) do
       item =
         Item.random_gem(level)
         |> Item.load_item_types()

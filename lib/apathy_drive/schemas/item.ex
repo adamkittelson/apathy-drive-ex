@@ -539,7 +539,7 @@ defmodule ApathyDrive.Item do
     __MODULE__
     |> Ecto.Query.where(
       [i],
-      i.quality_level <= ^level and i.quality_level >= ^level - 3
+      i.quality_level <= ^level and i.quality_level >= ^level - 3 and i.type_id != 23
     )
     |> ApathyDrive.Repo.all()
     |> case do
@@ -559,8 +559,16 @@ defmodule ApathyDrive.Item do
   end
 
   def random_gem(level) do
+    IO.puts("dropping random gem")
+    level = min(level, 18)
     ids = gem_ids()
-    level = div(level, 2)
+
+    level =
+      Enum.map(1..level, fn n ->
+        Enum.map(1..n, fn _x -> level + 1 - n end)
+      end)
+      |> List.flatten()
+      |> Enum.random()
 
     __MODULE__
     |> Ecto.Query.where([i], i.id in ^ids and i.quality_level <= ^level)
