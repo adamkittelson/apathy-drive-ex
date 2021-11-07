@@ -704,6 +704,43 @@ defmodule ApathyDrive.Character do
   end
 
   def ability_for_weapon(character, weapon) do
+    verbs = %{
+      "beat" => "Crushing",
+      "bludgeon" => "Crushing",
+      "chop" => "Cutting",
+      "claw" => "Cutting",
+      "cleave" => "Cutting",
+      "clobber" => "Crushing",
+      "crush" => "Crushing",
+      "cut" => "Cutting",
+      "double-shoot two arrows at" => "Impaling",
+      "hack" => "Cutting",
+      "hurl your chakram and strike" => "Cutting",
+      "hurl your nexus spear at" => "Impaling",
+      "hurl your shuriken and strike" => "Cutting",
+      "hurl your throwing hammer and strike" => "Impact",
+      "hurl your throwing knife and strike" => "Impaling",
+      "impale" => "Impaling",
+      "impale your nexus spear into" => "Impaling",
+      "jab" => "Impaling",
+      "lash" => "Cutting",
+      "pierce" => "Impaling",
+      "pound" => "Crushing",
+      "rip" => "Cutting",
+      "shoot a bolt at" => "Impaling",
+      "shoot an arrow and strike" => "Impaling",
+      "skewer" => "Impaling",
+      "slam" => "Crushing",
+      "slash" => "Cutting",
+      "slice" => "Cutting",
+      "slice and dice" => "Cutting",
+      "smack" => "Impact",
+      "smash" => "Crushing",
+      "stab" => "Impaling",
+      "whap" => "Crushing",
+      "whip" => "Cutting"
+    }
+
     %Item{
       type: "Weapon",
       name: name,
@@ -777,6 +814,8 @@ defmodule ApathyDrive.Character do
       max_dam + (Mobile.ability_value(character, "MaxDamage") || 0) +
         (Mobile.ability_value(character, "MaxDamagePerLevel") || 0) * character.level
 
+    table = verbs[singular_hit] || "Crushing"
+
     ability = %Ability{
       kind: "attack",
       energy: energy,
@@ -793,7 +832,7 @@ defmodule ApathyDrive.Character do
       traits: %{
         "Damage" => [
           %{
-            damage_type: "Physical",
+            damage_type: table,
             min: min_dam,
             max: max_dam
           }

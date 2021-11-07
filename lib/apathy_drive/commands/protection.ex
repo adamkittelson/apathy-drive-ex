@@ -2,9 +2,23 @@ defmodule ApathyDrive.Commands.Protection do
   use ApathyDrive.Command
 
   @damage_types %{
+    "Aether" => "magical",
     "Cold" => "magical",
+    "Crushing" => "physical",
+    "Cutting" => "physical",
+    "Disruption" => "magical",
     "Electricity" => "magical",
     "Fire" => "magical",
+    "Holy" => "magical",
+    "Impact" => "physical",
+    "Impaling" => "physical",
+    "Infernal" => "magical",
+    "Plasma" => "magical",
+    "Sonic" => "magical",
+    "Stress" => "magical",
+    "Strike" => "physical",
+    "Unholy" => "magical",
+    "Vacuum" => "magical",
     "Physical" => "physical",
     "Poison" => "magical"
   }
@@ -30,6 +44,12 @@ defmodule ApathyDrive.Commands.Protection do
   def keywords, do: ["protection", "prot"]
 
   def damage_types, do: @damage_types
+
+  def physical_damage_types do
+    @damage_types
+    |> Map.keys()
+    |> Enum.filter(&(@damage_types[&1] == "physical"))
+  end
 
   def execute(%Room{} = room, character, _args) do
     show_protection(character)

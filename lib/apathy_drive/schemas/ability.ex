@@ -245,6 +245,8 @@ defmodule ApathyDrive.Ability do
     spectator: "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} {{shield}}!!"
   }
 
+  @physical_damage_types ApathyDrive.Commands.Protection.physical_damage_types()
+
   @doc """
   Creates a changeset based on the `model` and `params`.
 
@@ -1579,7 +1581,7 @@ defmodule ApathyDrive.Ability do
 
         room
         |> trigger_damage_shields(caster.ref, target.ref, ability)
-        # |> apply_criticals(caster.ref, target.ref, ability)
+        |> apply_criticals(caster.ref, target.ref, ability)
         |> finish_ability(caster.ref, target.ref, ability, target.ability_shift)
       end
 
@@ -1638,7 +1640,10 @@ defmodule ApathyDrive.Ability do
 
   def crit_for_damage(ability_shift, %{traits: %{"Damage" => damage}})
       when is_number(ability_shift) and ability_shift < 0 and is_list(damage) do
-    crit_tables = Enum.map(damage, & &1.damage_type_id)
+    crit_tables =
+      Enum.map(damage, fn damage ->
+        Repo.get_by(ApathyDrive.DamageType, name: damage.damage_type).id
+      end)
 
     percent = trunc(abs(ability_shift) * 100)
 
@@ -2225,7 +2230,8 @@ defmodule ApathyDrive.Ability do
 
       {caster, damage_percent, target} =
         Enum.reduce(damages, {caster, 0, target}, fn
-          %{min: min, max: max, damage_type: "Physical"}, {caster, damage_percent, target} ->
+          %{min: min, max: max, damage_type: dt}, {caster, damage_percent, target}
+          when dt in @physical_damage_types ->
             min = trunc(min)
             max = trunc(max)
 

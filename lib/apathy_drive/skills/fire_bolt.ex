@@ -9,16 +9,18 @@ defmodule ApathyDrive.Skills.FireBolt do
       kind: "attack",
       command: "fbol",
       targets: "monster or single",
-      energy: 500,
-      name: "ice bolt",
+      energy: 0,
+      name: "fire bolt",
       attributes: ["intellect"],
       mana: mana(level),
       spell?: true,
+      cast_time: 2500,
       auto: !!get_in(character, [:skills, "fbol", :auto]),
       user_message: "You cast a fire bolt at {{target}} for {{amount}} damage!",
       target_message: "{{user}} casts fire bolt at you for {{amount}} damage!",
       spectator_message: "{{user}} cast fire bolt at {{target}} for {{amount}} damage!",
       traits: %{
+        "Color" => "magenta",
         "Damage" => [
           %{
             damage_type: "Fire",
