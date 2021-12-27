@@ -2,7 +2,9 @@ defmodule ApathyDrive.Commands.Protection do
   use ApathyDrive.Command
 
   @damage_types %{
+    "Acid" => "magical",
     "Aether" => "magical",
+    "Bite" => "physical",
     "Cold" => "magical",
     "Crushing" => "physical",
     "Cutting" => "physical",
