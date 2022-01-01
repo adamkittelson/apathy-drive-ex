@@ -47,6 +47,74 @@ defmodule ApathyDrive.System do
     result
   end
 
+  def damage_types() do
+    require Ecto.Query
+
+    types =
+      ApathyDrive.AbilityDamageType
+      |> Ecto.Query.where(
+        [dt],
+        dt.damage_type_id == 23 and dt.ability_id not in [1041, 367, 436, 437, 450, 538, 1749] and
+          dt.ability_id > 1399
+      )
+      |> Ecto.Query.preload(:ability)
+      |> Repo.all()
+      |> Enum.reject(&(is_nil(&1.ability.user_message) or &1.ability.user_message == ""))
+
+    first = List.first(types)
+
+    IO.puts("#{length(types)} - #{first.ability.id} - #{first.ability.user_message}")
+  end
+
+  def damage_types(text) do
+    require Ecto.Query
+
+    types =
+      ApathyDrive.AbilityDamageType
+      |> Ecto.Query.where(
+        [dt],
+        dt.damage_type_id == 23 and dt.ability_id not in [1041, 367, 436, 437, 450, 538, 1749] and
+          dt.ability_id > 1399
+      )
+      |> Ecto.Query.preload(:ability)
+      |> Repo.all()
+      |> Enum.reject(&(is_nil(&1.ability.user_message) or &1.ability.user_message == ""))
+      |> Enum.filter(&String.contains?(&1.ability.user_message, text))
+
+    first = List.first(types)
+
+    if first do
+      IO.puts("#{length(types)} - #{first.ability.id} - #{first.ability.user_message}")
+    end
+  end
+
+  def damage_types(text, type_id) do
+    require Ecto.Query
+
+    types =
+      ApathyDrive.AbilityDamageType
+      |> Ecto.Query.where(
+        [dt],
+        dt.damage_type_id == 23 and dt.ability_id not in [1041, 367, 436, 437, 450, 538, 1749] and
+          dt.ability_id > 1399
+      )
+      |> Ecto.Query.preload(:ability)
+      |> Repo.all()
+      |> Enum.reject(&(is_nil(&1.ability.user_message) or &1.ability.user_message == ""))
+      |> Enum.filter(&String.contains?(&1.ability.user_message, text))
+
+    IO.puts("#{length(types)} updated")
+
+    types
+    |> Enum.each(fn dt ->
+      dt
+      |> Ecto.Changeset.change(%{damage_type_id: type_id})
+      |> Repo.update!()
+    end)
+
+    damage_types()
+  end
+
   def items() do
     require Ecto.Query
 
