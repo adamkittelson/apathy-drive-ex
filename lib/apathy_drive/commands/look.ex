@@ -18,6 +18,7 @@ defmodule ApathyDrive.Commands.Look do
     RoomServer,
     Shop,
     Socket,
+    Trainer,
     Trait
   }
 
@@ -102,6 +103,15 @@ defmodule ApathyDrive.Commands.Look do
     if visible?(light) do
       Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span> #{coords}</p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
+
+      if Trainer.join_room?(room) do
+        guild = Trainer.guild_name(room)
+
+        Mobile.send_scroll(
+          character,
+          "<p style='font-style: italic;'>\nYou may <span class='green'>join</span> the #{guild}'s guild here.\n\n</p>"
+        )
+      end
 
       Mobile.send_scroll(
         character,

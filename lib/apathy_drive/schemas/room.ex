@@ -59,6 +59,7 @@ defmodule ApathyDrive.Room do
     field(:allies, :any, virtual: true, default: %{})
     field(:enemies, :any, virtual: true, default: %{})
     field(:trainable_skills, :any, virtual: true)
+    field(:class_id, :any, virtual: true)
 
     timestamps()
 

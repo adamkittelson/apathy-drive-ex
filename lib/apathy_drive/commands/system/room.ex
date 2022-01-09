@@ -14,6 +14,10 @@ defmodule ApathyDrive.Commands.System.Room do
     set_name(room, character, room_name)
   end
 
+  def execute(%Room{} = room, character, ["set", "description" | description]) do
+    set_description(room, character, description)
+  end
+
   def execute(%Room{} = room, character, _args) do
     Mobile.send_scroll(character, "<p>Invalid system command.</p>")
 
@@ -47,9 +51,7 @@ defmodule ApathyDrive.Commands.System.Room do
 
     Mobile.send_scroll(
       character,
-      "<p>Room coordinates changed from \"#{inspect(old_coords)}\" to \"#{
-        inspect(room.coordinates)
-      }\".</p>"
+      "<p>Room coordinates changed from \"#{inspect(old_coords)}\" to \"#{inspect(room.coordinates)}\".</p>"
     )
 
     room
@@ -84,12 +86,27 @@ defmodule ApathyDrive.Commands.System.Room do
 
     ApathyDriveWeb.Endpoint.broadcast!("map", "room name change", %{
       room_id: room.id,
-      name: room.name
+      name: room.name,
+      area: room.area.name
     })
 
     Mobile.send_scroll(
       character,
       "<p>Room name changed from \"#{old_name}\" to \"#{room.name}\".</p>"
+    )
+
+    room
+  end
+
+  def set_description(%Room{description: old_description} = room, character, description) do
+    room =
+      room
+      |> Map.put(:description, Enum.join(description, " "))
+      |> Repo.save!()
+
+    Mobile.send_scroll(
+      character,
+      "<p>Room description changed from \n\n\"#{old_description}\"\n\n to \n\n\"#{room.description}\"</p>"
     )
 
     room
