@@ -133,6 +133,7 @@ defmodule ApathyDrive.Character do
     field(:materials, :map, virtual: true, default: %{})
     field(:death_race_id, :integer, virtual: true)
     belongs_to(:room, Room)
+    belongs_to(:class, Class)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
     has_many(:characters_items, ApathyDrive.CharacterItem)
@@ -213,6 +214,13 @@ defmodule ApathyDrive.Character do
       _ ->
         "evil"
     end
+  end
+
+  def change_class(%Character{} = character, class_id) do
+    character
+    |> Ecto.Changeset.change(%{class_id: class_id})
+    |> Repo.update!()
+    |> load_classes()
   end
 
   def set_title(%Character{} = character) do
@@ -540,6 +548,7 @@ defmodule ApathyDrive.Character do
 
     character
     |> Map.put(:classes, classes)
+    |> Repo.preload(:class, force: true)
     |> set_level()
   end
 
@@ -1225,7 +1234,7 @@ defmodule ApathyDrive.Character do
     %{
       name: character.name,
       race: character.race.race.name,
-      combat: character |> Character.combat_level() |> Character.combat_proficiency(),
+      class: character.class && character.class.name,
       level: character.level,
       alignment: legal_status(character),
       skill: Character.skill_points(character),

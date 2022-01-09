@@ -1,8 +1,40 @@
 defmodule ApathyDrive.Commands.Join do
   use ApathyDrive.Command
-  alias ApathyDrive.{Character, Party}
+  alias ApathyDrive.{Character, CharacterClass, Party, Repo, Room, Trainer}
 
   def keywords, do: ["join", "follow"]
+
+  def execute(%Room{} = room, %Character{} = character, []) do
+    if Trainer.join_room?(room) do
+      CharacterClass
+      |> Repo.get_by(%{character_id: character.id, class_id: room.class_id})
+      |> Repo.preload(:class)
+      |> case do
+        nil ->
+          cc =
+            %CharacterClass{character_id: character.id, class_id: room.class_id, level: 1}
+            |> Repo.insert!()
+            |> Repo.preload(:class)
+
+          Mobile.send_scroll(character, "<p>You join the #{cc.class.name}'s guild!</p>")
+
+          Room.update_mobile(room, character.ref, fn _room, character ->
+            Character.change_class(character, room.class_id)
+          end)
+
+        %CharacterClass{class: class} ->
+          Mobile.send_scroll(
+            character,
+            "<p>You are already a member of the #{class.name}'s guild!</p>"
+          )
+
+          room
+      end
+    else
+      Mobile.send_scroll(character, "<p>What?</p>")
+      room
+    end
+  end
 
   def execute(%Room{} = room, %Character{ref: ref} = character, arguments) do
     query = Enum.join(arguments)
