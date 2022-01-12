@@ -235,6 +235,12 @@ div.experience {
   top: 10px;
   left: 4px;
   height: 3px;
+
+}
+
+// hack because margin next to experience bar looks different on safari vs chrome / brave
+_::-webkit-full-page-media, _:future, :root div.experience {
+  margin-right: 9px;
 }
 
 #right-sidebar {

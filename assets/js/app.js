@@ -183,9 +183,9 @@ chan.on("update score", function (score_data) {
   update_score_attribute("name", _.padEnd(score_data.name, 13));
   update_score_attribute("level", _.padEnd(score_data.level, 11));
   update_score_attribute("attack", score_data.attack);
-  update_score_attribute("skill", score_data.skill, 2);
+  update_score_attribute("devs", _.padEnd(score_data.devs, 10));
   update_score_attribute("race", _.padEnd(score_data.race, 13));
-  update_score_attribute("class", _.padEnd(score_data.class, 10));
+  update_score_attribute("class", _.padEnd(score_data.class, 11));
   update_score_attribute("defense", score_data.defense);
   update_score_attribute("alignment", _.padEnd(_.capitalize(score_data.alignment), 8));
   update_score_attribute("acmr", _.padEnd(score_data.physical_resistance + '/' + score_data.magical_resistance + '%', 11));

@@ -7,6 +7,8 @@ defmodule ApathyDrive.Skill do
     field(:command, :string)
     field(:required_level, :integer)
     field(:max_level, :integer)
+    field(:dev_cost, :integer)
+    field(:fast_dev_cost, :integer)
 
     has_many(:characters_skills, CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])
@@ -34,6 +36,19 @@ defmodule ApathyDrive.Skill do
         |> case do
           %{level: level} ->
             level
+
+          _ ->
+            0
+        end
+      end
+
+      def current_level_times_trained(character) do
+        character.skills
+        |> Map.values()
+        |> Enum.find(&(&1.name == name()))
+        |> case do
+          %{current_level_times_trained: times} ->
+            times
 
           _ ->
             0

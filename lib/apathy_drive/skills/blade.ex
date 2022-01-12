@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.BladeMastery do
+defmodule ApathyDrive.Skills.Blade do
   alias ApathyDrive.{Ability, Character, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -6,8 +6,8 @@ defmodule ApathyDrive.Skills.BladeMastery do
     %Ability{
       kind: "passive",
       targets: "self",
-      name: "Blade Mastery",
-      attributes: ["strength", "agility"],
+      name: "Blade",
+      attributes: ["agility"],
       traits: %{}
     }
   end
@@ -18,7 +18,7 @@ defmodule ApathyDrive.Skills.BladeMastery do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Blade Mastery</span>
+      <span style="color: lime">Blade</span>
       Increases combat proficiency with all manner of bladed weapons.
       Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}

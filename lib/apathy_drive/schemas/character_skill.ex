@@ -3,8 +3,9 @@ defmodule ApathyDrive.CharacterSkill do
   alias ApathyDrive.{Character, Skill}
 
   schema "characters_skills" do
-    field(:level, :integer)
     field(:auto, :boolean)
+    field(:level, :integer)
+    field(:current_level_times_trained, :integer)
 
     belongs_to(:character, Character)
     belongs_to(:skill, Skill)

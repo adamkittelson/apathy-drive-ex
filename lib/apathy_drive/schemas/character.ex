@@ -148,6 +148,29 @@ defmodule ApathyDrive.Character do
     timestamps()
   end
 
+  def development_points(%Character{} = character) do
+    total_development_points(character)
+  end
+
+  def total_development_points(%Character{} = character) do
+    level_devs = total_development_points(character.level)
+    tolevel = Level.exp_at_level(character.level + 1)
+    percent = character.experience / tolevel
+
+    100 + level_devs +
+      round((total_development_points(character.level + 1) - level_devs) * percent)
+  end
+
+  def total_development_points(level) when is_integer(level) do
+    total_development_points(level, 0)
+  end
+
+  def total_development_points(level, power) when level > 0 do
+    total_development_points(level - 1, power + 100 * (level - 1))
+  end
+
+  def total_development_points(0, power), do: power
+
   def block_chance(character, %Item{block_chance: chance} = item) do
     chance = Systems.Effect.effect_bonus(item, "Block") + chance
 
@@ -1237,7 +1260,7 @@ defmodule ApathyDrive.Character do
       class: character.class && character.class.name,
       level: character.level,
       alignment: legal_status(character),
-      skill: Character.skill_points(character),
+      devs: Character.development_points(character),
       perception: Mobile.perception_at_level(character, character.level, room),
       attack: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level),
@@ -1291,13 +1314,13 @@ defmodule ApathyDrive.Character do
     skill =
       case weapon.weapon_type do
         "blade" ->
-          ApathyDrive.Skills.BladeMastery.skill_level(character)
+          ApathyDrive.Skills.Blade.skill_level(character)
 
         "blunt" ->
           ApathyDrive.Skills.BluntMastery.skill_level(character)
 
         "two handed blade" ->
-          (ApathyDrive.Skills.BladeMastery.skill_level(character) +
+          (ApathyDrive.Skills.Blade.skill_level(character) +
              ApathyDrive.Skills.TwoHandedMastery.skill_level(character)) / 2
 
         "two handed blunt" ->
