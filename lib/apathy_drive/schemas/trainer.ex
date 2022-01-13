@@ -5,7 +5,6 @@ defmodule ApathyDrive.Trainer do
   alias ApathyDrive.{Character, Class, Repo, Room, Skill, Trainer}
 
   schema "trainers" do
-    field :type, :string
     field :cost_modifier, :float
 
     belongs_to(:room, Room)
@@ -13,7 +12,7 @@ defmodule ApathyDrive.Trainer do
     belongs_to(:class, Class)
   end
 
-  def dev_cost(%Character{} = character, %Skill{} = skill, multiplier) do
+  def dev_cost(%Character{} = character, %Skill{type: "skill"} = skill, multiplier) do
     times = Skill.module(skill.name).current_level_times_trained(character)
 
     if times > 0 do
@@ -24,23 +23,60 @@ defmodule ApathyDrive.Trainer do
     |> trunc()
   end
 
+  def dev_cost(%Character{} = character, %Skill{type: "ability"} = skill, multiplier) do
+    times = Skill.module(skill.name).current_level_times_trained(character)
+    power_level = Skill.module(skill.name).skill_level(character) + 1
+
+    power_level =
+      if power_level > Skill.module(skill.name).max_skill_level(character) do
+        0
+      else
+        power_level
+      end
+
+    if times > 0 do
+      power_level * multiplier * times * skill.fast_dev_cost
+    else
+      power_level * multiplier * skill.dev_cost
+    end
+    |> trunc()
+  end
+
   def guild_name(%Room{class_id: nil}), do: nil
 
   def guild_name(%Room{class_id: class_id}) do
     Repo.get(Class, class_id).name
   end
 
-  def join_room?(%Room{class_id: class_id}) when not is_nil(class_id), do: true
+  def join_room?(%Room{class_id: class_id, trainable_skills: []}) when not is_nil(class_id),
+    do: true
+
   def join_room?(_room), do: false
 
   def trainer?(%Room{trainable_skills: list}) when is_list(list) and length(list) > 0, do: true
   def trainer?(%Room{trainable_skills: _list}), do: false
 
+  def skill_trainer?(%Room{trainable_skills: list}) when is_list(list) and length(list) > 0 do
+    Enum.all?(list, fn %{skill: skill} ->
+      skill.type == "skill"
+    end)
+  end
+
+  def skill_trainer?(%Room{trainable_skills: _list}), do: false
+
+  def ability_trainer?(%Room{trainable_skills: list}) when is_list(list) and length(list) > 0 do
+    Enum.all?(list, fn %{skill: skill} ->
+      skill.type == "ability"
+    end)
+  end
+
+  def ability_trainer?(%Room{trainable_skills: _list}), do: false
+
   def load(%Room{id: id} = room) do
     skills =
       Trainer
       |> Ecto.Query.where(room_id: ^id)
-      |> Ecto.Query.preload([:skill])
+      |> Ecto.Query.preload(skill: :casting_skill)
       |> Repo.all()
       |> Enum.map(&%{skill: &1.skill, class_id: &1.class_id, cost_modifier: &1.cost_modifier})
 
@@ -49,6 +85,11 @@ defmodule ApathyDrive.Trainer do
         room
         |> Map.put(:class_id, class_id)
         |> Map.put(:skills, [])
+
+      [%{class_id: class_id} | _rest] = skills ->
+        room
+        |> Map.put(:trainable_skills, skills)
+        |> Map.put(:class_id, class_id)
 
       skills ->
         Map.put(room, :trainable_skills, skills)

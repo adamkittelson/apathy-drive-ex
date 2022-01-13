@@ -342,7 +342,7 @@ defmodule ApathyDrive.Character do
     skills =
       CharacterSkill
       |> Ecto.Query.where(character_id: ^id)
-      |> Ecto.Query.preload([:skill])
+      |> Ecto.Query.preload(skill: [:casting_skill])
       |> Repo.all()
       |> Enum.reduce(%{}, fn %CharacterSkill{} = skill, skills ->
         command = skill.skill.command

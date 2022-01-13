@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Skill do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, CharacterSkill, Match}
+  alias ApathyDrive.{Character, CharacterSkill, Match, Skill}
 
   schema "skills" do
     field(:name, :string)
@@ -9,9 +9,11 @@ defmodule ApathyDrive.Skill do
     field(:max_level, :integer)
     field(:dev_cost, :integer)
     field(:fast_dev_cost, :integer)
+    field(:type, :string)
 
     has_many(:characters_skills, CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])
+    belongs_to(:casting_skill, Skill)
   end
 
   defmacro __using__(_opts) do

@@ -113,6 +113,30 @@ defmodule ApathyDrive.Commands.Look do
         )
       end
 
+      trainables =
+        cond do
+          Trainer.skill_trainer?(room) and Trainer.ability_trainer?(room) ->
+            "skills and abilities"
+
+          Trainer.skill_trainer?(room) ->
+            "skills"
+
+          Trainer.ability_trainer?(room) ->
+            "abilities"
+
+          :else ->
+            nil
+        end
+
+      if trainables do
+        guild = Trainer.guild_name(room)
+
+        Mobile.send_scroll(
+          character,
+          "<p style='font-style: italic;'>\nYou may <span class='green'>list</span> and <span class='green'>train</span> #{guild} #{trainables} here.\n\n</p>"
+        )
+      end
+
       Mobile.send_scroll(
         character,
         "<p><span class='dark-cyan'>#{look_items(room, character)}</span></p>"

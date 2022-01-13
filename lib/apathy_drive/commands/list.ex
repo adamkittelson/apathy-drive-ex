@@ -89,59 +89,119 @@ defmodule ApathyDrive.Commands.List do
   end
 
   def list(%Room{shop: nil} = room, character) do
-    if Trainer.trainer?(room) do
-      character
-      |> Mobile.send_scroll(
-        "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=  <span class='white'>Skill Listing</span>  <span class='dark-magenta'>=-=-=-=-=-=-=-=-=-=-</span></p>"
-      )
+    if Trainer.skill_trainer?(room), do: list_skills(room, character)
 
-      room.trainable_skills
-      |> Enum.group_by(& &1.skill.required_level)
-      |> Enum.sort()
-      |> Enum.each(fn {level, list} ->
-        character
-        |> Mobile.send_scroll(
-          "<p><span class='dark-cyan'>Level #{String.pad_leading(to_string(level), 2)}</span> <span class='dark-magenta'>--------------------</span> <span class='dark-cyan'>Cost</span> <span class='dark-magenta'>---------------</span> <span class='dark-cyan'>Rating</span></p>"
-        )
+    if Trainer.ability_trainer?(room), do: list_abilities(room, character)
 
-        Enum.each(list, fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
-          name = String.pad_trailing(skill.name, 25)
-
-          cost = Trainer.dev_cost(character, skill, cost_modifier)
-
-          string =
-            cost
-            |> to_string()
-            |> String.pad_trailing(21)
-
-          cost =
-            if Character.development_points(character) > cost do
-              "<span class='green'>#{string}</span>"
-            else
-              "<span class='dark-red'>#{string}</span>"
-            end
-
-          rating =
-            Skill.module(skill.name).skill_level(character)
-            |> to_string()
-            |> String.pad_leading(3)
-
-          Mobile.send_scroll(
-            character,
-            "<p>     #{name}#{cost}#{rating}%</span></p>"
-          )
-        end)
-      end)
-
-      character
-      |> Mobile.send_scroll(
-        "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
-      )
-    else
+    if !Trainer.skill_trainer?(room) and !Trainer.ability_trainer?(room) do
       Mobile.send_scroll(
         character,
         "<p><span class='red'>You cannot LIST if you are not in a shop!</span></p>"
       )
     end
+  end
+
+  def list_skills(room, character) do
+    character
+    |> Mobile.send_scroll(
+      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=  <span class='white'>Skill Listing</span>  <span class='dark-magenta'>=-=-=-=-=-=-=-=-=-=-</span></p>"
+    )
+
+    room.trainable_skills
+    |> Enum.filter(&(&1.skill.type == "skill"))
+    |> Enum.group_by(& &1.skill.required_level)
+    |> Enum.sort()
+    |> Enum.each(fn {level, list} ->
+      character
+      |> Mobile.send_scroll(
+        "<p><span class='dark-cyan'>Level #{String.pad_leading(to_string(level), 2)}</span> <span class='dark-magenta'>--------------------</span> <span class='dark-cyan'>Cost</span> <span class='dark-magenta'>---------------</span> <span class='dark-cyan'>Rating</span></p>"
+      )
+
+      Enum.each(list, fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
+        name = String.pad_trailing(skill.name, 25)
+
+        cost = Trainer.dev_cost(character, skill, cost_modifier)
+
+        string =
+          cost
+          |> to_string()
+          |> String.pad_trailing(21)
+
+        cost =
+          if Character.development_points(character) > cost do
+            "<span class='green'>#{string}</span>"
+          else
+            "<span class='dark-red'>#{string}</span>"
+          end
+
+        rating =
+          Skill.module(skill.name).skill_level(character)
+          |> to_string()
+          |> String.pad_leading(3)
+
+        Mobile.send_scroll(
+          character,
+          "<p>     #{name}#{cost}#{rating}%</span></p>"
+        )
+      end)
+    end)
+
+    character
+    |> Mobile.send_scroll(
+      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
+    )
+  end
+
+  def list_abilities(room, character) do
+    character
+    |> Mobile.send_scroll(
+      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=  <span class='white'>Ability Listing</span>  <span class='dark-magenta'>=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
+    )
+
+    room.trainable_skills
+    |> Enum.filter(&(&1.skill.type == "ability"))
+    |> Enum.group_by(& &1.skill.required_level)
+    |> Enum.sort()
+    |> Enum.each(fn {level, list} ->
+      character
+      |> Mobile.send_scroll(
+        "<p><span class='dark-cyan'>Level #{String.pad_leading(to_string(level), 2)}</span> <span class='dark-magenta'>-------------------------</span> <span class='dark-cyan'>Skill</span> <span class='dark-magenta'>---------------</span> <span class='dark-cyan'>Cost</span> <span class='dark-magenta'>---</span> <span class='dark-cyan'>Power</span></p>"
+      )
+
+      Enum.each(list, fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
+        IO.inspect(skill)
+        name = String.pad_trailing(skill.name, 30)
+
+        cost = Trainer.dev_cost(character, skill, cost_modifier)
+
+        string =
+          cost
+          |> to_string()
+          |> String.pad_trailing(9)
+
+        cost =
+          if Character.development_points(character) > cost do
+            "<span class='green'>#{string}</span>"
+          else
+            "<span class='dark-red'>#{string}</span>"
+          end
+
+        power = Skill.module(skill.name).skill_level(character)
+
+        skill =
+          (skill.casting_skill && skill.casting_skill.name)
+          |> String.pad_trailing(22)
+
+        Mobile.send_scroll(
+          character,
+          "<p>     #{name}#{skill}#{cost}*#{power}</span></p>"
+        )
+      end)
+    end)
+
+    character
+    |> Mobile.send_scroll(
+      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
+    )
   end
 end
