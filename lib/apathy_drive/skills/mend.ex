@@ -34,8 +34,8 @@ defmodule ApathyDrive.Skills.Mend do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Minor Healing</span>
-      Heals minor damage for a small mana cost.
+      <span style="color: lime">Mend</span>
+      By casting this spell, the wounds of the target are healed.
       Attribute(s): #{attributes()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
@@ -63,12 +63,12 @@ defmodule ApathyDrive.Skills.Mend do
   end
 
   defp min_healing(level) do
-    trunc(2 + level / 2)
+    trunc(1 + level * 2)
   end
 
   defp max_healing(level) do
-    trunc(7 + 2 * level / 2)
+    trunc(11 + level * 2.8)
   end
 
-  defp mana(), do: 2
+  defp mana(), do: 4
 end

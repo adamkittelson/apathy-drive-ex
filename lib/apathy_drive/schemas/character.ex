@@ -1065,11 +1065,6 @@ defmodule ApathyDrive.Character do
         character,
         message
       )
-
-      Mobile.send_scroll(
-        character,
-        "<p>You gain 1 skill point!</p>"
-      )
     end
 
     Character.update_exp_bar(character)

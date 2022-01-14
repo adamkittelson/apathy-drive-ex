@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.Blade do
+defmodule ApathyDrive.Skills.Perception do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -6,8 +6,8 @@ defmodule ApathyDrive.Skills.Blade do
     %Ability{
       kind: "passive",
       targets: "self",
-      name: "Blade",
-      attributes: ["agility"],
+      name: "Perception",
+      attributes: ["perception"],
       traits: %{}
     }
   end
@@ -18,8 +18,8 @@ defmodule ApathyDrive.Skills.Blade do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Blade</span>
-      Increases combat proficiency with large one handed blades such as swords and axes.
+      <span style="color: lime">Perception</span>
+      Perception is the ability to detect hidden items, exits, and enemies.
       Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """

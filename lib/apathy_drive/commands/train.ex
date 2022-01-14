@@ -17,12 +17,20 @@ defmodule ApathyDrive.Commands.Train do
     skill = Enum.join(args, " ")
 
     room.trainable_skills
-    |> Enum.find(
-      &(Match.keyword_starts_with(skill, &1.skill) and &1.class_id == character.class_id)
-    )
+    |> Enum.map(& &1.skill)
+    |> Match.one(:keyword_starts_with, skill)
     |> case do
-      %{} = trainer ->
-        train(room, character, trainer, force)
+      %Skill{} = skill ->
+        trainer = Enum.find(room.trainable_skills, &(&1.skill == skill))
+        class = Trainer.guild_name(room)
+
+        if trainer.class_id != character.class_id do
+          message = "<p>You must be a #{class} to train here.</p>"
+          Mobile.send_scroll(character, message)
+          room
+        else
+          train(room, character, trainer, force)
+        end
 
       nil ->
         message = "<p>You are unable to train that here.</p>"
@@ -74,14 +82,12 @@ defmodule ApathyDrive.Commands.Train do
         room
 
       :else ->
-        train(room, character, skill.id, cost, trainer.class_id)
+        train(room, character, skill.id, cost, trainer)
     end
   end
 
-  def train(room, character, skill_id, devs_spent, class_id) do
+  def train(room, character, skill_id, devs_spent, trainer) do
     Room.update_mobile(room, character.ref, fn _room, character ->
-      attribute_levels = attribute_levels(character)
-
       character_skill =
         CharacterSkill
         |> Repo.get_by(%{character_id: character.id, skill_id: skill_id})
@@ -92,7 +98,7 @@ defmodule ApathyDrive.Commands.Train do
             |> Ecto.Changeset.change(%{
               level: character_skill.level + 1,
               current_level_times_trained: character_skill.current_level_times_trained + 1,
-              class_id: class_id,
+              class_id: trainer.class_id,
               devs_spent: devs_spent
             })
             |> Repo.update!()
@@ -103,7 +109,7 @@ defmodule ApathyDrive.Commands.Train do
               skill_id: skill_id,
               level: 1,
               current_level_times_trained: 1,
-              class_id: class_id,
+              class_id: trainer.class_id,
               devs_spent: devs_spent
             }
             |> Repo.insert!()
@@ -121,34 +127,37 @@ defmodule ApathyDrive.Commands.Train do
         |> Character.update_exp_bar()
         |> Character.set_attribute_levels()
 
-      Mobile.send_scroll(
-        character,
-        "<p><span class='yellow'>Your #{character_skill.skill.name} level has increased to #{character_skill.level}!</span></p>"
-      )
+      level =
+        case character_skill.skill.type do
+          "skill" ->
+            "#{character_skill.level}%"
+
+          "ability" ->
+            "*#{character_skill.level}"
+        end
 
       Trait.bust_cache(character)
 
-      updated_attribute_levels = attribute_levels(character)
+      Mobile.send_scroll(
+        character,
+        "<p>You spend #{devs_spent} to train #{String.downcase(character_skill.skill.name)} to #{level}.</p>"
+      )
 
-      updated_attribute_levels
-      |> Enum.each(fn {attribute, level} ->
-        if level > attribute_levels[attribute] do
-          message = "<p><span class='yellow'>Your #{attribute} increased to #{level}!</span></p>"
+      cost = Trainer.dev_cost(character, character_skill.skill, trainer.cost_modifier)
 
-          Mobile.send_scroll(character, message)
-        end
-      end)
+      Mobile.send_scroll(
+        character,
+        "<p>It will cost you #{cost} development points to advance this #{character_skill.skill.type} further.</p>"
+      )
 
-      ApathyDrive.Commands.Help.execute(room, character, [character_skill.skill.name])
+      devs = Character.development_points(character)
+
+      Mobile.send_scroll(
+        character,
+        "<p>You have #{devs} development points left.</p>"
+      )
 
       character
-    end)
-  end
-
-  defp attribute_levels(character) do
-    [:strength, :agility, :intellect, :willpower, :health, :charm]
-    |> Enum.reduce(%{}, fn attribute, levels ->
-      Map.put(levels, attribute, Mobile.attribute_at_level(character, attribute, character.level))
     end)
   end
 end

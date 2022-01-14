@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.Blade do
+defmodule ApathyDrive.Skills.TwoHandedBlade do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -6,7 +6,7 @@ defmodule ApathyDrive.Skills.Blade do
     %Ability{
       kind: "passive",
       targets: "self",
-      name: "Blade",
+      name: "Two Handed Blade",
       attributes: ["agility"],
       traits: %{}
     }
@@ -18,8 +18,8 @@ defmodule ApathyDrive.Skills.Blade do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Blade</span>
-      Increases combat proficiency with large one handed blades such as swords and axes.
+      <span style="color: lime">Two Handed Blade</span>
+      Increases combat proficiency with large two handed blades such as greatswords and halberds.
       Attribute(s): #{attributes()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
