@@ -7,6 +7,7 @@ defmodule ApathyDrive.Commands.Train do
     Match,
     Repo,
     Skill,
+    Trainer,
     Trait
   }
 
@@ -16,10 +17,12 @@ defmodule ApathyDrive.Commands.Train do
     skill = Enum.join(args, " ")
 
     room.trainable_skills
-    |> Match.one(:keyword_starts_with, skill)
+    |> Enum.find(
+      &(Match.keyword_starts_with(skill, &1.skill) and &1.class_id == character.class_id)
+    )
     |> case do
-      %Skill{} = skill ->
-        train(room, character, skill, force)
+      %{} = trainer ->
+        train(room, character, trainer, force)
 
       nil ->
         message = "<p>You are unable to train that here.</p>"
@@ -28,7 +31,7 @@ defmodule ApathyDrive.Commands.Train do
     end
   end
 
-  def train(room, character, %Skill{} = skill, force) do
+  def train(room, character, %{skill: skill} = trainer, force) do
     level =
       CharacterSkill
       |> Repo.get_by(%{character_id: character.id, skill_id: skill.id})
@@ -40,7 +43,8 @@ defmodule ApathyDrive.Commands.Train do
           0
       end
 
-    skill_points = Character.skill_points(character)
+    dev_points = Character.development_points(character)
+    cost = Trainer.dev_cost(character, skill, trainer.cost_modifier)
     module = Skill.module(skill.name)
 
     cond do
@@ -49,8 +53,8 @@ defmodule ApathyDrive.Commands.Train do
         Mobile.send_scroll(character, message)
         room
 
-      skill_points < 1 and !force ->
-        message = "<p>You do not have any available skill points!</p>"
+      dev_points < cost and !force ->
+        message = "<p>You do not have enough development points!</p>"
         Mobile.send_scroll(character, message)
         room
 
@@ -70,11 +74,11 @@ defmodule ApathyDrive.Commands.Train do
         room
 
       :else ->
-        train(room, character, skill.id)
+        train(room, character, skill.id, cost, trainer.class_id)
     end
   end
 
-  def train(room, character, skill_id) do
+  def train(room, character, skill_id, devs_spent, class_id) do
     Room.update_mobile(room, character.ref, fn _room, character ->
       attribute_levels = attribute_levels(character)
 
@@ -86,12 +90,22 @@ defmodule ApathyDrive.Commands.Train do
           %CharacterSkill{} = character_skill ->
             character_skill
             |> Ecto.Changeset.change(%{
-              level: character_skill.level + 1
+              level: character_skill.level + 1,
+              current_level_times_trained: character_skill.current_level_times_trained + 1,
+              class_id: class_id,
+              devs_spent: devs_spent
             })
             |> Repo.update!()
 
           nil ->
-            %CharacterSkill{character_id: character.id, skill_id: skill_id, level: 1}
+            %CharacterSkill{
+              character_id: character.id,
+              skill_id: skill_id,
+              level: 1,
+              current_level_times_trained: 1,
+              class_id: class_id,
+              devs_spent: devs_spent
+            }
             |> Repo.insert!()
             |> Repo.preload([:skill])
         end

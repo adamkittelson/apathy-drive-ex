@@ -34,6 +34,7 @@ defmodule ApathyDrive.Skill do
       def skill_level(character) do
         character.skills
         |> Map.values()
+        |> List.flatten()
         |> Enum.find(&(&1.name == name()))
         |> case do
           %{level: level} ->
@@ -47,6 +48,7 @@ defmodule ApathyDrive.Skill do
       def current_level_times_trained(character) do
         character.skills
         |> Map.values()
+        |> List.flatten()
         |> Enum.find(&(&1.name == name()))
         |> case do
           %{current_level_times_trained: times} ->
@@ -60,6 +62,7 @@ defmodule ApathyDrive.Skill do
       def max_skill_level(character) do
         character.skills
         |> Map.values()
+        |> List.flatten()
         |> Enum.find(&(&1.name == name()))
         |> case do
           %{max_level: level} ->

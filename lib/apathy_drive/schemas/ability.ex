@@ -564,9 +564,14 @@ defmodule ApathyDrive.Ability do
   end
 
   def skill_abilities(%Character{} = character) do
-    Enum.map(character.skills, fn {_cmd, skill} ->
-      skill.module.ability(character)
+    Enum.map(character.skills, fn
+      {_cmd, %{} = skill} ->
+        skill.module.ability(character)
+
+      {_cmd, skills} ->
+        Enum.map(skills, & &1.module.ability(character))
     end)
+    |> List.flatten()
   end
 
   def skill_abilities(_mobile), do: []
