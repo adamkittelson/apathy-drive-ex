@@ -220,8 +220,6 @@ defmodule ApathyDrive.RoomServer do
       send(self(), :execute_room_ability)
     end
 
-    Process.send_after(self(), :save, 2000)
-
     send(self(), :cleanup)
 
     {:noreply, room}
@@ -758,12 +756,6 @@ defmodule ApathyDrive.RoomServer do
     {:noreply, room}
   end
 
-  def handle_info(:save, room) do
-    Process.send_after(self(), :save, jitter(:timer.minutes(30)))
-    room = Repo.save!(room)
-    {:noreply, room}
-  end
-
   def handle_info(:spawn_zone_monster, %Room{zone_controller_id: nil} = room),
     do: {:noreply, room}
 
@@ -1168,11 +1160,5 @@ defmodule ApathyDrive.RoomServer do
     time = ((95..100 |> Enum.random()) * :timer.minutes(10)) |> div(100)
     Process.send_after(self(), :spawn_permanent_npc, time)
     MonsterSpawning.spawn_permanent_npc(room)
-  end
-
-  defp jitter(time) do
-    time
-    |> :rand.uniform()
-    |> Kernel.+(time)
   end
 end

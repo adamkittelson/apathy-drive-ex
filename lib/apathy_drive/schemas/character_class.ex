@@ -5,6 +5,7 @@ defmodule ApathyDrive.CharacterClass do
   schema "characters_classes" do
     field(:experience, :float, default: 0.0)
     field(:level, :integer)
+    field(:exp_buffer, :integer)
     field(:delete, :boolean, virtual: true)
 
     belongs_to(:character, Character)

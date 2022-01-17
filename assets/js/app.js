@@ -423,7 +423,7 @@ window.progress = function (elem, percent, secondary_percent) {
 
   var modified = percent + (secondary_percent * 100)
 
-  var setting = percent + '%, ' + modified + '%, 100%';
+  var setting = percent + '% 100%, ' + modified + '%, 100% 100%';
   $(elem).css('background-size', setting)
 
 }

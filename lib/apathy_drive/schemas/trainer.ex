@@ -2,7 +2,7 @@ defmodule ApathyDrive.Trainer do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Class, Repo, Room, Skill, Trainer}
+  alias ApathyDrive.{Character, Class, Mobile, Repo, Room, Skill, Trainer}
 
   schema "trainers" do
     field :cost_modifier, :float
@@ -48,7 +48,7 @@ defmodule ApathyDrive.Trainer do
     Repo.get(Class, class_id).name
   end
 
-  def join_room?(%Room{class_id: class_id, trainable_skills: []}) when not is_nil(class_id),
+  def join_room?(%Room{class_id: class_id, trainable_skills: nil}) when not is_nil(class_id),
     do: true
 
   def join_room?(_room), do: false
@@ -94,5 +94,15 @@ defmodule ApathyDrive.Trainer do
       skills ->
         Map.put(room, :trainable_skills, skills)
     end
+  end
+
+  def training_cost(%Character{level: level} = character) do
+    charm = Mobile.attribute_at_level(character, :charm, character.level)
+
+    cost_multiplier = trunc(3.5 + 2.43 * (level - 2))
+
+    next_level = level + 1
+    charm_mod = 1 - (trunc(charm / 5.0) - 10) / 100
+    trunc(next_level * 5 * (cost_multiplier + 1) * 10 * charm_mod)
   end
 end

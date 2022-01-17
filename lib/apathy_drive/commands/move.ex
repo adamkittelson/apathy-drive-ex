@@ -244,7 +244,6 @@ defmodule ApathyDrive.Commands.Move do
             })
             |> Repo.update!()
             |> Character.load_items()
-            |> Repo.save!()
           end)
 
         execute(

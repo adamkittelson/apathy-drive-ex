@@ -2,8 +2,6 @@ defmodule ApathyDrive.Skills.VineStrike do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
-  def prereq(), do: ApathyDrive.Skills.MagicMissile
-
   def ability(character, level \\ nil) do
     level = level || skill_level(character)
 
@@ -62,7 +60,7 @@ defmodule ApathyDrive.Skills.VineStrike do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Cutting Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}Cutting Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
 

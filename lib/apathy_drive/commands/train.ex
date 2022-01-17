@@ -1,9 +1,13 @@
 defmodule ApathyDrive.Commands.Train do
   use ApathyDrive.Command
+  require Ecto.Query
 
   alias ApathyDrive.{
     Character,
     CharacterSkill,
+    Currency,
+    Directory,
+    Level,
     Match,
     Repo,
     Skill,
@@ -13,7 +17,94 @@ defmodule ApathyDrive.Commands.Train do
 
   def keywords, do: ["train"]
 
-  def execute(%Room{} = room, %Character{} = character, args, force \\ false) do
+  def execute(room, character, args, force \\ false)
+
+  def execute(%Room{} = room, %Character{} = character, [], _force) do
+    modifier = (100 + character.race.race.exp_modifier) / 100
+    level = character.level
+    exp = trunc(character.experience)
+    tolevel = Level.exp_at_level(level, modifier)
+    remaining = tolevel - exp
+
+    cond do
+      !Trainer.trainer?(room) ->
+        message = "<p>You must be in an appropriate training room to train!</p>"
+        Mobile.send_scroll(character, message)
+        room
+
+      room.class_id && room.class_id != character.class_id ->
+        guild = Trainer.guild_name(room)
+        message = "<p>You must be a #{guild} to train here!</p>"
+        Mobile.send_scroll(character, message)
+        room
+
+      remaining > 0 ->
+        message = "<p>You don't have the experience required to train!</p>"
+        Mobile.send_scroll(character, message)
+        room
+
+      Trainer.training_cost(character) > Currency.wealth(character) ->
+        message = "<p>You don't have the money required to train!</p>"
+        Mobile.send_scroll(character, message)
+        room
+
+      :else ->
+        Room.update_mobile(room, character.ref, fn _room, character ->
+          price_in_copper = Trainer.training_cost(character)
+          currency = Currency.set_value(price_in_copper)
+          char_currency = Currency.subtract(character, price_in_copper)
+
+          character
+          |> Ecto.assoc(:character_classes)
+          |> Ecto.Query.where(class_id: ^character.class_id)
+          |> Repo.one()
+          |> Ecto.Changeset.change(%{
+            level: character.level + 1
+          })
+          |> Repo.update!()
+
+          character
+          |> Ecto.assoc(:characters_skills)
+          |> Repo.update_all(set: [current_level_times_trained: 0])
+
+          character =
+            character
+            |> Ecto.Changeset.change(%{
+              runic: char_currency.runic,
+              platinum: char_currency.platinum,
+              gold: char_currency.gold,
+              silver: char_currency.silver,
+              copper: char_currency.copper
+            })
+            |> Repo.update!()
+            |> Character.load_classes()
+            |> Character.load_abilities()
+            |> Character.set_title()
+            |> Character.update_exp_bar()
+
+          Mobile.send_scroll(
+            character,
+            "<p>You hand over #{Currency.to_string(currency)}.</p>"
+          )
+
+          Mobile.send_scroll(
+            character,
+            "<p>Your #{Trainer.guild_name(room)} level has increased to #{character.level}!</p>"
+          )
+
+          Directory.add_character(%{
+            name: character.name,
+            room: character.room_id,
+            ref: character.ref,
+            title: character.title
+          })
+
+          character
+        end)
+    end
+  end
+
+  def execute(%Room{} = room, %Character{} = character, args, force) do
     skill = Enum.join(args, " ")
 
     room.trainable_skills
@@ -99,7 +190,7 @@ defmodule ApathyDrive.Commands.Train do
               level: character_skill.level + 1,
               current_level_times_trained: character_skill.current_level_times_trained + 1,
               class_id: trainer.class_id,
-              devs_spent: devs_spent
+              devs_spent: character_skill.devs_spent + devs_spent
             })
             |> Repo.update!()
 

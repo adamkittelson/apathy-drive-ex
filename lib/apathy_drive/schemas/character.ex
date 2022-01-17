@@ -31,7 +31,6 @@ defmodule ApathyDrive.Character do
     Room,
     RoomServer,
     Skill,
-    Statix,
     Text,
     TimerManager,
     Title,
@@ -77,8 +76,10 @@ defmodule ApathyDrive.Character do
     field(:lore_name, :string)
     field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:chat_tab, :string)
-    field(:experience, :integer)
 
+    field(:experience, :integer, virtual: true, default: 0)
+    field(:next_drain_at, :integer, virtual: true)
+    field(:exp_buffer, :integer, virtual: true, default: 0)
     field(:remaining_energy, :integer, virtual: true, default: 0)
     field(:gcd, :integer, virtual: true, default: 0)
     field(:attunements, :any, virtual: true, default: [])
@@ -382,8 +383,8 @@ defmodule ApathyDrive.Character do
           %{} = existing_skill ->
             Map.put(skills, command, [skill, existing_skill])
 
-          skills ->
-            Map.put(skills, command, [skill | skills])
+          list ->
+            Map.put(skills, command, [skill | list])
         end
       end)
 
@@ -570,20 +571,26 @@ defmodule ApathyDrive.Character do
     classes =
       character
       |> Ecto.assoc(:character_classes)
+      |> Ecto.Query.preload([:class])
       |> Repo.all()
-      |> Repo.preload([:class])
 
-    character
-    |> Map.put(:classes, classes)
-    |> Repo.preload(:class, force: true)
-    |> set_level()
-  end
+    character =
+      character
+      |> Map.put(:classes, classes)
 
-  def set_level(%Character{} = character) do
-    modifier = (100 + character.race.race.exp_modifier) / 100
-    level = Level.level_at_exp(character.experience, modifier) + 1
+    character_class = Enum.find(classes, &(&1.class_id == character.class_id))
 
-    Map.put(character, :level, level)
+    if character_class do
+      character
+      |> Map.put(:level, character_class.level || 1)
+      |> Map.put(:exp_buffer, character_class.exp_buffer || 0)
+      |> Map.put(:class, character_class.class)
+    else
+      character
+      |> Map.put(:level, 1)
+      |> Map.put(:exp_buffer, 0)
+      |> Map.put(:class, nil)
+    end
   end
 
   def load_race(%Character{race_id: race_id} = character) do
@@ -1040,37 +1047,34 @@ defmodule ApathyDrive.Character do
 
   def add_experience(%Character{} = character, exp, silent) when exp > 0 do
     exp = trunc(exp)
-    unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-    level = character.level
+    CharacterClass
+    |> Repo.get_by(character_id: character.id, class_id: character.class_id)
+    |> case do
+      %CharacterClass{} = cc ->
+        buffer = min((cc.exp_buffer || 0) + exp, Character.max_exp_buffer(character))
 
-    character =
-      character
-      |> Ecto.Changeset.change(%{
-        experience: character.experience + exp
-      })
-      |> Repo.update!()
-      |> Character.set_level()
+        cc
+        |> Ecto.Changeset.change(%{
+          exp_buffer: buffer
+        })
+        |> Repo.update!()
 
-    if character.level > level do
-      message =
-        "<p><span class='yellow'>You have advanced to level #{character.level}!</span></p>"
+        unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
-      Repo.insert!(%ChannelHistory{
-        character_id: character.id,
-        message: message
-      })
+        character
+        |> Map.put(:exp_buffer, buffer)
 
-      Character.send_chat(
-        character,
-        message
-      )
+      nil ->
+        unless silent,
+          do:
+            Mobile.send_scroll(
+              character,
+              "<p>You gain 0 experience, you must join a guild to earn experience!</p>"
+            )
+
+        character
     end
-
-    Character.update_exp_bar(character)
-
-    Statix.increment("exp_gained", exp, tags: ["character:#{String.downcase(character.name)}"])
-    character
   end
 
   def add_experience(character, _exp, _silent), do: character
@@ -1396,6 +1400,67 @@ defmodule ApathyDrive.Character do
       )
 
     min(energy, 1000)
+  end
+
+  def drain_rate(character) do
+    level = max(1, character.level)
+
+    exp_to_level = Level.exp_at_level(level) - Level.exp_at_level(level - 1)
+
+    target_time = 20 * level
+
+    trunc(max(Float.round(exp_to_level / (target_time * 60) * 10), 10.0))
+  end
+
+  def max_exp_buffer(character) do
+    rate = drain_rate(character)
+
+    trunc(rate / 9 * 60 + 60 * character.level)
+  end
+
+  def drain_exp_buffer(%Character{exp_buffer: 0} = character), do: character
+
+  def drain_exp_buffer(%Character{next_drain_at: drain_at} = character) do
+    now = DateTime.utc_now() |> DateTime.to_unix(:millisecond) |> trunc
+
+    if is_nil(drain_at) or drain_at < now do
+      mind = ApathyDrive.Commands.Status.mind(character)
+      amount = Character.drain_rate(character)
+
+      CharacterClass
+      |> Repo.get_by(character_id: character.id, class_id: character.class_id)
+      |> case do
+        %CharacterClass{} = cc ->
+          buffer = max(0, (character.exp_buffer || 0) - amount)
+
+          cc
+          |> Ecto.Changeset.change(%{
+            exp_buffer: buffer,
+            experience: cc.experience + buffer
+          })
+          |> Repo.update!()
+
+          character =
+            character
+            |> put_in([:next_drain_at], now + :timer.seconds(10))
+            |> put_in([:exp_buffer], buffer)
+            |> put_in([:experience], cc.experience + buffer)
+            |> Character.update_exp_bar()
+
+          new_mind = ApathyDrive.Commands.Status.mind(character)
+
+          if new_mind != mind do
+            ApathyDrive.Commands.Status.status(character)
+          end
+
+          character
+
+        nil ->
+          character
+      end
+    else
+      character
+    end
   end
 
   def send_chat(%Character{socket: socket} = character, html) do
@@ -1965,6 +2030,7 @@ defmodule ApathyDrive.Character do
 
             character
             |> Map.put(:bust_cache, false)
+            |> Character.drain_exp_buffer()
             |> Regeneration.regenerate(room)
             |> TimerManager.send_after(
               {:heartbeat, ApathyDrive.Regeneration.tick_time(character),
@@ -2149,10 +2215,12 @@ defmodule ApathyDrive.Character do
       })
 
       character
-      |> Map.put(:last_room_id, character.room_id)
-      |> Map.put(:room_id, room_id)
       |> Map.put(:monitor_ref, Process.monitor(socket))
-      |> Repo.save!()
+      |> Ecto.Changeset.change(%{
+        last_room_id: character.room_id,
+        room_id: room_id
+      })
+      |> Repo.update!()
     end
 
     def shift_hp(character, percentage) do
