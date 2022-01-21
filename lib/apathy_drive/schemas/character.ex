@@ -1070,6 +1070,7 @@ defmodule ApathyDrive.Character do
     |> Repo.get_by(character_id: character.id, class_id: character.class_id)
     |> case do
       %CharacterClass{} = cc ->
+        mind = ApathyDrive.Commands.Status.mind(character)
         buffer = min((cc.exp_buffer || 0) + exp, Character.max_exp_buffer(character))
 
         cc
@@ -1080,8 +1081,17 @@ defmodule ApathyDrive.Character do
 
         unless silent, do: Mobile.send_scroll(character, "<p>You gain #{exp} experience.</p>")
 
+        character =
+          character
+          |> Map.put(:exp_buffer, buffer)
+
+        new_mind = ApathyDrive.Commands.Status.mind(character)
+
+        if new_mind != mind do
+          unless silent, do: ApathyDrive.Commands.Status.status(character)
+        end
+
         character
-        |> Map.put(:exp_buffer, buffer)
 
       nil ->
         unless silent,
@@ -1421,18 +1431,20 @@ defmodule ApathyDrive.Character do
 
     if is_nil(drain_at) or drain_at < now do
       mind = ApathyDrive.Commands.Status.mind(character)
-      amount = Character.drain_rate(character)
+      amount = min(Character.drain_rate(character), character.exp_buffer)
 
       CharacterClass
       |> Repo.get_by(character_id: character.id, class_id: character.class_id)
       |> case do
         %CharacterClass{} = cc ->
+          IO.puts("#{character.exp_buffer} -> #{amount} -> #{character.experience}")
+
           buffer = max(0, (character.exp_buffer || 0) - amount)
 
           cc
           |> Ecto.Changeset.change(%{
             exp_buffer: buffer,
-            experience: cc.experience + buffer
+            experience: cc.experience + amount
           })
           |> Repo.update!()
 
@@ -1440,7 +1452,7 @@ defmodule ApathyDrive.Character do
             character
             |> put_in([:next_drain_at], now + :timer.seconds(10))
             |> put_in([:exp_buffer], buffer)
-            |> put_in([:experience], cc.experience + buffer)
+            |> put_in([:experience], cc.experience + amount)
             |> Character.update_exp_bar()
 
           new_mind = ApathyDrive.Commands.Status.mind(character)

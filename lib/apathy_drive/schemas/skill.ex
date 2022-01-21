@@ -53,7 +53,7 @@ defmodule ApathyDrive.Skill do
         |> List.flatten()
         |> Enum.find(&(&1.name == name()))
         |> case do
-          %{attributes: attributes} ->
+          %{attributes: attributes, skill: %{type: "skill"}, level: base} = skill ->
             total =
               attributes
               |> Enum.map(
@@ -65,10 +65,18 @@ defmodule ApathyDrive.Skill do
               )
               |> Enum.sum()
 
-            div(total, length(attributes)) + base
+            average = total / length(attributes)
 
-          _ ->
+            with_charm =
+              (average * 5 + Mobile.attribute_at_level(character, :charm, character.level)) / 6
+
+            trunc(with_charm + base)
+
+          %{level: base} = skill ->
             base
+
+          nil ->
+            0
         end
       end
 

@@ -256,6 +256,14 @@ defmodule ApathyDrive.Item do
     trunc(1.75 * quality_level) - 1
   end
 
+  def str_for_weapon(quality_level, "knife") do
+    str_for_weapon(quality_level, "blade") * 0.75
+  end
+
+  def str_for_weapon(quality_level, "staff") do
+    str_for_weapon(quality_level, "blade")
+  end
+
   def str_for_weapon(quality_level, "blunt") do
     str_for_weapon(quality_level, "blade") * 1.25
   end
@@ -275,6 +283,14 @@ defmodule ApathyDrive.Item do
   def agi_for_item(_item), do: 0
 
   def agi_for_weapon(quality_level, "blade") do
+    str_for_weapon(quality_level, "blade")
+  end
+
+  def agi_for_weapon(quality_level, "knife") do
+    str_for_weapon(quality_level, "blade") * 1.25
+  end
+
+  def agi_for_weapon(quality_level, "staff") do
     str_for_weapon(quality_level, "blade")
   end
 
