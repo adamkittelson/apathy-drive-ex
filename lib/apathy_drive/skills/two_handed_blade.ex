@@ -2,13 +2,15 @@ defmodule ApathyDrive.Skills.TwoHandedBlade do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
-  def ability(_character) do
+  def ability(character) do
     %Ability{
       kind: "passive",
       targets: "self",
       name: "Two Handed Blade",
       attributes: ["agility"],
-      traits: %{}
+      traits: %{
+        "two handed blade" => skill_level(character)
+      }
     }
   end
 

@@ -2,13 +2,15 @@ defmodule ApathyDrive.Skills.NatureMagic do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
-  def ability(_character) do
+  def ability(character) do
     %Ability{
       kind: "passive",
       targets: "self",
       name: "Nature Magic",
       attributes: ["intellect", "willpower"],
-      traits: %{}
+      traits: %{
+        "nature magic" => skill_level(character)
+      }
     }
   end
 

@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Skill do
   use ApathyDriveWeb, :model
-  alias ApathyDrive.{Character, CharacterSkill, Match, Skill}
+  alias ApathyDrive.{Character, CharacterSkill, Match, Mobile, Skill}
 
   schema "skills" do
     field(:name, :string)
@@ -31,7 +31,7 @@ defmodule ApathyDrive.Skill do
         |> String.trim()
       end
 
-      def skill_level(character) do
+      def base_skill_level(character) do
         character.skills
         |> Map.values()
         |> List.flatten()
@@ -42,6 +42,33 @@ defmodule ApathyDrive.Skill do
 
           _ ->
             0
+        end
+      end
+
+      def skill_level(character) do
+        base = base_skill_level(character)
+
+        character.skills
+        |> Map.values()
+        |> List.flatten()
+        |> Enum.find(&(&1.name == name()))
+        |> case do
+          %{attributes: attributes} ->
+            total =
+              attributes
+              |> Enum.map(
+                &Mobile.attribute_at_level(
+                  character,
+                  String.to_existing_atom(&1),
+                  character.level
+                )
+              )
+              |> Enum.sum()
+
+            div(total, length(attributes)) + base
+
+          _ ->
+            base
         end
       end
 

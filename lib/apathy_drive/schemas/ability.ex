@@ -119,8 +119,8 @@ defmodule ApathyDrive.Ability do
   ]
 
   @duration_traits [
-    "AttackRating",
-    "AttackRatingVsUndead",
+    "Accuracy",
+    "AccuracyVsUndead",
     "Agility",
     "Alignment",
     "Beacon",
@@ -1417,8 +1417,8 @@ defmodule ApathyDrive.Ability do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
     attack_rating_modifier =
-      (100 + Mobile.ability_value(caster, "AttackRating%") +
-         (ability.traits["AttackRating%"] || 0)) / 100
+      (100 + Mobile.ability_value(caster, "Accuracy%") +
+         (ability.traits["Accuracy%"] || 0)) / 100
 
     accuracy = accuracy * attack_rating_modifier
 
@@ -1426,10 +1426,10 @@ defmodule ApathyDrive.Ability do
       if ability.weapon? do
         cond do
           Mobile.has_ability?(target, "Undead") ->
-            accuracy + Mobile.ability_value(caster, "AttackRatingVsUndead")
+            accuracy + Mobile.ability_value(caster, "AccuracyVsUndead")
 
           Mobile.has_ability?(target, "Demon") ->
-            accuracy + Mobile.ability_value(caster, "AttackRatingVsDemons")
+            accuracy + Mobile.ability_value(caster, "AccuracyVsDemons")
 
           :else ->
             accuracy

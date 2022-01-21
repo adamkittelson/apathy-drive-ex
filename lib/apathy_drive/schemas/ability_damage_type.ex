@@ -17,6 +17,8 @@ defmodule ApathyDrive.AbilityDamageType do
     |> cast(params, ~w(damage_type_id kind potency)a)
   end
 
+  def load_damage(nil), do: []
+
   def load_damage(ability_id) do
     __MODULE__
     |> where([mt], mt.ability_id == ^ability_id)

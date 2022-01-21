@@ -418,8 +418,13 @@ defmodule ApathyDrive.Character do
         %{ability: ability}
       end)
 
+    skill_abilities =
+      character
+      |> Ability.skill_abilities()
+      |> Enum.map(&%{ability: &1})
+
     character =
-      granted_abilities
+      (granted_abilities ++ skill_abilities)
       |> Enum.reduce(character, fn
         %{ability: %Ability{} = ability, kind: "skill"}, character ->
           update_in(character.abilities, fn abilities ->
@@ -427,22 +432,34 @@ defmodule ApathyDrive.Character do
             |> Map.put(ability.command, ability)
           end)
 
-        %{ability: %Ability{id: id, kind: "passive"}}, character ->
-          effect = AbilityTrait.load_traits(id)
+        %{ability: %Ability{id: id, kind: "passive"} = ability}, character ->
+          effect =
+            if id do
+              AbilityTrait.load_traits(id)
+            else
+              ability.traits
+            end
 
           effect =
             effect
             |> Map.put("stack_count", effect["StackCount"] || 1)
-            |> Map.put("stack_key", effect["StackKey"] || id)
+            |> Map.put("stack_key", effect["StackKey"] || id || ability.name)
             |> Map.delete("StatusMessage")
             |> Map.delete("RemoveMessage")
 
           Systems.Effect.add(character, effect)
 
         %{ability: %Ability{id: id} = ability}, character ->
+          traits =
+            if id do
+              AbilityTrait.load_traits(id)
+            else
+              ability.traits
+            end
+
           ability =
             ability
-            |> put_in([Access.key!(:traits)], AbilityTrait.load_traits(id))
+            |> put_in([Access.key!(:traits)], traits)
             |> put_in([Access.key!(:auto)], !!auto_abilities[id])
 
           ability =
@@ -713,6 +730,7 @@ defmodule ApathyDrive.Character do
         punch = %Item{
           type: "Weapon",
           name: "fist",
+          weapon_type: "melee",
           hit_verbs: [["punch", "punches"]],
           miss_verbs: ["throw a punch", "throws a punch"],
           min_damage: 2,
@@ -1311,30 +1329,8 @@ defmodule ApathyDrive.Character do
     %{min_damage: avg * 0.75, max_damage: avg * 1.25}
   end
 
-  def combat_level(%Character{} = character) do
-    weapon = Character.weapon(character)
-
-    skill =
-      case weapon.weapon_type do
-        "blade" ->
-          ApathyDrive.Skills.Blade.skill_level(character)
-
-        "blunt" ->
-          ApathyDrive.Skills.BluntMastery.skill_level(character)
-
-        "two handed blade" ->
-          (ApathyDrive.Skills.Blade.skill_level(character) +
-             ApathyDrive.Skills.TwoHandedMastery.skill_level(character)) / 2
-
-        "two handed blunt" ->
-          (ApathyDrive.Skills.BluntMastery.skill_level(character) +
-             ApathyDrive.Skills.TwoHandedMastery.skill_level(character)) / 2
-
-        nil ->
-          3
-      end
-
-    1 + skill * 0.67
+  def combat_level(%Character{} = _character) do
+    3
   end
 
   def magic_level(%Character{} = character) do
@@ -1595,11 +1591,11 @@ defmodule ApathyDrive.Character do
     end
 
     def accuracy_at_level(character, _level, _room) do
-      agility = Mobile.attribute_at_level(character, :agility, character.level)
-      charm = Mobile.attribute_at_level(character, :charm, character.level)
+      weapon_type = Character.weapon(character).weapon_type
 
-      agi = trunc(agility + charm / 10)
-      ability_value(character, "AttackRating") + 5 * agi
+      weapon_value = Mobile.ability_value(character, weapon_type)
+
+      ability_value(character, "Accuracy") + weapon_value
     end
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
@@ -2167,7 +2163,7 @@ defmodule ApathyDrive.Character do
     end
 
     def attack_rating(character) do
-      ability_value(character, "AttackRating")
+      ability_value(character, "Accuracy")
     end
 
     def defense_rating(character) do

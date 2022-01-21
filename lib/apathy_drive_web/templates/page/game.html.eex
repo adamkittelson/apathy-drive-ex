@@ -5,7 +5,7 @@
 </script>
 
 <div class="score">
-  <span class="dark-green">Name:</span> <span id="score-name" class="dark-cyan"></span> <span class="dark-green">Level:</span> <span id="score-level" class="dark-cyan"></span> <span class="dark-green">Attack:</span>    <span id="score-attack" class="dark-cyan"></span>
+  <span class="dark-green">Name:</span> <span id="score-name" class="dark-cyan"></span> <span class="dark-green">Level:</span> <span id="score-level" class="dark-cyan"></span> <span class="dark-green">Accuracy:</span>  <span id="score-attack" class="dark-cyan"></span>
   <span class="dark-green">Race:</span> <span id="score-race" class="dark-cyan"></span> <span class="dark-green">Class:</span> <span id="score-class" class="dark-cyan"></span> <span class="dark-green">Defense:</span>   <span id="score-defense" class="dark-cyan"></span>
   <span class="dark-green">Alignment:</span> <span id="score-alignment" class="dark-cyan"></span> <span class="dark-green">Devs:</span> <span id="score-devs" class="dark-cyan"></span>   <span class="dark-green">Percep:</span>    <span id="score-perception" class="dark-cyan"></span>
   <span class="dark-green">Life:</span> <span id="score-hp" class="dark-cyan"></span> <span class="dark-green">Mana:</span>  <span id="score-mana" class="dark-cyan"></span> <span class="dark-green">Stealth:</span>   <span id="score-stealth" class="dark-cyan"></span>

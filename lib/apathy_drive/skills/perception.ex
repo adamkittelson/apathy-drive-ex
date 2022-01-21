@@ -2,13 +2,15 @@ defmodule ApathyDrive.Skills.Perception do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
-  def ability(_character) do
+  def ability(character) do
     %Ability{
       kind: "passive",
       targets: "self",
       name: "Perception",
       attributes: ["perception"],
-      traits: %{}
+      traits: %{
+        "perception" => skill_level(character)
+      }
     }
   end
 

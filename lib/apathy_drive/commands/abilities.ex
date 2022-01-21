@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Abilities do
   use ApathyDrive.Command
-  alias ApathyDrive.{Ability, Character, Mobile}
+  alias ApathyDrive.{Character, Mobile}
   require Ecto.Query
 
   def keywords, do: ["abilities", "spells"]
@@ -11,13 +11,11 @@ defmodule ApathyDrive.Commands.Abilities do
   end
 
   def display_abilities(%Character{} = character) do
-    skill_abilities = Ability.skill_abilities(character)
-
     abilities =
       character.abilities
       |> Map.values()
 
-    abilities = abilities ++ skill_abilities
+    abilities = abilities
 
     if Enum.any?(abilities) do
       Mobile.send_scroll(

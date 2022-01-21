@@ -144,7 +144,6 @@ defmodule ApathyDrive.Commands.Look do
               character
               |> Trainer.training_cost()
               |> Currency.set_value()
-              |> IO.inspect()
               |> Currency.to_string()
 
             "\n\nYou may <span class='green'>train</span> the #{guild} class to level #{character.level + 1} here for #{cost}."

@@ -2,13 +2,15 @@ defmodule ApathyDrive.Skills.Dodge do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
-  def ability(_character) do
+  def ability(character) do
     %Ability{
       kind: "passive",
       targets: "self",
       name: "Dodge",
       attributes: ["agility"],
-      traits: %{}
+      traits: %{
+        "dodge" => skill_level(character)
+      }
     }
   end
 

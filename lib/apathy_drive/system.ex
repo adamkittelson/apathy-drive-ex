@@ -168,4 +168,21 @@ defmodule ApathyDrive.System do
 
     nil
   end
+
+  def update_affix_traits do
+    ApathyDrive.AffixTrait
+    |> Repo.all()
+    |> Enum.filter(&String.contains?(to_string(&1.description), "["))
+    |> Enum.each(fn at ->
+      IO.inspect(at.description)
+      description = String.replace(at.description, ~r/ \[.*\]/, "")
+      IO.inspect(description)
+
+      at
+      |> Ecto.Changeset.change(%{
+        description: description
+      })
+      |> Repo.update!()
+    end)
+  end
 end
