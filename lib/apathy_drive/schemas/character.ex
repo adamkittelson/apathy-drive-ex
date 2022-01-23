@@ -805,7 +805,6 @@ defmodule ApathyDrive.Character do
 
     %Item{
       type: "Weapon",
-      name: name,
       hit_verbs: hit_verbs,
       miss_verbs: [singular_miss, plural_miss],
       min_damage: min,
@@ -1088,6 +1087,7 @@ defmodule ApathyDrive.Character do
         character =
           character
           |> Map.put(:exp_buffer, buffer)
+          |> Character.update_exp_bar()
 
         new_mind = ApathyDrive.Commands.Status.mind(character)
 
@@ -1507,12 +1507,14 @@ defmodule ApathyDrive.Character do
     remaining = to_next_level - character.experience
 
     percent = min(1, 1 - remaining / total_needed) * 100
+    buffer_percent = character.exp_buffer / total_needed
 
     send(
       socket,
       {:update_exp_bar,
        %{
-         percentage: percent
+         percentage: percent,
+         buffer_percentage: buffer_percent
        }}
     )
 
@@ -2319,24 +2321,28 @@ defmodule ApathyDrive.Character do
     def subtract_energy(character, ability) do
       character = update_in(character.energy, &(&1 - ability.energy))
 
-      attributes = ability.attributes
+      attributes = ability.attributes || []
 
       charm? = "charm" in attributes
       count = length(attributes)
 
-      attributes =
-        if charm? do
-          Enum.reduce(attributes, %{}, fn attribute, attributes ->
-            Map.put(attributes, String.to_atom(attribute), 1 / count)
-          end)
-        else
-          Enum.reduce(attributes, %{}, fn attribute, attributes ->
-            Map.put(attributes, String.to_atom(attribute), 1 / count - 1 / 6 / count)
-          end)
-          |> Map.put(:charm, 1 / 6)
-        end
+      if count > 0 do
+        attributes =
+          if charm? do
+            Enum.reduce(attributes, %{}, fn attribute, attributes ->
+              Map.put(attributes, String.to_atom(attribute), 1 / count)
+            end)
+          else
+            Enum.reduce(attributes, %{}, fn attribute, attributes ->
+              Map.put(attributes, String.to_atom(attribute), 1 / count - 1 / 6 / count)
+            end)
+            |> Map.put(:charm, 1 / 6)
+          end
 
-      Character.add_attribute_experience(character, attributes)
+        Character.add_attribute_experience(character, attributes)
+      else
+        character
+      end
     end
 
     def tracking_at_level(character, level, room) do

@@ -120,9 +120,7 @@ var update_score_attribute = function (attribute, new_value) {
 chan.on("update exp bar", function (data) {
   var elem = $(".score .experience")
 
-  var currentWidth = data.percentage * elem.width() / 100;
-
-  elem.find('div').width(currentWidth)
+  exp_progress(elem, data.percentage, data.buffer_percentage)
 })
 
 
@@ -426,6 +424,18 @@ window.progress = function (elem, percent, secondary_percent) {
   var setting = percent + '% 100%, ' + modified + '%, 100% 100%';
   $(elem).css('background-size', setting)
 
+}
+
+window.exp_progress = function (elem, exp_percent, buffer_percent) {
+  if (typeof buffer_percent !== 'undefined') {
+    buffer_percent = exp_percent + (buffer_percent * 100)
+  }
+  else {
+    buffer_percent = 0;
+  }
+
+  var setting = exp_percent + '% 100%, ' + buffer_percent + '% 100%, 100% 100%';
+  $(elem).css('background-size', setting)
 }
 
 
