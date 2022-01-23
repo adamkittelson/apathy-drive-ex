@@ -2318,13 +2318,24 @@ defmodule ApathyDrive.Character do
     def subtract_energy(character, ability) do
       character = update_in(character.energy, &(&1 - ability.energy))
 
-      attributes = ability.attributes || %{}
+      attributes = ability.attributes
 
-      Enum.reduce(attributes, character, fn attribute, character ->
-        Character.add_attribute_experience(character, %{
-          String.to_atom(attribute) => 1 / length(attributes)
-        })
-      end)
+      charm? = "charm" in attributes
+      count = length(attributes)
+
+      attributes =
+        if charm? do
+          Enum.reduce(attributes, %{}, fn attribute, attributes ->
+            Map.put(attributes, String.to_atom(attribute), 1 / count)
+          end)
+        else
+          Enum.reduce(attributes, %{}, fn attribute, attributes ->
+            Map.put(attributes, String.to_atom(attribute), 1 / count - 1 / 6 / count)
+          end)
+          |> Map.put(:charm, 1 / 6)
+        end
+
+      Character.add_attribute_experience(character, attributes)
     end
 
     def tracking_at_level(character, level, room) do
