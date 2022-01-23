@@ -56,6 +56,7 @@ defmodule ApathyDrive.Ability do
     field(:cast_complete, :boolean, virtual: true, default: false)
     field(:target_list, :any, virtual: true)
     field(:attributes, :any, virtual: true)
+    field(:skill, :any, virtual: true)
     field(:max_stacks, :integer, virtual: true, default: 1)
     field(:chance, :integer, virtual: true)
     field(:on_hit?, :boolean, virtual: true, default: false)

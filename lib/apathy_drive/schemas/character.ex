@@ -602,6 +602,7 @@ defmodule ApathyDrive.Character do
       |> Map.put(:level, character_class.level || 1)
       |> Map.put(:exp_buffer, character_class.exp_buffer || 0)
       |> Map.put(:class, character_class.class)
+      |> Map.put(:experience, character_class.experience || 0)
     else
       character
       |> Map.put(:level, 1)
@@ -1605,9 +1606,7 @@ defmodule ApathyDrive.Character do
     def accuracy_at_level(character, _level, _room) do
       weapon_type = Character.weapon(character).weapon_type
 
-      weapon_value = Mobile.ability_value(character, weapon_type)
-
-      ability_value(character, "Accuracy") + weapon_value
+      ability_value(character, "Accuracy") + ability_value(character, weapon_type)
     end
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
@@ -1901,14 +1900,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def dodge_at_level(character, level, _room) do
-      agi = attribute_at_level(character, :agility, level)
-      cha = attribute_at_level(character, :charm, level)
-      base = trunc(agi + cha / 10)
-
-      bonus = div(base, 4)
-
-      trunc(bonus + defense_rating(character) + ability_value(character, "Dodge"))
+    def dodge_at_level(character, _level, _room) do
+      ability_value(character, "Dodge") + ability_value(character, "dodge")
     end
 
     def enough_mana_for_ability?(character, %Ability{} = ability) do
@@ -2157,13 +2150,8 @@ defmodule ApathyDrive.Character do
       Party.refs(room, character)
     end
 
-    def perception_at_level(character, level, room) do
-      intellect = attribute_at_level(character, :intellect, level)
-      charm = attribute_at_level(character, :charm, level)
-
-      base = div(intellect * 3 + charm, 6) + level * 2
-
-      base = base + ability_value(character, "Perception")
+    def perception_at_level(character, _level, room) do
+      base = ability_value(character, "Perception") + ability_value(character, "perception")
 
       light_modifier =
         room

@@ -47,7 +47,7 @@ defmodule ApathyDrive.Skills.MinorHealing do
 
     if level > 0 do
       """
-      \nCurrent Skill Level: #{level}
+      \nCurrent Ability Level: #{level}
       Heals: #{min_healing(level)}-#{max_healing(level)}
       Mana Cost: #{mana()}
       """
@@ -58,7 +58,7 @@ defmodule ApathyDrive.Skills.MinorHealing do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Skill Level: #{level}\nHeals: #{min_healing(level)}-#{max_healing(level)}\nMana Cost: #{mana()}"
+      "\nNext Ability Level: #{level}\nHeals: #{min_healing(level)}-#{max_healing(level)}\nMana Cost: #{mana()}"
     end
   end
 

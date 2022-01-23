@@ -49,7 +49,7 @@ defmodule ApathyDrive.Skills.BindLesserDemon do
 
     if level > 0 do
       """
-      \nCurrent Skill Level: #{level}
+      \nCurrent Ability Level: #{level}
       Defense: #{defense(level)}
       Replenishment: #{replenishment(level)}
       Success Chance: #{control_chance(level)}%
@@ -63,7 +63,7 @@ defmodule ApathyDrive.Skills.BindLesserDemon do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Defense: #{defense(level)}\nSuccess Chance: #{control_chance(level)}%\nDuration: #{div(duration(level), 60)} minutes\nMana Cost: #{mana(level)}"
+      "\nNext Ability Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Defense: #{defense(level)}\nSuccess Chance: #{control_chance(level)}%\nDuration: #{div(duration(level), 60)} minutes\nMana Cost: #{mana(level)}"
     end
   end
 

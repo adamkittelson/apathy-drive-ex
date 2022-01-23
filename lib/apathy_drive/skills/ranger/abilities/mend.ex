@@ -10,7 +10,7 @@ defmodule ApathyDrive.Skills.Mend do
       command: "mend",
       targets: "self or single",
       name: "mend",
-      attributes: ["intellect", "willpower"],
+      skill: ApathyDrive.Skill.NatureMagic,
       mana: mana(),
       auto: !!get_in(character, [:skills, "mend", :auto]),
       spell?: true,
@@ -36,7 +36,7 @@ defmodule ApathyDrive.Skills.Mend do
     """
       <span style="color: lime">Mend</span>
       By casting this spell, the wounds of the target are healed.
-      Attribute(s): #{attributes()}
+      Skill: #{ability(character).skill.name()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
@@ -47,7 +47,7 @@ defmodule ApathyDrive.Skills.Mend do
 
     if level > 0 do
       """
-      \nCurrent Skill Level: #{level}
+      \nCurrent Ability Level: #{level}
       Heals: #{min_healing(level)}-#{max_healing(level)}
       Mana Cost: #{mana()}
       """
@@ -58,7 +58,7 @@ defmodule ApathyDrive.Skills.Mend do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Skill Level: #{level}\nHeals: #{min_healing(level)}-#{max_healing(level)}\nMana Cost: #{mana()}"
+      "\nNext Ability Level: #{level}\nHeals: #{min_healing(level)}-#{max_healing(level)}\nMana Cost: #{mana()}"
     end
   end
 

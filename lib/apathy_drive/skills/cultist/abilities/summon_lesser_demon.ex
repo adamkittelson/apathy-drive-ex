@@ -45,7 +45,7 @@ defmodule ApathyDrive.Skills.SummonLesserDemon do
 
     if level > 0 do
       """
-      \nCurrent Skill Level: #{level}
+      \nCurrent Ability Level: #{level}
       Control Chance: #{control_chance(level)}%
       Duration: #{div(duration(level), 60)} minutes
       Mana Cost: #{mana(level)}
@@ -57,7 +57,7 @@ defmodule ApathyDrive.Skills.SummonLesserDemon do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Control Chance: #{control_chance(level)}%\nDuration: #{div(duration(level), 60)} minutes\nMana Cost: #{mana(level)}"
+      "\nNext Ability Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Control Chance: #{control_chance(level)}%\nDuration: #{div(duration(level), 60)} minutes\nMana Cost: #{mana(level)}"
     end
   end
 

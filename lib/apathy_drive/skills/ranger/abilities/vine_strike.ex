@@ -10,7 +10,7 @@ defmodule ApathyDrive.Skills.VineStrike do
       command: "vine",
       targets: "monster or single",
       name: "vine strike",
-      attributes: ["intellect", "willpower"],
+      skill: ApathyDrive.Skills.NatureMagic,
       mana: mana(level),
       spell?: true,
       energy: 0,
@@ -39,7 +39,7 @@ defmodule ApathyDrive.Skills.VineStrike do
     """
       <span style="color: lime">Vine Strike</span>
       With this spell, the caster throws out a thorny vine to lash their foe.
-      Attribute(s): #{attributes()}
+      Skill: #{ability(character).skill.name()}
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
   end
@@ -49,7 +49,7 @@ defmodule ApathyDrive.Skills.VineStrike do
 
     if level > 0 do
       """
-      \nCurrent Skill Level: #{level}
+      \nCurrent Ability Level: #{level}
       Cutting Damage: #{min_damage(level)}-#{max_damage(level)}
       Mana Cost: #{mana(level)}
       """
@@ -60,7 +60,7 @@ defmodule ApathyDrive.Skills.VineStrike do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Skill Level: #{level}\n#{required_level(character.level)}Cutting Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
+      "\nNext Ability Level: #{level}\n#{required_level(character.level)}Cutting Damage: #{min_damage(level)}-#{max_damage(level)}\nMana Cost: #{mana(level)}"
     end
   end
 
