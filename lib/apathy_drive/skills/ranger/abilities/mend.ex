@@ -2,6 +2,8 @@ defmodule ApathyDrive.Skills.Mend do
   alias ApathyDrive.{Ability, Character, Mobile, Skill}
   use ApathyDrive.Skill
 
+  @skill ApathyDrive.Skills.NatureMagic
+
   def ability(%Character{} = character) do
     level = skill_level(character)
 
@@ -10,8 +12,8 @@ defmodule ApathyDrive.Skills.Mend do
       command: "mend",
       targets: "self or single",
       name: "mend",
-      skill: ApathyDrive.Skill.NatureMagic,
-      mana: mana(),
+      attributes: @skill.ability(character).attributes,
+      mana: mana(level),
       auto: !!get_in(character, [:skills, "mend", :auto]),
       spell?: true,
       cast_time: 2500,
@@ -21,8 +23,8 @@ defmodule ApathyDrive.Skills.Mend do
       spectator_message: "{{user}} casts mend on {{target}}, healing {{amount}} damage!",
       traits: %{
         "Heal" => %{
-          "min" => min_healing(level),
-          "max" => max_healing(level)
+          "min" => min_healing(character, level),
+          "max" => max_healing(character, level)
         }
       }
     }
@@ -36,7 +38,7 @@ defmodule ApathyDrive.Skills.Mend do
     """
       <span style="color: lime">Mend</span>
       By casting this spell, the wounds of the target are healed.
-      Skill: #{ability(character).skill.name()}
+      Skill: #{@skill.name()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
     """
@@ -48,8 +50,8 @@ defmodule ApathyDrive.Skills.Mend do
     if level > 0 do
       """
       \nCurrent Ability Level: #{level}
-      Heals: #{min_healing(level)}-#{max_healing(level)}
-      Mana Cost: #{mana()}
+      Heals: #{min_healing(character, level)}-#{max_healing(character, level)}
+      Mana Cost: #{mana(level)}
       """
     end
   end
@@ -58,17 +60,17 @@ defmodule ApathyDrive.Skills.Mend do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Ability Level: #{level}\nHeals: #{min_healing(level)}-#{max_healing(level)}\nMana Cost: #{mana()}"
+      "\nNext Ability Level: #{level}\nHeals: #{min_healing(character, level)}-#{max_healing(character, level)}\nMana Cost: #{mana(level)}"
     end
   end
 
-  defp min_healing(level) do
-    trunc(1 + level * 2)
+  defp min_healing(character, level) do
+    trunc(3 * level * @skill.skill_level(character) / 100)
   end
 
-  defp max_healing(level) do
-    trunc(11 + level * 2.8)
+  defp max_healing(character, level) do
+    trunc(13 * level * @skill.skill_level(character) / 100)
   end
 
-  defp mana(), do: 4
+  defp mana(level), do: 4 * level
 end

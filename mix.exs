@@ -87,7 +87,9 @@ defmodule ApathyDrive.Mixfile do
       {:tzdata, "~> 1.1.0"},
       {:timex, "~> 3.7.5"},
       {:logflare_logger_backend, "~> 0.8.0"},
-      {:floki, ">= 0.0.0", only: :test}
+      {:floki, ">= 0.0.0", only: :test},
+      # for tzdata
+      {:hackney, "~> 1.0"}
     ]
   end
 
