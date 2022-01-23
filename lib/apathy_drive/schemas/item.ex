@@ -84,6 +84,7 @@ defmodule ApathyDrive.Item do
     field(:socketable, :boolean)
     field(:stackable, :boolean)
 
+    field(:short_name, :string, virtual: true)
     field(:ac, :any, virtual: true, default: 0)
     field(:sockets, :any, virtual: true, default: [])
     field(:item_type_ids, :any, virtual: true, default: [])
@@ -436,6 +437,7 @@ defmodule ApathyDrive.Item do
     item
     |> Map.put(:uses, ii.uses || item.max_uses)
     |> Map.put(:name, ii.name || item.name)
+    |> Map.put(:short_name, item.name)
     |> Map.put(:description, ii.description || item.description)
     |> Map.put(:room_destruct_message, ii.room_destruct_message || item.room_destruct_message)
     |> load_required_races_and_classes()

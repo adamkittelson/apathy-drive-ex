@@ -567,10 +567,16 @@ defmodule ApathyDrive.Ability do
   def skill_abilities(%Character{} = character) do
     Enum.map(character.skills, fn
       {_cmd, %{} = skill} ->
-        skill.module.ability(character)
+        character
+        |> skill.module.ability()
+        |> Map.put(:level, skill.skill.required_level)
 
       {_cmd, skills} ->
-        Enum.map(skills, & &1.module.ability(character))
+        Enum.map(skills, fn skill ->
+          character
+          |> skill.module.ability()
+          |> Map.put(:level, skill.skill.required_level)
+        end)
     end)
     |> List.flatten()
   end

@@ -886,10 +886,12 @@ defmodule ApathyDrive.Character do
       mana: 0,
       spell?: false,
       weapon?: true,
-      user_message: "You #{singular_hit} {{target}} with your #{name} for {{amount}} damage!",
-      target_message: "{{user}} #{plural_hit} you with their #{name} for {{amount}} damage!",
+      user_message:
+        "You #{singular_hit} {{target}} with your #{weapon.short_name} for {{amount}} damage!",
+      target_message:
+        "{{user}} #{plural_hit} you with their #{weapon.short_name} for {{amount}} damage!",
       spectator_message:
-        "{{user}} #{plural_hit} {{target}} with their #{name} for {{amount}} damage!",
+        "{{user}} #{plural_hit} {{target}} with their #{weapon.short_name} for {{amount}} damage!",
       can_crit: true,
       traits: %{
         "Damage" => [
@@ -902,10 +904,11 @@ defmodule ApathyDrive.Character do
         ],
         "Dodgeable" => true,
         "DodgeUserMessage" =>
-          "You #{singular_miss} {{target}} with your #{name}, but they dodge!",
-        "DodgeTargetMessage" => "{{user}} #{plural_miss} you with their #{name}, but you dodge!",
+          "You #{singular_miss} {{target}} with your #{weapon.short_name}, but they dodge!",
+        "DodgeTargetMessage" =>
+          "{{user}} #{plural_miss} you with their #{weapon.short_name}, but you dodge!",
         "DodgeSpectatorMessage" =>
-          "{{user}} #{plural_miss} {{target}} with their #{name}, but they dodge!",
+          "{{user}} #{plural_miss} {{target}} with their #{weapon.short_name}, but they dodge!",
         "PhysicalPenetration" => Systems.Effect.effect_bonus(weapon, "PhysicalPenetration"),
         "MagicalPenetration" => Systems.Effect.effect_bonus(weapon, "MagicalPenetration"),
         "OnAttack" => Mobile.ability_value(character, "OnAttack"),
@@ -1438,8 +1441,6 @@ defmodule ApathyDrive.Character do
       |> Repo.get_by(character_id: character.id, class_id: character.class_id)
       |> case do
         %CharacterClass{} = cc ->
-          IO.puts("#{character.exp_buffer} -> #{amount} -> #{character.experience}")
-
           buffer = max(0, (character.exp_buffer || 0) - amount)
 
           cc
