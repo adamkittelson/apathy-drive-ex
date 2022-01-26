@@ -9,7 +9,7 @@ defmodule ApathyDrive.Skills.TwoHandedBlade do
       name: "Two Handed Blade",
       attributes: ["agility", "strength"],
       traits: %{
-        "two handed blade" => skill_level(character)
+        "Two Handed Blade" => skill_level(character)
       }
     }
   end

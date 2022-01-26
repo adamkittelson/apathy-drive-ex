@@ -253,28 +253,28 @@ defmodule ApathyDrive.Item do
 
   def str_for_weapon(nil, _armour_type), do: 0
 
-  def str_for_weapon(quality_level, "blade") do
+  def str_for_weapon(quality_level, "Blade") do
     trunc(1.75 * quality_level) - 1
   end
 
-  def str_for_weapon(quality_level, "knife") do
-    str_for_weapon(quality_level, "blade") * 0.75
+  def str_for_weapon(quality_level, "Knife") do
+    str_for_weapon(quality_level, "Blade") * 0.75
   end
 
-  def str_for_weapon(quality_level, "staff") do
-    str_for_weapon(quality_level, "blade")
+  def str_for_weapon(quality_level, "Staff") do
+    str_for_weapon(quality_level, "Blade")
   end
 
-  def str_for_weapon(quality_level, "blunt") do
-    str_for_weapon(quality_level, "blade") * 1.25
+  def str_for_weapon(quality_level, "Blunt") do
+    str_for_weapon(quality_level, "Blade") * 1.25
   end
 
-  def str_for_weapon(quality_level, "two handed blade") do
-    str_for_weapon(quality_level, "blade") * 1.75
+  def str_for_weapon(quality_level, "Two Handed Blade") do
+    str_for_weapon(quality_level, "Blade") * 1.75
   end
 
-  def str_for_weapon(quality_level, "two handed blunt") do
-    str_for_weapon(quality_level, "blunt") * 1.75
+  def str_for_weapon(quality_level, "Two Handed Blunt") do
+    str_for_weapon(quality_level, "Blunt") * 1.75
   end
 
   def agi_for_item(%Item{type: "Weapon"} = item) do
@@ -283,28 +283,28 @@ defmodule ApathyDrive.Item do
 
   def agi_for_item(_item), do: 0
 
-  def agi_for_weapon(quality_level, "blade") do
-    str_for_weapon(quality_level, "blade")
+  def agi_for_weapon(quality_level, "Blade") do
+    str_for_weapon(quality_level, "Blade")
   end
 
-  def agi_for_weapon(quality_level, "knife") do
-    str_for_weapon(quality_level, "blade") * 1.25
+  def agi_for_weapon(quality_level, "Knife") do
+    str_for_weapon(quality_level, "Blade") * 1.25
   end
 
-  def agi_for_weapon(quality_level, "staff") do
-    str_for_weapon(quality_level, "blade")
+  def agi_for_weapon(quality_level, "Staff") do
+    str_for_weapon(quality_level, "Blade")
   end
 
-  def agi_for_weapon(quality_level, "blunt") do
-    agi_for_weapon(quality_level, "blade") * 0.75
+  def agi_for_weapon(quality_level, "Blunt") do
+    agi_for_weapon(quality_level, "Blade") * 0.75
   end
 
-  def agi_for_weapon(quality_level, "two handed blade") do
-    agi_for_weapon(quality_level, "blade") * 0.75
+  def agi_for_weapon(quality_level, "Two Handed Blade") do
+    agi_for_weapon(quality_level, "Blade") * 0.75
   end
 
-  def agi_for_weapon(quality_level, "two handed blunt") do
-    agi_for_weapon(quality_level, "blunt") * 0.75
+  def agi_for_weapon(quality_level, "Two Handed Blunt") do
+    agi_for_weapon(quality_level, "Blunt") * 0.75
   end
 
   def ac_for_item(%Item{type: "Armour"} = item) do

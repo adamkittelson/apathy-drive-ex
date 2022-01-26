@@ -9,7 +9,7 @@ defmodule ApathyDrive.Skills.NatureMagic do
       name: "Nature Magic",
       attributes: ["intellect", "willpower"],
       traits: %{
-        "nature magic" => skill_level(character)
+        "Nature Magic" => skill_level(character)
       }
     }
   end

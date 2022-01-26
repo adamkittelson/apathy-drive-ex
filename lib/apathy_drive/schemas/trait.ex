@@ -193,16 +193,14 @@ defmodule ApathyDrive.Trait do
             "add"
 
           trait_name in [
-            "blade",
-            "blunt",
-            "melee",
-            "two handed blade",
-            "two handed blunt",
-            "knife",
-            "staff",
-            "perception",
-            "dodge",
-            "nature magic"
+            "Blade",
+            "Blunt",
+            "Melee",
+            "Two Handed Blade",
+            "Two Handed Blunt",
+            "Knife",
+            "Staff",
+            "Nature Magic"
           ] ->
             "add"
 

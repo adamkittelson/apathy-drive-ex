@@ -246,6 +246,12 @@ defmodule ApathyDrive.Ability do
     spectator: "{{target}} blocks {{user}}'s attack with {{target:his/her/their}} {{shield}}!!"
   }
 
+  @parry_message %{
+    user: "{{target}} parries your attack with {{target:his/her/their}} {{weapon}}!",
+    target: "You parry {{user}}'s attack with your {{weapon}}!",
+    spectator: "{{target}} parries {{user}}'s attack with {{target:his/her/their}} {{weapon}}!!"
+  }
+
   @physical_damage_types ApathyDrive.Commands.Protection.physical_damage_types()
 
   @doc """
@@ -1461,6 +1467,47 @@ defmodule ApathyDrive.Ability do
     :rand.uniform(100) < chance
   end
 
+  def parried?(%{} = caster, %{} = target, ability, room) do
+    accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+    attack_rating_modifier =
+      (100 + Mobile.ability_value(caster, "Accuracy%") +
+         (ability.traits["Accuracy%"] || 0)) / 100
+
+    accuracy = accuracy * attack_rating_modifier
+
+    accuracy =
+      if ability.weapon? do
+        cond do
+          Mobile.has_ability?(target, "Undead") ->
+            accuracy + Mobile.ability_value(caster, "AccuracyVsUndead")
+
+          Mobile.has_ability?(target, "Demon") ->
+            accuracy + Mobile.ability_value(caster, "AccuracyVsDemons")
+
+          :else ->
+            accuracy
+        end
+      else
+        accuracy
+      end
+
+    parry = Mobile.parry_at_level(target, target.level, room)
+
+    chance =
+      100 -
+        trunc(
+          100 * accuracy / (accuracy + parry) * 2 * caster.level / (caster.level + target.level)
+        )
+
+    chance =
+      chance
+      |> min(95)
+      |> max(0)
+
+    :rand.uniform(100) < chance
+  end
+
   def blocked?(%{} = _caster, %{equipment: equipment} = _target, _ability, _room) do
     shield = Enum.find(equipment, &(!!&1.block_chance))
 
@@ -1487,6 +1534,23 @@ defmodule ApathyDrive.Ability do
         target = room.mobiles[target.ref]
         Process.put(:ability_result, :dodged)
         display_cast_message(room, caster, target, Map.put(ability, :result, :dodged))
+
+        target =
+          target
+          |> aggro_target(ability, caster)
+          |> Character.add_attribute_experience(%{
+            agility: 0.9,
+            charm: 0.1
+          })
+
+        put_in(room.mobiles[target.ref], target)
+
+      parried?(caster, target, ability, room) ->
+        room = add_evil_points(room, ability, caster, target)
+        caster = room.mobiles[caster.ref]
+        target = room.mobiles[target.ref]
+        Process.put(:ability_result, :parried)
+        display_cast_message(room, caster, target, Map.put(ability, :result, :parried))
 
         target =
           target
@@ -2998,6 +3062,24 @@ defmodule ApathyDrive.Ability do
   end
 
   def caster_cast_message(
+        %Ability{result: :parried} = ability,
+        %{} = caster,
+        %{} = target,
+        mobile
+      ) do
+    if target.ref == caster.ref && ability.caster do
+      target_cast_message(ability, caster, target, mobile)
+    else
+      message =
+        @parry_message.user
+        |> Text.interpolate(%{"target" => target, "weapon" => weapon_name(target)})
+        |> Text.capitalize_first()
+
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
+  end
+
+  def caster_cast_message(
         %Ability{result: :resisted} = ability,
         %{} = caster,
         %{} = target,
@@ -3178,6 +3260,24 @@ defmodule ApathyDrive.Ability do
   end
 
   def target_cast_message(
+        %Ability{result: :parried} = ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    caster = ability.caster || caster
+
+    message =
+      @parry_message.target
+      |> Text.interpolate(%{"user" => caster, "weapon" => weapon_name(target)})
+      |> Text.capitalize_first()
+
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
+  end
+
+  def target_cast_message(
         %Ability{} = ability,
         %{} = caster,
         %{ability_shift: nil} = target,
@@ -3290,6 +3390,24 @@ defmodule ApathyDrive.Ability do
     message =
       @block_message.spectator
       |> Text.interpolate(%{"user" => caster, "target" => target, "shield" => shield_name(target)})
+      |> Text.capitalize_first()
+
+    unless message == "" do
+      "<p><span class='dark-cyan'>#{message}</span></p>"
+    end
+  end
+
+  def spectator_cast_message(
+        %Ability{result: :parried} = ability,
+        %{} = caster,
+        %{} = target,
+        _mobile
+      ) do
+    caster = ability.caster || caster
+
+    message =
+      @parry_message.spectator
+      |> Text.interpolate(%{"user" => caster, "target" => target, "weapon" => weapon_name(target)})
       |> Text.capitalize_first()
 
     unless message == "" do
@@ -3816,5 +3934,9 @@ defmodule ApathyDrive.Ability do
 
   def shield_name(%Character{equipment: equipment}) do
     Enum.find(equipment, &(!!&1.block_chance)).name
+  end
+
+  def weapon_name(character) do
+    Character.weapon(character).short_name
   end
 end

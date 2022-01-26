@@ -9,7 +9,7 @@ defmodule ApathyDrive.Skills.Perception do
       name: "Perception",
       attributes: ["intellect"],
       traits: %{
-        "perception" => skill_level(character)
+        "Perception" => skill_level(character)
       }
     }
   end

@@ -46,8 +46,6 @@ defmodule ApathyDrive.Skill do
       end
 
       def skill_level(character) do
-        base = base_skill_level(character)
-
         character.skills
         |> Map.values()
         |> List.flatten()

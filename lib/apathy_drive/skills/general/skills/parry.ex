@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.TwoHandedBlunt do
+defmodule ApathyDrive.Skills.Parry do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -6,10 +6,10 @@ defmodule ApathyDrive.Skills.TwoHandedBlunt do
     %Ability{
       kind: "passive",
       targets: "self",
-      name: "Two Handed Blunt",
-      attributes: ["strength"],
+      name: "Parry",
+      attributes: ["agility"],
       traits: %{
-        "Two Handed Blunt" => skill_level(character)
+        "Parry" => skill_level(character)
       }
     }
   end
@@ -20,8 +20,8 @@ defmodule ApathyDrive.Skills.TwoHandedBlunt do
 
   def tooltip(_character, _skill) do
     """
-      <span style="color: lime">Two Handed Blade</span>
-      Increases accuracy with large two handed blunt weapons such as mauls and flails.
+      <span style="color: lime">Parry</span>
+      Parrying lets you deflect enemy attacks with your weapon.
 
       Attribute(s): #{attributes()}
     """

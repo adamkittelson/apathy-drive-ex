@@ -731,7 +731,7 @@ defmodule ApathyDrive.Character do
         punch = %Item{
           type: "Weapon",
           name: "fist",
-          weapon_type: "melee",
+          weapon_type: "Melee",
           hit_verbs: [["punch", "punches"]],
           miss_verbs: ["throw a punch", "throws a punch"],
           min_damage: 2,
@@ -1904,7 +1904,20 @@ defmodule ApathyDrive.Character do
     end
 
     def dodge_at_level(character, _level, _room) do
-      ability_value(character, "Dodge") + ability_value(character, "dodge")
+      ability_value(character, "Dodge")
+    end
+
+    def parry_at_level(character, _level, _room) do
+      case Character.weapon(character) do
+        %Item{weapon_type: "Melee"} ->
+          0
+
+        %Item{weapon_type: _} ->
+          ability_value(character, "Parry")
+
+        _ ->
+          0
+      end
     end
 
     def enough_mana_for_ability?(character, %Ability{} = ability) do
@@ -2154,7 +2167,7 @@ defmodule ApathyDrive.Character do
     end
 
     def perception_at_level(character, _level, room) do
-      base = ability_value(character, "Perception") + ability_value(character, "perception")
+      base = ability_value(character, "Perception")
 
       light_modifier =
         room

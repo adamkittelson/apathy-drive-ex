@@ -9,7 +9,7 @@ defmodule ApathyDrive.Skills.Staff do
       name: "Staff",
       attributes: ["agility", "intellect"],
       traits: %{
-        "staff" => skill_level(character)
+        "Staff" => skill_level(character)
       }
     }
   end
