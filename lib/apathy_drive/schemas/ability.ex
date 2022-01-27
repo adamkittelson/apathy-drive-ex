@@ -1453,18 +1453,22 @@ defmodule ApathyDrive.Ability do
 
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
-    chance =
-      100 -
-        trunc(
-          100 * accuracy / (accuracy + dodge) * 2 * caster.level / (caster.level + target.level)
-        )
+    if dodge > 0 do
+      chance =
+        100 -
+          trunc(
+            100 * accuracy / (accuracy + dodge) * 2 * caster.level / (caster.level + target.level)
+          )
 
-    chance =
-      chance
-      |> min(95)
-      |> max(5)
+      chance =
+        chance
+        |> min(95)
+        |> max(5)
 
-    :rand.uniform(100) < chance
+      :rand.uniform(100) < chance
+    else
+      false
+    end
   end
 
   def parried?(%{} = caster, %{} = target, ability, room) do
@@ -1494,18 +1498,30 @@ defmodule ApathyDrive.Ability do
 
     parry = Mobile.parry_at_level(target, target.level, room)
 
-    chance =
-      100 -
-        trunc(
-          100 * accuracy / (accuracy + parry) * 2 * caster.level / (caster.level + target.level)
-        )
+    if parry > 0 do
+      chance =
+        100 -
+          trunc(
+            100 * accuracy / (accuracy + parry) * 2 * caster.level / (caster.level + target.level)
+          )
 
-    chance =
-      chance
-      |> min(95)
-      |> max(0)
+      chance =
+        chance
+        |> min(95)
+        |> max(5)
 
-    :rand.uniform(100) < chance
+      roll = :rand.uniform(100)
+
+      parry? = roll < chance
+
+      IO.puts(
+        "#{target.name} parries?: #{parry?} - accuracy: #{accuracy}, parry: #{parry}, chance: #{chance}, roll: #{roll}"
+      )
+
+      parry?
+    else
+      false
+    end
   end
 
   def blocked?(%{} = _caster, %{equipment: equipment} = _target, _ability, _room) do

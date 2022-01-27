@@ -33,10 +33,19 @@ defmodule ApathyDrive.Commands.Status do
   end
 
   def mind(character) do
-    max_buffer = Character.max_exp_buffer(character)
+    exp = trunc(character.experience)
+    modifier = (100 + character.race.race.exp_modifier) / 100
+    tolevel = Level.exp_at_level(character.level, modifier)
+    exp = max(0, tolevel - exp)
+
     buffer = character.exp_buffer
 
-    percent = buffer / max_buffer
+    percent =
+      if exp > 0 do
+        buffer / exp
+      else
+        1
+      end
 
     cond do
       percent < 0.05 ->

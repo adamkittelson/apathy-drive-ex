@@ -66,7 +66,7 @@ defmodule ApathyDrive.Skills.VineStrike do
     end
   end
 
-  defp mana(level), do: level
+  defp mana(level), do: 1 + trunc(level * 0.5)
 
   defp min_damage(character, level) do
     trunc(4 * level * @skill.skill_level(character) / 100)

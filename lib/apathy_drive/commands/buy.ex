@@ -182,7 +182,6 @@ defmodule ApathyDrive.Commands.Buy do
               })
               |> Repo.update!()
               |> Character.load_items()
-              |> Repo.save!()
             end)
             |> Shop.load()
         end

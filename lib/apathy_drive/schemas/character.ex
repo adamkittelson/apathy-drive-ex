@@ -1074,7 +1074,7 @@ defmodule ApathyDrive.Character do
     |> case do
       %CharacterClass{} = cc ->
         mind = ApathyDrive.Commands.Status.mind(character)
-        buffer = min((cc.exp_buffer || 0) + exp, Character.max_exp_buffer(character))
+        buffer = (cc.exp_buffer || 0) + exp
 
         cc
         |> Ecto.Changeset.change(%{
@@ -1417,15 +1417,9 @@ defmodule ApathyDrive.Character do
 
     exp_to_level = Level.exp_at_level(level) - Level.exp_at_level(level - 1)
 
-    target_time = 20 * level
+    target_time = 5 + 5 * trunc(level / 5)
 
     trunc(max(Float.round(exp_to_level / (target_time * 60) * 10), 10.0))
-  end
-
-  def max_exp_buffer(character) do
-    rate = drain_rate(character)
-
-    trunc(rate / 9 * 60 + 60 * character.level)
   end
 
   def drain_exp_buffer(%Character{exp_buffer: 0} = character), do: character

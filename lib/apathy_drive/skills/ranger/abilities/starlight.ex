@@ -68,5 +68,5 @@ defmodule ApathyDrive.Skills.Starlight do
     trunc(320 * level * @skill.skill_level(character) / 100)
   end
 
-  defp mana(level), do: 4 * level
+  defp mana(level), do: 2 + 2 * level
 end
