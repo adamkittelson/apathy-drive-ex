@@ -33,19 +33,5 @@ defmodule ApathyDrive.Gossip.Core do
   end
 
   @impl true
-  def message_broadcast(payload) do
-    channel = payload.channel
-
-    channel = if channel == "gossip", do: "grapevine", else: channel
-
-    name = String.replace(payload.name, ~r/ \(.* in I3\)/, "")
-
-    message =
-      "<p>[<span class='#{@channel_colors[channel]}'>#{channel}</span> : #{ApathyDrive.Character.sanitize(name)}@#{ApathyDrive.Character.sanitize(payload.game)}] #{ApathyDrive.Character.sanitize(payload.message)}</p>"
-
-    ApathyDriveWeb.Endpoint.broadcast!("chat:#{payload.channel}", "chat", %{
-      html: message,
-      chat_tab: "chat"
-    })
-  end
+  def message_broadcast(_payload), do: :noop
 end
