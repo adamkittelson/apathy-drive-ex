@@ -356,10 +356,37 @@ defmodule ApathyDrive.Character do
 
   def load_skills(%Character{id: id} = character) do
     skills =
-      CharacterSkill
-      |> Ecto.Query.where(character_id: ^id, class_id: ^character.class_id)
-      |> Ecto.Query.preload(skill: [:casting_skill])
-      |> Repo.all()
+      if character.class_id do
+        CharacterSkill
+        |> Ecto.Query.where(character_id: ^id, class_id: ^character.class_id)
+        |> Ecto.Query.preload(skill: [:casting_skill])
+        |> Repo.all()
+      else
+        []
+      end
+
+    IO.inspect(skills)
+
+    skills =
+      if character.race.race.stealth and !Enum.find(skills, &(&1.skill.name == "Stealth")) do
+        stealth = %ApathyDrive.CharacterSkill{
+          current_level_times_trained: 0,
+          devs_spent: 0,
+          level: 0,
+          skill: %ApathyDrive.Skill{
+            name: "Stealth",
+            required_level: 1,
+            type: "skill"
+          }
+        }
+
+        [stealth | skills]
+      else
+        skills
+      end
+
+    skills =
+      skills
       |> Enum.reduce(%{}, fn %CharacterSkill{} = skill, skills ->
         command = skill.skill.command
 
@@ -2264,33 +2291,8 @@ defmodule ApathyDrive.Character do
       trunc(sc + ability_value(character, "Spellcasting"))
     end
 
-    def stealth_at_level(character, level) do
-      agility = attribute_at_level(character, :agility, level)
-      charm = attribute_at_level(character, :charm, level)
-
-      base = div(agility * 3 + charm, 6) + level * 2
-
-      race_modifier =
-        if character.race.race.stealth do
-          0.4
-        else
-          0
-        end
-
-      class_modifier =
-        if level > 0 do
-          level * 0.6
-        else
-          0
-        end
-
-      modifier = race_modifier + class_modifier
-
-      modified = trunc(base * modifier)
-
-      ability = ability_value(character, "Stealth")
-
-      max(0, modified + ability)
+    def stealth_at_level(character, _level) do
+      ability_value(character, "Stealth")
     end
 
     def subtract_mana(character, %{mana: 0} = _ability), do: character
