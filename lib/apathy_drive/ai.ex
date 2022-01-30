@@ -15,7 +15,7 @@ defmodule ApathyDrive.AI do
           cure_poison(mobile, room) ||
           rest_or_sneak(mobile, room) ||
           bless(mobile, room) ||
-          backstab(mobile, room) || curse(mobile, room) || attack(mobile, room) ||
+          curse(mobile, room) || attack(mobile, room) ||
           auto_attack(mobile, room) ||
           move(mobile, room) || mobile
       end
@@ -482,16 +482,6 @@ defmodule ApathyDrive.AI do
       end
     end
   end
-
-  def backstab(%Character{} = mobile, %Room{} = room) do
-    target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
-
-    if mobile.sneaking && target do
-      ApathyDrive.Commands.Backstab.execute(room, mobile, [target.name])
-    end
-  end
-
-  def backstab(_mobile, %Room{}), do: nil
 
   def attack(%{} = mobile, %Room{} = room) do
     target = room.mobiles[Mobile.auto_attack_target(mobile, room)]
