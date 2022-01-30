@@ -70,7 +70,7 @@ defmodule ApathyDrive.Skills.Bash do
 
     if level > 0 do
       """
-      \nCurrent Ability Level: #{level}
+      \nCurrent Skill Level: #{level}
       Damage: +#{damage(level)}
       Damage Bonus: #{damage_percent(level)}%
       Attack Bonus: #{attack_percent(level)}%
@@ -83,7 +83,7 @@ defmodule ApathyDrive.Skills.Bash do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Ability Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Damage: +#{damage(level)}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nMana Cost: #{mana(level)}"
+      "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Damage: +#{damage(level)}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nMana Cost: #{mana(level)}"
     end
   end
 

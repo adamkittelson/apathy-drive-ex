@@ -47,7 +47,6 @@ defmodule ApathyDrive.Command do
       Commands.Auto,
       Commands.Attack,
       Commands.Attune,
-      Commands.Backstab,
       Commands.Bash,
       Commands.Buy,
       Commands.Close,

@@ -49,6 +49,7 @@ defmodule ApathyDrive.Ability do
     field(:letter, :string)
 
     field(:weapon?, :boolean, virtual: true, default: false)
+    field(:stealth?, :boolean, virtual: true, default: false)
     field(:damage_shield, :any, virtual: true)
     field(:caster, :any, virtual: true)
     field(:traits, :map, virtual: true, default: %{})
@@ -688,39 +689,45 @@ defmodule ApathyDrive.Ability do
 
   def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query)
       when is_binary(query) and (is_nil(time) or time == 0 or ability.spell? != true) do
-    case get_targets(room, caster_ref, ability, query) do
-      [] ->
-        case query do
-          "" ->
-            if ability.targets in ["self", "self or single"] do
-              execute(room, caster_ref, ability, List.wrap(caster_ref))
-            else
-              room
-              |> Room.get_mobile(caster_ref)
-              |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
+    caster = room.mobiles[caster_ref]
+
+    if ability.stealth? and !(caster && caster.sneaking) do
+      ApathyDrive.Commands.Attack.execute(room, caster, [query])
+    else
+      case get_targets(room, caster_ref, ability, query) do
+        [] ->
+          case query do
+            "" ->
+              if ability.targets in ["self", "self or single"] do
+                execute(room, caster_ref, ability, List.wrap(caster_ref))
+              else
+                room
+                |> Room.get_mobile(caster_ref)
+                |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
+
+                room
+              end
+
+            _ ->
+              if ability.targets == "single global" do
+                execute(room, caster_ref, ability, {:scry, %{room_id: nil, ref: nil}})
+              else
+                room
+                |> Room.get_mobile(caster_ref)
+                |> Mobile.send_scroll(
+                  "<p><span class='red'>You don't see #{query} here!</span></p>"
+                )
+              end
 
               room
-            end
+          end
 
-          _ ->
-            if ability.targets == "single global" do
-              execute(room, caster_ref, ability, {:scry, %{room_id: nil, ref: nil}})
-            else
-              room
-              |> Room.get_mobile(caster_ref)
-              |> Mobile.send_scroll(
-                "<p><span class='red'>You don't see #{query} here!</span></p>"
-              )
-            end
+        :too_many_matches ->
+          room
 
-            room
-        end
-
-      :too_many_matches ->
-        room
-
-      targets ->
-        execute(room, caster_ref, ability, targets)
+        targets ->
+          execute(room, caster_ref, ability, targets)
+      end
     end
   end
 

@@ -365,8 +365,6 @@ defmodule ApathyDrive.Character do
         []
       end
 
-    IO.inspect(skills)
-
     skills =
       if character.race.race.stealth and !Enum.find(skills, &(&1.skill.name == "Stealth")) do
         stealth = %ApathyDrive.CharacterSkill{
