@@ -1,9 +1,11 @@
 defmodule ApathyDrive.Commands.Use do
   use ApathyDrive.Command
+  require Ecto.Query
 
   alias ApathyDrive.{
     Ability,
     Character,
+    CharacterItem,
     Doors,
     Item,
     ItemInstance,
@@ -96,7 +98,28 @@ defmodule ApathyDrive.Commands.Use do
       |> List.delete(target)
       |> Enum.join(" ")
 
-    character.inventory
+    gems =
+      character
+      |> Ecto.assoc(:characters_items)
+      |> Ecto.Query.preload(
+        item: [
+          socketable_item_affixes: [
+            :item_type,
+            affix: [
+              affixes_traits: [:trait, :affix]
+            ]
+          ]
+        ]
+      )
+      |> Repo.all()
+      |> Enum.map(fn ci ->
+        ci.item
+        |> Item.with_traits()
+        |> Item.load_required_races_and_classes()
+        |> Item.load_item_abilities()
+      end)
+
+    (character.inventory ++ gems)
     |> Match.one(:name_contains, item_name)
     |> case do
       nil ->
@@ -107,31 +130,48 @@ defmodule ApathyDrive.Commands.Use do
 
         room
 
-      %Item{type: "Stone", id: _id} = gem ->
+      %Item{type: "Stone", id: id} = gem ->
         character.inventory
         |> Match.one(:name_contains, target)
         |> case do
           %Item{name: name} = item ->
             if socket = Enum.find(item.sockets, &is_nil(&1.socketed_item_id)) do
-              socket
-              |> Ecto.Changeset.change(%{
-                socketed_item_id: gem.instance_id
-              })
-              |> Repo.update!()
-
-              ItemInstance
-              |> Repo.get(gem.instance_id)
-              |> Ecto.Changeset.change(%{
-                character_id: nil
-              })
-              |> Repo.update!()
-
               Mobile.send_scroll(
                 character,
                 "<p>You deftly insert the #{gem.name} into a socket on the #{name}!</p>"
               )
 
               Room.update_mobile(room, character.ref, fn _room, character ->
+                CharacterItem
+                |> Repo.get_by(character_id: character.id, item_id: id)
+                |> case do
+                  %CharacterItem{count: count} = ci when count > 0 ->
+                    ci
+                    |> Ecto.Changeset.change(%{
+                      count: count - 1
+                    })
+                    |> Repo.update!()
+                end
+
+                gem_instance =
+                  %ItemInstance{
+                    item_id: gem.id,
+                    room_id: nil,
+                    character_id: nil,
+                    equipped: false,
+                    hidden: false,
+                    quality: "normal",
+                    ac: 0,
+                    name: item.name
+                  }
+                  |> Repo.insert!()
+
+                socket
+                |> Ecto.Changeset.change(%{
+                  socketed_item_id: gem_instance.id
+                })
+                |> Repo.update!()
+
                 Character.load_items(character)
               end)
             else

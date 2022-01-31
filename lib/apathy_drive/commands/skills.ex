@@ -63,7 +63,7 @@ defmodule ApathyDrive.Commands.Skills do
   end
 
   defp amount(skill, character, _arg) do
-    amount(Skill.module(skill.skill.name).skill_level(character))
+    Mobile.ability_value(character, skill.skill.name)
   end
 
   defp amount(string) do

@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.Starlight do
+defmodule ApathyDrive.Skills.Alertness do
   alias ApathyDrive.{Ability, Character, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -9,23 +9,23 @@ defmodule ApathyDrive.Skills.Starlight do
 
     %Ability{
       kind: "blessing",
-      command: "star",
+      command: "aler",
       targets: "self or single",
-      name: "starlight",
+      name: "alertness",
       attributes: @skill.ability(character).attributes,
       mana: mana(level),
       duration: duration(character, level),
-      auto: !!get_in(character, [:skills, "star", :auto]),
+      auto: !!get_in(character, [:skills, "aler", :auto]),
       spell?: true,
       cast_time: 2500,
       energy: 0,
-      user_message: "You cast starlight!",
-      target_message: "{{user}} casts starlight!",
-      spectator_message: "{{user}} casts starlight!",
+      user_message: "You cast alertness on {{target}}!",
+      target_message: "{{user}} casts alertness on {{target}}!",
+      spectator_message: "{{user}} casts alertness on {{target}}!",
       traits: %{
-        "RemoveMessage" => "Your starlight spell fades away.",
-        "StatusMessage" => "You are surrounded by a shimmering light!",
-        "Light" => 175
+        "RemoveMessage" => "The effects of alertness wear off!",
+        "StatusMessage" => "You feel perceptive!",
+        "Perception" => 10
       }
     }
   end
@@ -36,8 +36,8 @@ defmodule ApathyDrive.Skills.Starlight do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Starlight</span>
-      This spell focuses the power of the stars to illuminate an area.
+      <span style="color: lime">Alertness</span>
+      Increases the target's perception, making them better able to detect incoming attacks and hidden items or exits.
       Skill: #{@skill.name()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
@@ -50,6 +50,7 @@ defmodule ApathyDrive.Skills.Starlight do
     if level > 0 do
       """
       \nCurrent Ability Level: #{level}
+      Perception: +10
       Duration: #{Float.round(duration(character, level) / 60, 2)} minutes
       Mana Cost: #{mana(level)}
       """
@@ -65,7 +66,7 @@ defmodule ApathyDrive.Skills.Starlight do
   end
 
   defp duration(character, level) do
-    trunc(320 * level * @skill.skill_level(character) / 100)
+    trunc(240 * level * @skill.skill_level(character) / 100)
   end
 
   defp mana(level), do: 2 + 2 * level
