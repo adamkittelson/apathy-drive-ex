@@ -189,7 +189,7 @@ defmodule ApathyDrive.Commands.Look do
         look(room, character, room_exit)
 
       target = Room.find_mobile_in_room(room, character, Enum.join(arguments, " ")) ->
-        look_at_mobile(target, character)
+        look_at_mobile(target, character, room)
 
       target = Room.find_item(room, character, Enum.join(arguments, " ")) ->
         case target do
@@ -266,7 +266,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%Character{} = target, %{} = character) do
+  def look_at_mobile(%Character{} = target, %{} = character, _room) do
     if character != target,
       do:
         Mobile.send_scroll(
@@ -317,7 +317,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%{} = target, %{} = character) do
+  def look_at_mobile(%{} = target, %{} = character, room) do
     hp_description = Mobile.hp_description(target)
 
     hp_description =
@@ -331,6 +331,30 @@ defmodule ApathyDrive.Commands.Look do
 
     Mobile.send_scroll(character, "<p>#{description}</p>")
     Mobile.send_scroll(character, "<p>#{hp_description}\n\n</p>")
+
+    if character.admin do
+      accuracy = Mobile.accuracy_at_level(target, target.level, room)
+      dodge = Mobile.dodge_at_level(target, target.level, room)
+      perception = Mobile.dodge_at_level(target, target.level, room)
+
+      Mobile.send_scroll(
+        character,
+        "<p class='white'>Level #{target.level}</p>"
+      )
+
+      Mobile.send_scroll(
+        character,
+        "<p class='dark-magenta'>---------------------------------------------------------------------------</p>"
+      )
+
+      Mobile.send_scroll(
+        character,
+        "<p>accuracy:   #{accuracy}%                             dodge: #{dodge}%</p>"
+      )
+
+      Mobile.send_scroll(character, "<p>perception: #{perception}%</p>")
+      Mobile.send_scroll(character, "<br>")
+    end
   end
 
   def look_mobiles(%Room{mobiles: mobiles}, character \\ nil) do
@@ -634,26 +658,6 @@ defmodule ApathyDrive.Commands.Look do
     "\nDamage: #{min_dam}-#{max_dam}"
   end
 
-  def block_chance(%Item{block_chance: nil}, _character), do: ""
-
-  def block_chance(%Item{block_chance: chance} = item, character) do
-    value = Character.block_chance(character, item)
-
-    cond do
-      value <= 0 ->
-        ""
-
-      value >= 75 ->
-        "\nChance to Block: <span style='color: #908858'>#{value}%</span>"
-
-      value > chance ->
-        "\nChance to Block: <span style='color: #4850B8'>#{value}%</span>"
-
-      :else ->
-        "\nChance to Block: #{value}%"
-    end
-  end
-
   def required_strength(character, %Item{} = item) do
     if (strength = Item.required_strength(item)) > 0 do
       if Mobile.attribute_at_level(character, :strength, character.level) >= strength do
@@ -752,7 +756,7 @@ defmodule ApathyDrive.Commands.Look do
       end
 
     """
-    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{description(item)}#{block_chance(item, character)}#{damage(item, character)}#{defense(item, character, opts)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(character, item)}#{sockets(item)}
+    #{Item.colored_name(item, titleize: true, no_tooltip: true)}#{description(item)}#{damage(item, character)}#{defense(item, character, opts)}#{required_level(character, item)}#{required_strength(character, item)}#{required_agility(character, item)}#{weapon_speed(character, item)}#{sockets(item)}
     <span style='color: #4850B8'>#{affix_trait_descriptions(item, character)}</span>
 
     Sells For: #{value}

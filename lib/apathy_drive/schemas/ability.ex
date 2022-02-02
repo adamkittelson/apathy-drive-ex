@@ -1433,6 +1433,19 @@ defmodule ApathyDrive.Ability do
     end
   end
 
+  def evade?(accuracy, evade) do
+    chance =
+      100 -
+        trunc(166 * accuracy / (accuracy + evade))
+
+    chance =
+      chance
+      |> min(95)
+      |> max(5)
+
+    :rand.uniform(100) < chance
+  end
+
   def dodged?(%{} = caster, %{} = target, ability, room) do
     accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
 
@@ -1461,18 +1474,9 @@ defmodule ApathyDrive.Ability do
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
     if dodge > 0 do
-      chance =
-        100 -
-          trunc(
-            100 * accuracy / (accuracy + dodge) * 2 * caster.level / (caster.level + target.level)
-          )
+      perception = Mobile.perception_at_level(target, target.level, room)
 
-      chance =
-        chance
-        |> min(95)
-        |> max(5)
-
-      :rand.uniform(100) < chance
+      evade?(accuracy, perception) and evade?(accuracy, dodge)
     else
       false
     end
@@ -1506,43 +1510,55 @@ defmodule ApathyDrive.Ability do
     parry = Mobile.parry_at_level(target, target.level, room)
 
     if parry > 0 do
-      chance =
-        100 -
-          trunc(
-            100 * accuracy / (accuracy + parry) * 2 * caster.level / (caster.level + target.level)
-          )
+      perception = Mobile.perception_at_level(target, target.level, room)
 
-      chance =
-        chance
-        |> min(95)
-        |> max(5)
-
-      roll = :rand.uniform(100)
-
-      parry? = roll < chance
-
-      IO.puts(
-        "#{target.name} parries?: #{parry?} - accuracy: #{accuracy}, parry: #{parry}, chance: #{chance}, roll: #{roll}"
-      )
-
-      parry?
+      evade?(accuracy, perception) and evade?(accuracy, parry)
     else
       false
     end
   end
 
-  def blocked?(%{} = _caster, %{equipment: equipment} = _target, _ability, _room) do
-    shield = Enum.find(equipment, &(!!&1.block_chance))
+  def blocked?(%{} = caster, %{} = target, ability, room) do
+    shield = Enum.find(Map.get(caster, :equipment) || [], &(!!&1.block_chance))
 
     if shield do
-      chance = Systems.Effect.effect_bonus(shield, "Block") + shield.block_chance
-      :rand.uniform(100) < chance
+      accuracy = Mobile.accuracy_at_level(caster, caster.level, room)
+
+      attack_rating_modifier =
+        (100 + Mobile.ability_value(caster, "Accuracy%") +
+           (ability.traits["Accuracy%"] || 0)) / 100
+
+      accuracy = accuracy * attack_rating_modifier
+
+      accuracy =
+        if ability.weapon? do
+          cond do
+            Mobile.has_ability?(target, "Undead") ->
+              accuracy + Mobile.ability_value(caster, "AccuracyVsUndead")
+
+            Mobile.has_ability?(target, "Demon") ->
+              accuracy + Mobile.ability_value(caster, "AccuracyVsDemons")
+
+            :else ->
+              accuracy
+          end
+        else
+          accuracy
+        end
+
+      block = Mobile.block_at_level(target, target.level, room)
+
+      if block > 0 do
+        perception = Mobile.perception_at_level(target, target.level, room)
+
+        evade?(accuracy, perception) and evade?(accuracy, block)
+      else
+        false
+      end
     else
       false
     end
   end
-
-  def blocked?(%{} = _caster, %{} = _target, _ability, _room), do: false
 
   def apply_ability(
         %Room{} = room,

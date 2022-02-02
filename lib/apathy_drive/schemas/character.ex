@@ -187,17 +187,6 @@ defmodule ApathyDrive.Character do
 
   def total_development_points(0, power), do: power
 
-  def block_chance(character, %Item{block_chance: chance} = item) do
-    chance = Systems.Effect.effect_bonus(item, "Block") + chance
-
-    agility = Mobile.attribute_at_level(character, :agility, character.level)
-    charm = Mobile.attribute_at_level(character, :charm, character.level)
-
-    attribute = div(agility * 3 + charm, 4)
-
-    min(75, trunc(chance * (attribute - 15) / character.level * 2))
-  end
-
   def top_list(number \\ 10) do
     classes =
       CharacterClass
@@ -1920,6 +1909,10 @@ defmodule ApathyDrive.Character do
         Room.update_moblist(room)
         room
       end
+    end
+
+    def block_at_level(character, _level, _room) do
+      ability_value(character, "Block")
     end
 
     def dodge_at_level(character, _level, _room) do

@@ -1015,7 +1015,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def accuracy_at_level(monster, _level, _room) do
-      attack_rating(monster)
+      trunc(attack_rating(monster))
     end
 
     def attribute_at_level(%Monster{} = monster, attribute, level) do
@@ -1245,6 +1245,10 @@ defmodule ApathyDrive.Monster do
     end
 
     def parry_at_level(_monster, _level, _room) do
+      0
+    end
+
+    def block_at_level(_monster, _level, _room) do
       0
     end
 
