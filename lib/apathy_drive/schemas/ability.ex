@@ -689,45 +689,39 @@ defmodule ApathyDrive.Ability do
 
   def execute(%Room{} = room, caster_ref, %Ability{cast_time: time} = ability, query)
       when is_binary(query) and (is_nil(time) or time == 0 or ability.spell? != true) do
-    caster = room.mobiles[caster_ref]
-
-    if ability.stealth? and !(caster && caster.sneaking) do
-      ApathyDrive.Commands.Attack.execute(room, caster, [query])
-    else
-      case get_targets(room, caster_ref, ability, query) do
-        [] ->
-          case query do
-            "" ->
-              if ability.targets in ["self", "self or single"] do
-                execute(room, caster_ref, ability, List.wrap(caster_ref))
-              else
-                room
-                |> Room.get_mobile(caster_ref)
-                |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
-
-                room
-              end
-
-            _ ->
-              if ability.targets == "single global" do
-                execute(room, caster_ref, ability, {:scry, %{room_id: nil, ref: nil}})
-              else
-                room
-                |> Room.get_mobile(caster_ref)
-                |> Mobile.send_scroll(
-                  "<p><span class='red'>You don't see #{query} here!</span></p>"
-                )
-              end
+    case get_targets(room, caster_ref, ability, query) do
+      [] ->
+        case query do
+          "" ->
+            if ability.targets in ["self", "self or single"] do
+              execute(room, caster_ref, ability, List.wrap(caster_ref))
+            else
+              room
+              |> Room.get_mobile(caster_ref)
+              |> Mobile.send_scroll("<p>Your ability would affect no one.</p>")
 
               room
-          end
+            end
 
-        :too_many_matches ->
-          room
+          _ ->
+            if ability.targets == "single global" do
+              execute(room, caster_ref, ability, {:scry, %{room_id: nil, ref: nil}})
+            else
+              room
+              |> Room.get_mobile(caster_ref)
+              |> Mobile.send_scroll(
+                "<p><span class='red'>You don't see #{query} here!</span></p>"
+              )
+            end
 
-        targets ->
-          execute(room, caster_ref, ability, targets)
-      end
+            room
+        end
+
+      :too_many_matches ->
+        room
+
+      targets ->
+        execute(room, caster_ref, ability, targets)
     end
   end
 
@@ -1108,11 +1102,11 @@ defmodule ApathyDrive.Ability do
               end
 
             ApathyDrive.Command.enqueue_ability(room, caster_ref, ability.command, targets)
-          else
-            Mobile.send_scroll(
-              caster,
-              "<p><span class='dark-red'>You can't do that yet.</span></p>"
-            )
+            # else
+            #   Mobile.send_scroll(
+            #     caster,
+            #     "<p><span class='dark-red'>You can't do that yet.</span></p>"
+            #   )
           end
 
         ability.spell? && ability.cast_time && ability.cast_time > 0 ->
@@ -1169,224 +1163,233 @@ defmodule ApathyDrive.Ability do
         can_execute?(room, caster, ability) ->
           IO.puts("#{caster.name} using #{ability.name} on targets: #{inspect(targets)}")
 
-          caster =
-            if caster.casting && caster.casting.spell? &&
-                 ((ability.cast_time && ability.cast_time > 0) ||
-                    (ability.energy && ability.energy > 0)) do
-              Mobile.send_scroll(
-                caster,
-                "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
-              )
-
-              Map.put(caster, :casting, nil)
-            else
-              caster
-            end
-
-          display_pre_cast_message(room, caster, targets, ability)
-
-          {caster, ability} = crit(caster, ability)
-
-          room = put_in(room.mobiles[caster_ref], caster)
-
-          room =
-            Enum.reduce(targets, room, fn target_ref, updated_room ->
-              Room.update_mobile(updated_room, target_ref, fn _room, target ->
-                caster = updated_room.mobiles[caster.ref]
-
-                if affects_target?(target, ability) do
-                  updated_room = apply_ability(updated_room, caster, target, ability)
-
-                  target = updated_room.mobiles[target_ref]
-
-                  if target do
-                    target =
-                      if ability.kind in ["attack", "curse"] do
-                        Stealth.reveal(target)
-                      else
-                        target
-                      end
-
-                    put_in(updated_room.mobiles[target.ref], target)
-                  else
-                    updated_room
-                  end
-                else
-                  message =
-                    "#{target.name} is not affected by that ability." |> Text.capitalize_first()
-
-                  Mobile.send_scroll(caster, "<p><span class='cyan'>#{message}</span></p>")
-                  target
-                end
-              end)
+          if ability.stealth? and (caster && !caster.sneaking) do
+            Room.update_mobile(room, caster.ref, fn room, caster ->
+              ApathyDrive.AI.auto_attack(caster, room, List.first(targets)) || room
             end)
+          else
+            caster =
+              if caster.casting && caster.casting.spell? &&
+                   ((ability.cast_time && ability.cast_time > 0) ||
+                      (ability.energy && ability.energy > 0)) do
+                Mobile.send_scroll(
+                  caster,
+                  "<p><span class='dark-red'>You interrupt your other spell.</span></p>"
+                )
 
-          room =
-            Room.update_mobile(room, caster.ref, fn _room, caster ->
-              caster =
-                caster
-                |> apply_cooldowns(ability)
-                |> Mobile.subtract_mana(ability)
-                |> Mobile.subtract_energy(ability)
-
-              caster =
-                if ability.cast_time && !ability.spell? do
-                  Map.put(caster, :gcd, ability.cast_time)
-                else
-                  caster
-                end
-
-              ability =
-                ability
-                |> Map.put(:target_list, targets)
-
-              if ability.cast_time do
-                if ability.spell? do
-                  Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
-                else
-                  Mobile.update_energy_bar(caster, time_to_empty: ability.cast_time)
-                end
-              end
-
-              Map.put(caster, :casting, ability)
-
-              Mobile.update_prompt(caster, room)
-
-              if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
-                if targets == [] do
-                  caster
-                else
-                  [target_ref | _] = targets
-
-                  if Map.has_key?(caster, :attack_target) do
-                    if is_nil(caster.attack_target) do
-                      caster
-                      |> Map.put(:attack_target, target_ref)
-                      |> Mobile.send_scroll(
-                        "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
-                      )
-                    else
-                      caster
-                      |> Map.put(:attack_target, target_ref)
-                    end
-                  else
-                    caster
-                  end
-                end
+                Map.put(caster, :casting, nil)
               else
                 caster
               end
-            end)
 
-          Room.update_hp_bar(room, caster.ref)
-          Room.update_mana_bar(room, caster.ref)
+            display_pre_cast_message(room, caster, targets, ability)
 
-          room =
-            if ability.kind in ["attack", "curse"] and
-                 ability.energy > 0 do
-              Room.update_mobile(room, caster_ref, fn _room, caster -> Stealth.reveal(caster) end)
-            else
-              room
-            end
+            {caster, ability} = crit(caster, ability)
 
-          room =
-            if instance_id = ability.traits["DestroyItem"] do
-              Room.update_mobile(room, caster_ref, fn _room, caster ->
-                scroll =
-                  (caster.inventory ++ caster.equipment)
-                  |> Enum.find(&(&1.instance_id == instance_id))
+            room = put_in(room.mobiles[caster_ref], caster)
 
-                Mobile.send_scroll(
-                  caster,
-                  "<p>As you read the #{scroll.name} it crumbles to dust.</p>"
-                )
+            room =
+              Enum.reduce(targets, room, fn target_ref, updated_room ->
+                Room.update_mobile(updated_room, target_ref, fn _room, target ->
+                  caster = updated_room.mobiles[caster.ref]
 
-                ItemInstance
-                |> Repo.get!(instance_id)
-                |> Repo.delete!()
+                  if affects_target?(target, ability) do
+                    updated_room = apply_ability(updated_room, caster, target, ability)
 
-                caster
-                |> Character.load_abilities()
-                |> Character.load_items()
-              end)
-            else
-              room
-            end
+                    target = updated_room.mobiles[target_ref]
 
-          room =
-            if ability.traits["OnHit"] && Enum.any?(ability.traits["OnHit"]) &&
-                 is_nil(Process.get(:ability_result)) do
-              Enum.reduce(ability.traits["OnHit"], room, fn on_hit, room ->
-                if :rand.uniform(100) <= on_hit["chance"] do
-                  Process.delete(:ability_result)
+                    if target do
+                      target =
+                        if ability.kind in ["attack", "curse"] do
+                          Stealth.reveal(target)
+                        else
+                          target
+                        end
 
-                  skill =
-                    Skill
-                    |> Repo.get(on_hit["skill_id"])
-
-                  ability = Skill.module(skill.name).ability(caster, on_hit["level"])
-
-                  ability =
-                    ability
-                    |> Map.put(:mana, 0)
-                    |> Map.put(:energy, 0)
-                    |> Map.put(:on_hit?, true)
-                    |> Map.put(:cast_time, 0)
-
-                  targets =
-                    if ability.targets in ["full party area", "full attack area"] do
-                      get_targets(room, caster_ref, ability, "")
+                      put_in(updated_room.mobiles[target.ref], target)
                     else
-                      targets
+                      updated_room
                     end
+                  else
+                    message =
+                      "#{target.name} is not affected by that ability." |> Text.capitalize_first()
 
-                  execute(room, caster_ref, ability, targets)
+                    Mobile.send_scroll(caster, "<p><span class='cyan'>#{message}</span></p>")
+                    target
+                  end
+                end)
+              end)
+
+            room =
+              Room.update_mobile(room, caster.ref, fn _room, caster ->
+                caster =
+                  caster
+                  |> apply_cooldowns(ability)
+                  |> Mobile.subtract_mana(ability)
+                  |> Mobile.subtract_energy(ability)
+                  |> Stealth.reveal()
+
+                caster =
+                  if ability.cast_time && !ability.spell? do
+                    Map.put(caster, :gcd, ability.cast_time)
+                  else
+                    caster
+                  end
+
+                ability =
+                  ability
+                  |> Map.put(:target_list, targets)
+
+                if ability.cast_time do
+                  if ability.spell? do
+                    Mobile.update_energy_bar(caster, time_to_full: ability.cast_time)
+                  else
+                    Mobile.update_energy_bar(caster, time_to_empty: ability.cast_time)
+                  end
+                end
+
+                Map.put(caster, :casting, ability)
+
+                Mobile.update_prompt(caster, room)
+
+                if ability.kind in ["attack", "curse"] and !(caster.ref in targets) do
+                  if targets == [] do
+                    caster
+                  else
+                    [target_ref | _] = targets
+
+                    if Map.has_key?(caster, :attack_target) do
+                      if is_nil(caster.attack_target) do
+                        caster
+                        |> Map.put(:attack_target, target_ref)
+                        |> Mobile.send_scroll(
+                          "<p><span class='dark-yellow'>*Combat Engaged*</span></p>"
+                        )
+                      else
+                        caster
+                        |> Map.put(:attack_target, target_ref)
+                      end
+                    else
+                      caster
+                    end
+                  end
                 else
-                  room
+                  caster
                 end
               end)
-            else
-              room
-            end
 
-          room =
-            if ability.traits["OnAttack"] && Enum.any?(ability.traits["OnAttack"]) do
-              Enum.reduce(ability.traits["OnAttack"], room, fn on_hit, room ->
-                if :rand.uniform(100) <= on_hit["chance"] do
-                  Process.delete(:ability_result)
+            Room.update_hp_bar(room, caster.ref)
+            Room.update_mana_bar(room, caster.ref)
 
-                  skill =
-                    Skill
-                    |> Repo.get(on_hit["skill_id"])
+            room =
+              if ability.kind in ["attack", "curse"] and
+                   ability.energy > 0 do
+                Room.update_mobile(room, caster_ref, fn _room, caster ->
+                  Stealth.reveal(caster)
+                end)
+              else
+                room
+              end
 
-                  ability = Skill.module(skill.name).ability(caster, on_hit["level"])
+            room =
+              if instance_id = ability.traits["DestroyItem"] do
+                Room.update_mobile(room, caster_ref, fn _room, caster ->
+                  scroll =
+                    (caster.inventory ++ caster.equipment)
+                    |> Enum.find(&(&1.instance_id == instance_id))
 
-                  ability =
-                    ability
-                    |> Map.put(:mana, 0)
-                    |> Map.put(:energy, 0)
-                    |> Map.put(:on_hit?, true)
-                    |> Map.put(:cast_time, 0)
+                  Mobile.send_scroll(
+                    caster,
+                    "<p>As you read the #{scroll.name} it crumbles to dust.</p>"
+                  )
 
-                  targets =
-                    if ability.targets in ["full party area", "full attack area"] do
-                      get_targets(room, caster_ref, ability, "")
-                    else
-                      targets
-                    end
+                  ItemInstance
+                  |> Repo.get!(instance_id)
+                  |> Repo.delete!()
 
-                  execute(room, caster_ref, ability, targets)
-                else
-                  room
-                end
-              end)
-            else
-              room
-            end
+                  caster
+                  |> Character.load_abilities()
+                  |> Character.load_items()
+                end)
+              else
+                room
+              end
 
-          Process.delete(:ability_result)
+            room =
+              if ability.traits["OnHit"] && Enum.any?(ability.traits["OnHit"]) &&
+                   is_nil(Process.get(:ability_result)) do
+                Enum.reduce(ability.traits["OnHit"], room, fn on_hit, room ->
+                  if :rand.uniform(100) <= on_hit["chance"] do
+                    Process.delete(:ability_result)
 
-          room
+                    skill =
+                      Skill
+                      |> Repo.get(on_hit["skill_id"])
+
+                    ability = Skill.module(skill.name).ability(caster, on_hit["level"])
+
+                    ability =
+                      ability
+                      |> Map.put(:mana, 0)
+                      |> Map.put(:energy, 0)
+                      |> Map.put(:on_hit?, true)
+                      |> Map.put(:cast_time, 0)
+
+                    targets =
+                      if ability.targets in ["full party area", "full attack area"] do
+                        get_targets(room, caster_ref, ability, "")
+                      else
+                        targets
+                      end
+
+                    execute(room, caster_ref, ability, targets)
+                  else
+                    room
+                  end
+                end)
+              else
+                room
+              end
+
+            room =
+              if ability.traits["OnAttack"] && Enum.any?(ability.traits["OnAttack"]) do
+                Enum.reduce(ability.traits["OnAttack"], room, fn on_hit, room ->
+                  if :rand.uniform(100) <= on_hit["chance"] do
+                    Process.delete(:ability_result)
+
+                    skill =
+                      Skill
+                      |> Repo.get(on_hit["skill_id"])
+
+                    ability = Skill.module(skill.name).ability(caster, on_hit["level"])
+
+                    ability =
+                      ability
+                      |> Map.put(:mana, 0)
+                      |> Map.put(:energy, 0)
+                      |> Map.put(:on_hit?, true)
+                      |> Map.put(:cast_time, 0)
+
+                    targets =
+                      if ability.targets in ["full party area", "full attack area"] do
+                        get_targets(room, caster_ref, ability, "")
+                      else
+                        targets
+                      end
+
+                    execute(room, caster_ref, ability, targets)
+                  else
+                    room
+                  end
+                end)
+              else
+                room
+              end
+
+            Process.delete(:ability_result)
+
+            room
+          end
 
         :else ->
           IO.puts("#{caster.name} can't execute #{ability.name}")

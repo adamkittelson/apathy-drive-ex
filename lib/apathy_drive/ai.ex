@@ -499,6 +499,9 @@ defmodule ApathyDrive.AI do
         |> Enum.reject(fn ability ->
           Ability.removes_blessing?(target, ability)
         end)
+        |> Enum.reject(fn ability ->
+          ability.stealth? and !mobile.sneaking
+        end)
 
       attack_abilities =
         if mobile.__struct__ == Monster do
@@ -527,6 +530,7 @@ defmodule ApathyDrive.AI do
         end
 
       if ability do
+        IO.inspect(Map.get(mobile, :sneaking))
         Ability.execute(room, mobile.ref, ability, targets)
       end
     end

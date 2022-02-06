@@ -906,9 +906,17 @@ defmodule ApathyDrive.Item do
     true
   end
 
-  def useable_by_character?(%Character{}, %Item{type: type})
+  def useable_by_character?(%Character{} = character, %Item{type: type, armour_type: armour})
       when type in ["Armour", "Shield"] do
-    true
+    armour_ranks = %{
+      "platemail armour" => 5,
+      "scalemail armour" => 4,
+      "chainmail armour" => 3,
+      "leather armour" => 2,
+      "cloth armour" => 1
+    }
+
+    armour_ranks[character.class.armour] >= armour_ranks[armour]
   end
 
   def useable_by_character?(_character, %Item{}), do: true
