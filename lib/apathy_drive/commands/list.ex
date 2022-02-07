@@ -89,9 +89,9 @@ defmodule ApathyDrive.Commands.List do
   end
 
   def list(%Room{shop: nil} = room, character) do
-    if Trainer.skill_trainer?(room), do: list_skills(room, character)
-
     if Trainer.ability_trainer?(room), do: list_abilities(room, character)
+
+    if Trainer.skill_trainer?(room), do: list_skills(room, character)
 
     if !Trainer.skill_trainer?(room) and !Trainer.ability_trainer?(room) do
       Mobile.send_scroll(
@@ -104,7 +104,7 @@ defmodule ApathyDrive.Commands.List do
   def list_skills(room, character) do
     character
     |> Mobile.send_scroll(
-      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=  <span class='white'>Skill Listing</span>  <span class='dark-magenta'>=-=-=-=-=-=-=-=-=-=-</span></p>"
+      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=  <span class='white'>Skill Listing</span>  <span class='dark-magenta'>=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
     )
 
     room.trainable_skills
@@ -114,18 +114,20 @@ defmodule ApathyDrive.Commands.List do
     |> Enum.each(fn {level, list} ->
       character
       |> Mobile.send_scroll(
-        "<p><span class='dark-cyan'>Level #{String.pad_leading(to_string(level), 2)}</span> <span class='dark-magenta'>--------------------</span> <span class='dark-cyan'>Cost</span> <span class='dark-magenta'>---------------</span> <span class='dark-cyan'>Rating</span></p>"
+        "<p><span class='dark-cyan'>Level #{String.pad_leading(to_string(level), 2)}</span> <span class='dark-magenta'>-------------------------</span> <span class='dark-cyan'>Cost</span> <span class='dark-magenta'>------------------------</span> <span class='dark-cyan'>Rating</span></p>"
       )
 
-      Enum.each(list, fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
-        name = String.pad_trailing(skill.name, 25)
+      list
+      |> Enum.sort_by(& &1.skill.name)
+      |> Enum.each(fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
+        name = String.pad_trailing(skill.name, 30)
 
         cost = Trainer.dev_cost(character, skill, cost_modifier)
 
         string =
           cost
           |> to_string()
-          |> String.pad_trailing(21)
+          |> String.pad_trailing(28)
 
         cost =
           if Character.development_points(character) > cost do
@@ -148,7 +150,7 @@ defmodule ApathyDrive.Commands.List do
 
     character
     |> Mobile.send_scroll(
-      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
+      "<p><span class='dark-magenta'>-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-</span></p>"
     )
   end
 
@@ -168,7 +170,9 @@ defmodule ApathyDrive.Commands.List do
         "<p><span class='dark-cyan'>Level #{String.pad_leading(to_string(level), 2)}</span> <span class='dark-magenta'>-------------------------</span> <span class='dark-cyan'>Skill</span> <span class='dark-magenta'>---------------</span> <span class='dark-cyan'>Cost</span> <span class='dark-magenta'>---</span> <span class='dark-cyan'>Power</span></p>"
       )
 
-      Enum.each(list, fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
+      list
+      |> Enum.sort_by(& &1.skill.name)
+      |> Enum.each(fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
         name = String.pad_trailing(skill.name, 30)
 
         cost = Trainer.dev_cost(character, skill, cost_modifier)

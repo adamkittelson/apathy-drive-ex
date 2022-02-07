@@ -1,31 +1,31 @@
-defmodule ApathyDrive.Skills.Starlight do
+defmodule ApathyDrive.Skills.Mend do
   alias ApathyDrive.{Ability, Character, Mobile, Skill}
   use ApathyDrive.Skill
 
-  @skill ApathyDrive.Skills.NatureMagic
+  @skill ApathyDrive.Skills.Balance
 
   def ability(%Character{} = character) do
     level = skill_level(character)
 
     %Ability{
-      kind: "blessing",
-      command: "star",
+      kind: "heal",
+      command: "mend",
       targets: "self or single",
-      name: "starlight",
+      name: "mend",
       attributes: @skill.ability(character).attributes,
       mana: mana(level),
-      duration: duration(character, level),
-      auto: !!get_in(character, [:skills, "star", :auto]),
+      auto: !!get_in(character, [:skills, "mend", :auto]),
       spell?: true,
       cast_time: 2500,
       energy: 0,
-      user_message: "You cast starlight!",
-      target_message: "{{user}} casts starlight!",
-      spectator_message: "{{user}} casts starlight!",
+      user_message: "You cast mend on {{target}}, healing {{amount}} damage!",
+      target_message: "{{user}} casts mend on you, healing {{amount}} damage!",
+      spectator_message: "{{user}} casts mend on {{target}}, healing {{amount}} damage!",
       traits: %{
-        "RemoveMessage" => "Your starlight spell fades away.",
-        "StatusMessage" => "You are surrounded by a shimmering light!",
-        "Light" => 175
+        "Heal" => %{
+          "min" => min_healing(character, level),
+          "max" => max_healing(character, level)
+        }
       }
     }
   end
@@ -36,8 +36,8 @@ defmodule ApathyDrive.Skills.Starlight do
 
   def tooltip(character, skill) do
     """
-      <span style="color: lime">Starlight</span>
-      This spell focuses the power of the stars to illuminate an area.
+      <span style="color: lime">Mend</span>
+      By casting this spell, the wounds of the target are healed.
       Skill: #{@skill.name()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
       #{current_skill_level(character)}#{next_skill_level(character, skill)}
@@ -50,7 +50,7 @@ defmodule ApathyDrive.Skills.Starlight do
     if level > 0 do
       """
       \nCurrent Ability Level: #{level}
-      Duration: #{Float.round(duration(character, level) / 60, 2)} minutes
+      Heals: #{min_healing(character, level)}-#{max_healing(character, level)}
       Mana Cost: #{mana(level)}
       """
     end
@@ -60,12 +60,16 @@ defmodule ApathyDrive.Skills.Starlight do
     level = skill_level(character) + 1
 
     if level <= skill.max_level do
-      "\nNext Ability Level: #{level}\nDuration: #{Float.round(duration(character, level) / 60, 2)} minutes\nMana Cost: #{mana(level)}"
+      "\nNext Ability Level: #{level}\nHeals: #{min_healing(character, level)}-#{max_healing(character, level)}\nMana Cost: #{mana(level)}"
     end
   end
 
-  defp duration(character, level) do
-    trunc(320 * level * @skill.skill_level(character) / 100)
+  defp min_healing(character, level) do
+    trunc(3 * level * @skill.skill_level(character) / 100)
+  end
+
+  defp max_healing(character, level) do
+    trunc(13 * level * @skill.skill_level(character) / 100)
   end
 
   defp mana(level), do: 2 + 2 * level

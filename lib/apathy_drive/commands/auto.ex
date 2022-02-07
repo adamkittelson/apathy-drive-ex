@@ -123,7 +123,12 @@ defmodule ApathyDrive.Commands.Auto do
           |> Repo.update!()
       end
 
-      room = update_in(room.mobiles[character.ref], &Character.load_skills/1)
+      room =
+        update_in(room.mobiles[character.ref], fn character ->
+          character
+          |> Character.load_skills()
+          |> Character.load_abilities()
+        end)
 
       ApathyDrive.Commands.Abilities.execute(room, room.mobiles[character.ref], [])
     else

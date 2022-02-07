@@ -34,6 +34,10 @@ defmodule ApathyDrive.Trainer do
         power_level
       end
 
+    IO.puts(
+      "times: #{times}, power level: #{power_level}, mult: #{multiplier}, cost: #{skill.dev_cost}/#{skill.fast_dev_cost}"
+    )
+
     if times > 0 do
       power_level * multiplier * times * skill.fast_dev_cost
     else
@@ -57,7 +61,7 @@ defmodule ApathyDrive.Trainer do
   def trainer?(%Room{trainable_skills: _list}), do: false
 
   def skill_trainer?(%Room{trainable_skills: list}) when is_list(list) and length(list) > 0 do
-    Enum.all?(list, fn %{skill: skill} ->
+    Enum.any?(list, fn %{skill: skill} ->
       skill.type == "skill"
     end)
   end
@@ -65,7 +69,7 @@ defmodule ApathyDrive.Trainer do
   def skill_trainer?(%Room{trainable_skills: _list}), do: false
 
   def ability_trainer?(%Room{trainable_skills: list}) when is_list(list) and length(list) > 0 do
-    Enum.all?(list, fn %{skill: skill} ->
+    Enum.any?(list, fn %{skill: skill} ->
       skill.type == "ability"
     end)
   end

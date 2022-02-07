@@ -33,6 +33,7 @@ defmodule ApathyDrive.Commands.Abilities do
       |> Enum.reject(&(&1.kind == "long-term"))
       |> Enum.reject(&(&1.kind == "passive"))
       |> Enum.each(fn %{name: name, command: command, mana: mana, auto: auto} ->
+        IO.inspect(%{name: name, command: command, mana: mana, auto: auto})
         mana_cost = String.pad_trailing(to_string(mana), 6)
 
         command =

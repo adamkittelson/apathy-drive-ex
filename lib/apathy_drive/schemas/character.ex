@@ -405,18 +405,10 @@ defmodule ApathyDrive.Character do
     put_in(character.skills, skills)
   end
 
-  def load_abilities(%Character{id: id} = character) do
+  def load_abilities(%Character{} = character) do
     character =
       character
       |> Map.put(:abilities, %{})
-
-    auto_abilities =
-      ApathyDrive.CharacterAbility
-      |> Ecto.Query.where([ca], ca.character_id == ^id)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn auto_ability, auto_abilities ->
-        Map.put(auto_abilities, auto_ability.ability_id, auto_ability.auto)
-      end)
 
     granted_abilities =
       character
@@ -474,7 +466,6 @@ defmodule ApathyDrive.Character do
           ability =
             ability
             |> put_in([Access.key!(:traits)], traits)
-            |> put_in([Access.key!(:auto)], !!auto_abilities[id])
 
           ability =
             case AbilityDamageType.load_damage(id) do

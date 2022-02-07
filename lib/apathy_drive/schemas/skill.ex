@@ -133,6 +133,7 @@ defmodule ApathyDrive.Skill do
   def module(skill_name) do
     module_name =
       skill_name
+      |> String.replace("'", "")
       |> String.split(~r/[^\w]+/)
       |> Enum.map(&Macro.camelize/1)
       |> Enum.join()

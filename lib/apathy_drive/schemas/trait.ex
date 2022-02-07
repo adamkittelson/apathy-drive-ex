@@ -200,7 +200,8 @@ defmodule ApathyDrive.Trait do
             "Two Handed Blunt",
             "Knife",
             "Staff",
-            "Nature Magic"
+            "Elementalism",
+            "Balance"
           ] ->
             "add"
 

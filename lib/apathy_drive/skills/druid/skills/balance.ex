@@ -1,4 +1,4 @@
-defmodule ApathyDrive.Skills.NatureMagic do
+defmodule ApathyDrive.Skills.Balance do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
@@ -6,10 +6,10 @@ defmodule ApathyDrive.Skills.NatureMagic do
     %Ability{
       kind: "passive",
       targets: "self",
-      name: "Nature Magic",
+      name: "Balance",
       attributes: ["intellect", "willpower"],
       traits: %{
-        "Nature Magic" => skill_level(character)
+        "Balance" => skill_level(character)
       }
     }
   end
@@ -20,8 +20,8 @@ defmodule ApathyDrive.Skills.NatureMagic do
 
   def tooltip(_character, _skill) do
     """
-      <span style="color: lime">Nature Magic</span>
-      Increases proficiency with casting spells related to nature.
+      <span style="color: lime">Balance</span>
+      Increases proficiency with casting spells of nature's healing and protection.
 
       Attribute(s): #{attributes()}
     """

@@ -577,12 +577,14 @@ defmodule ApathyDrive.Ability do
         character
         |> skill.module.ability()
         |> Map.put(:level, skill.skill.required_level)
+        |> Map.put(:auto, skill.auto)
 
       {_cmd, skills} ->
         Enum.map(skills, fn skill ->
           character
           |> skill.module.ability()
           |> Map.put(:level, skill.skill.required_level)
+          |> Map.put(:auto, skill.auto)
         end)
     end)
     |> List.flatten()

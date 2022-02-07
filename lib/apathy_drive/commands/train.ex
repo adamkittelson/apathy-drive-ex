@@ -78,6 +78,7 @@ defmodule ApathyDrive.Commands.Train do
             })
             |> Repo.update!()
             |> Character.load_classes()
+            |> Character.load_skills()
             |> Character.load_abilities()
             |> Character.set_title()
             |> Character.update_exp_bar()
