@@ -192,7 +192,7 @@ defmodule ApathyDrive.Commands.List do
         power = Skill.module(skill.name).skill_level(character)
 
         skill =
-          (skill.casting_skill && skill.casting_skill.name)
+          (Skill.module(skill.name).casting_skill && Skill.module(skill.name).casting_skill.name)
           |> String.pad_trailing(22)
 
         Mobile.send_scroll(

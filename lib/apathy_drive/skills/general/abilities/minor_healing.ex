@@ -28,17 +28,17 @@ defmodule ApathyDrive.Skills.MinorHealing do
     }
   end
 
-  def help(character, skill) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
+  def help(character) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
   end
 
-  def tooltip(character, skill) do
+  def tooltip(character) do
     """
       <span style="color: lime">Minor Healing</span>
       Heals minor damage for a small mana cost.
       Attribute(s): #{attributes()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
-      #{current_skill_level(character)}#{next_skill_level(character, skill)}
+      #{current_skill_level(character)}#{next_skill_level(character)}
     """
   end
 
@@ -54,10 +54,10 @@ defmodule ApathyDrive.Skills.MinorHealing do
     end
   end
 
-  defp next_skill_level(character, skill) do
+  defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= skill.max_level do
+    if level <= max_skill_level(character) do
       "\nNext Ability Level: #{level}\nHeals: #{min_healing(level)}-#{max_healing(level)}\nMana Cost: #{mana()}"
     end
   end

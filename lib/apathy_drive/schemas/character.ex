@@ -348,7 +348,7 @@ defmodule ApathyDrive.Character do
       if character.class_id do
         CharacterSkill
         |> Ecto.Query.where(character_id: ^id, class_id: ^character.class_id)
-        |> Ecto.Query.preload(skill: [:casting_skill])
+        |> Ecto.Query.preload([:skill])
         |> Repo.all()
       else
         []

@@ -6,14 +6,12 @@ defmodule ApathyDrive.Skill do
     field(:name, :string)
     field(:command, :string)
     field(:required_level, :integer)
-    field(:max_level, :integer)
     field(:dev_cost, :integer)
     field(:fast_dev_cost, :integer)
     field(:type, :string)
 
     has_many(:characters_skills, CharacterSkill)
     has_many(:characters, through: [:characters_skills, :character])
-    belongs_to(:casting_skill, Skill)
   end
 
   defmacro __using__(_opts) do
@@ -98,11 +96,11 @@ defmodule ApathyDrive.Skill do
         |> List.flatten()
         |> Enum.find(&(&1.name == name()))
         |> case do
-          %{max_level: level} ->
-            level
+          %{type: "ability"} ->
+            6
 
           _ ->
-            Repo.get_by(Skill, name: name()).max_level
+            nil
         end
       end
 
@@ -126,7 +124,9 @@ defmodule ApathyDrive.Skill do
         |> Enum.join(", ")
       end
 
-      defoverridable(prereq: 0)
+      def casting_skill, do: nil
+
+      defoverridable(prereq: 0, casting_skill: 0)
     end
   end
 

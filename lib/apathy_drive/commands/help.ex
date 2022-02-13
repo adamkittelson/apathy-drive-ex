@@ -419,7 +419,7 @@ defmodule ApathyDrive.Commands.Help do
     )
   end
 
-  def help(character, %Skill{name: name} = skill) do
+  def help(character, %Skill{name: name}) do
     name =
       name
       |> String.split(~r/[^\w]+/)
@@ -428,8 +428,8 @@ defmodule ApathyDrive.Commands.Help do
 
     module = Module.concat([ApathyDrive, Skills, name])
 
-    if function_exported?(module, :help, 2) do
-      module.help(character, skill)
+    if function_exported?(module, :help, 1) do
+      module.help(character)
     else
       Mobile.send_scroll(character, "<p>Sorry! No help is available for that topic.</p>")
     end

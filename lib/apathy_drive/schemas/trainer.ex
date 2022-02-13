@@ -80,7 +80,7 @@ defmodule ApathyDrive.Trainer do
     skills =
       Trainer
       |> Ecto.Query.where(room_id: ^id)
-      |> Ecto.Query.preload(skill: :casting_skill)
+      |> Ecto.Query.preload([:skill])
       |> Repo.all()
       |> Enum.map(&%{skill: &1.skill, class_id: &1.class_id, cost_modifier: &1.cost_modifier})
 

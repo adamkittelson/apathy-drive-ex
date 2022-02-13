@@ -1,9 +1,9 @@
-defmodule ApathyDrive.Skills.VineStrike do
+defmodule ApathyDrive.Skills.ElementalChaos do
   alias ApathyDrive.{Ability, Mobile, Skill}
   use ApathyDrive.Skill
 
   @skill ApathyDrive.Skills.Elementalism
-  @id 25
+  @id 30
 
   def ability(character, level \\ nil) do
     level = level || skill_level(character)

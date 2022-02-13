@@ -15,11 +15,11 @@ defmodule ApathyDrive.Skills.ResistCold do
     |> Map.put(:spell?, true)
   end
 
-  def help(character, skill) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
+  def help(character) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
   end
 
-  def tooltip(character, skill) do
+  def tooltip(character) do
     ability = ability(character)
 
     """
@@ -27,9 +27,11 @@ defmodule ApathyDrive.Skills.ResistCold do
       #{ability.description}
       Skill: #{@skill.name()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability) / 1000, 2)} seconds
-      #{current_skill_level(character)}#{next_skill_level(character, skill)}
+      #{current_skill_level(character)}#{next_skill_level(character)}
     """
   end
+
+  def casting_skill, do: @skill
 
   defp current_skill_level(character) do
     level = skill_level(character)
@@ -45,11 +47,11 @@ defmodule ApathyDrive.Skills.ResistCold do
     end
   end
 
-  defp next_skill_level(character, skill) do
+  defp next_skill_level(character) do
     level = skill_level(character) + 1
     ability = ability(character, level)
 
-    if level <= skill.max_level do
+    if level <= max_skill_level(character) do
       """
       \nNext Ability Level: #{level}
       Resist Cold: #{ability.traits["ResistCold"]}%

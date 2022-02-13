@@ -148,8 +148,10 @@ defmodule ApathyDrive.Commands.Train do
     module = Skill.module(skill.name)
 
     cond do
-      level >= skill.max_level ->
-        message = "<p>You cannot train #{skill.name} beyond level #{skill.max_level}.</p>"
+      level >= module.max_skill_level(character) ->
+        message =
+          "<p>You cannot train #{skill.name} beyond level #{module.max_skill_level(character)}.</p>"
+
         Mobile.send_scroll(character, message)
         room
 

@@ -14,11 +14,11 @@ defmodule ApathyDrive.Skills.Blunt do
     }
   end
 
-  def help(character, skill) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
+  def help(character) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
   end
 
-  def tooltip(_character, _skill) do
+  def tooltip(_character) do
     """
       <span style="color: lime">Blunt</span>
       Increases accuracy with one-handed blunt weapons such as maces and clubs.

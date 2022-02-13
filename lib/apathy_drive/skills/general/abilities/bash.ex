@@ -52,16 +52,16 @@ defmodule ApathyDrive.Skills.Bash do
     end)
   end
 
-  def help(character, skill) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
+  def help(character) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
   end
 
-  def tooltip(character, skill) do
+  def tooltip(character) do
     """
       <span style="color: lime">Bash</span>
       Strike an enemy with great strength, doing increased damage and knocking them back.
       Attribute(s): #{attributes()}
-      #{current_skill_level(character)}#{next_skill_level(character, skill)}
+      #{current_skill_level(character)}#{next_skill_level(character)}
     """
   end
 
@@ -79,10 +79,10 @@ defmodule ApathyDrive.Skills.Bash do
     end
   end
 
-  defp next_skill_level(character, skill) do
+  defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= skill.max_level do
+    if level <= max_skill_level(character) do
       "\nNext Skill Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Damage: +#{damage(level)}\nDamage Bonus: #{damage_percent(level)}%\nAttack Bonus: #{attack_percent(level)}%\nMana Cost: #{mana(level)}"
     end
   end

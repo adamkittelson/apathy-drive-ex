@@ -28,11 +28,11 @@ defmodule ApathyDrive.Skills.BindLesserDemon do
     }
   end
 
-  def help(character, skill) do
-    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character, skill)}</p>")
+  def help(character) do
+    Mobile.send_scroll(character, "<p class='item'>#{tooltip(character)}</p>")
   end
 
-  def tooltip(character, skill) do
+  def tooltip(character) do
     """
       <span style="color: lime">Bind Lesser Demon</span>
 
@@ -40,7 +40,7 @@ defmodule ApathyDrive.Skills.BindLesserDemon do
 
       Attribute(s): #{attributes()}
       Cast Time: #{Float.round(Mobile.cast_time(character, ability(character)) / 1000, 2)} seconds
-      #{current_skill_level(character)}#{next_skill_level(character, skill)}
+      #{current_skill_level(character)}#{next_skill_level(character)}
     """
   end
 
@@ -59,10 +59,10 @@ defmodule ApathyDrive.Skills.BindLesserDemon do
     end
   end
 
-  defp next_skill_level(character, skill) do
+  defp next_skill_level(character) do
     level = skill_level(character) + 1
 
-    if level <= skill.max_level do
+    if level <= max_skill_level(character) do
       "\nNext Ability Level: #{level}\n#{required_level(character.level)}#{prereq(character, level)}Defense: #{defense(level)}\nSuccess Chance: #{control_chance(level)}%\nDuration: #{div(duration(level), 60)} minutes\nMana Cost: #{mana(level)}"
     end
   end
