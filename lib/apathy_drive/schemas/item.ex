@@ -916,7 +916,8 @@ defmodule ApathyDrive.Item do
       "cloth armour" => 1
     }
 
-    armour_ranks[character.class.armour] >= armour_ranks[armour]
+    (armour_ranks[get_in(character, [:class, Access.key!(:armour)])] || 1) >=
+      armour_ranks[armour]
   end
 
   def useable_by_character?(_character, %Item{}), do: true

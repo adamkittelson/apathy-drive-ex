@@ -30,6 +30,7 @@ defmodule ApathyDriveWeb.MUDChannel do
               |> assign(:level, character.level)
               |> assign(:monster_ref, character.ref)
               |> assign(:commands, :queue.new())
+              |> monitor_room()
 
             ApathyDrive.PubSub.subscribe("spirits:online")
             ApathyDrive.PubSub.subscribe("chat:gossip")
@@ -42,6 +43,28 @@ defmodule ApathyDriveWeb.MUDChannel do
 
       {:error, _error} ->
         {:error, %{reason: "unauthorized"}}
+    end
+  end
+
+  def handle_info({:DOWN, ref, :process, _object, _reason}, socket) do
+    if ref == socket.assigns[:room_monitor_ref] do
+      send_scroll(socket, "<p><span class='dark-red'>Something went wrong.</span></p>")
+
+      character = Repo.get!(Character, socket.assigns[:character])
+
+      character =
+        socket.assigns[:room_id]
+        |> RoomServer.find()
+        |> RoomServer.character_connected(character, self())
+
+      socket =
+        socket
+        |> assign(:monster_ref, character.ref)
+        |> monitor_room()
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
     end
   end
 
@@ -90,6 +113,7 @@ defmodule ApathyDriveWeb.MUDChannel do
       |> assign(:room_id, room_id)
       |> assign(:power, power)
       |> assign(:level, level)
+      |> monitor_room()
 
     update_room(socket)
 
@@ -300,4 +324,14 @@ defmodule ApathyDriveWeb.MUDChannel do
 
   defp chat_tab("announce"), do: "announce"
   defp chat_tab(_), do: "chat"
+
+  defp monitor_room(socket) do
+    if ref = socket.assigns[:room_monitor_ref] do
+      Process.demonitor(ref)
+    end
+
+    room_pid = RoomServer.find(socket.assigns[:room_id])
+
+    assign(socket, :room_monitor_ref, Process.monitor(room_pid))
+  end
 end
