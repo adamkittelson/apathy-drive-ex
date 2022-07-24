@@ -1,6 +1,6 @@
 defmodule ApathyDriveWeb.CharacterController do
   use ApathyDriveWeb, :controller
-  alias ApathyDrive.Character
+  alias ApathyDrive.{Character, Mailer}
   import Ecto.Changeset
   import ApathyDrive.Text
 
@@ -23,15 +23,21 @@ defmodule ApathyDriveWeb.CharacterController do
 
     case Repo.insert(changeset) do
       {:ok, character} ->
+        Mailer.send_welcome_email(character)
+
         conn
         |> put_session(:character, character.id)
         |> redirect(to: Routes.game_path(conn, :game))
 
       {:error, changeset} ->
+        {races, traits} = ApathyDriveWeb.SessionController.races_and_traits()
+
         render(
           conn,
           ApathyDriveWeb.SessionView,
           "new.html",
+          races: races,
+          traits: traits,
           changeset: changeset,
           tab: "signup_tab"
         )

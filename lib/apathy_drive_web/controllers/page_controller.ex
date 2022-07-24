@@ -32,4 +32,27 @@ defmodule ApathyDriveWeb.PageController do
         end
     end
   end
+
+  def welcome(conn, %{"token" => token}) do
+    {:ok, character_id} = Phoenix.Token.verify(ApathyDriveWeb.Endpoint, "welcome email", token)
+
+    case Repo.get(Character, character_id) do
+      %Character{welcome_token: ^token} = character ->
+        character
+        |> Ecto.Changeset.change(%{
+          welcome_token: nil,
+          email_verified: true
+        })
+        |> Repo.update!()
+
+        conn
+        |> put_session(:character, character.id)
+        |> redirect(to: Routes.game_path(conn, :game, %{}))
+
+      _ ->
+        conn
+        |> put_session(:character, nil)
+        |> redirect(to: "/")
+    end
+  end
 end

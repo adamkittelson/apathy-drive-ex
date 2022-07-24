@@ -10,9 +10,12 @@
   </ul>
 
   <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session, id: "signin_form"], fn f -> %>
-    <div class="alert alert-danger">
-      <%= get_flash(@conn, :sign_in) %>
-    </div>
+
+    <%= if flash = get_flash(@conn, :sign_in) do %>
+      <div class="alert alert-danger">
+        <%= flash %>
+      </div>
+    <% end %>
 
     <div class="form-group">
       <%= label f, :email, "Email Address" %>
@@ -54,7 +57,7 @@
             <div style="white-space: pre-wrap;"><span class='dark-green'>Intellect:</span> <span class='dark-cyan'><%=race.intellect%></span>            <span class='dark-green'>Health:</span>  <span class='dark-cyan'><%=race.health%></span></div>
             <div style="white-space: pre-wrap;"><span class='dark-green'>Willpower:</span> <span class='dark-cyan'><%=race.willpower%></span>            <span class='dark-green'>Charm:</span>   <span class='dark-cyan'><%=race.charm%></span></div>
             <p></p>
-            <%= unless "" == IO.inspect(:erlang.element(2, Map.get(@traits, race.id))) do %>
+            <%= unless "" == :erlang.element(2, Map.get(@traits, race.id)) do %>
               <div style="white-space: pre-wrap;"><span class='dark-green'>Traits:</span></div>
             <% end %>
             <%= Map.get(@traits, race.id) %>

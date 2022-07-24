@@ -22,6 +22,7 @@ defmodule ApathyDriveWeb.Router do
 
     get("/", PageController, :index)
     get("/game", PageController, :game, as: :game)
+    get("/welcome/:token", PageController, :welcome, as: :welcome)
     resources("/sessions", SessionController)
 
     resources(

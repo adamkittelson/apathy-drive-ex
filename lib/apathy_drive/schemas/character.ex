@@ -76,6 +76,8 @@ defmodule ApathyDrive.Character do
     field(:lore_name, :string)
     field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:chat_tab, :string)
+    field(:welcome_token, :string)
+    field(:email_verified, :boolean)
 
     field(:experience, :integer, virtual: true, default: 0)
     field(:next_drain_at, :integer, virtual: true)
@@ -171,7 +173,7 @@ defmodule ApathyDrive.Character do
   def total_development_points(%Character{} = character) do
     level_devs = total_development_points(character.level)
     tolevel = Level.exp_at_level(character.level + 1)
-    percent = character.experience / tolevel
+    percent = min(1, character.experience / tolevel)
 
     100 + level_devs +
       round((total_development_points(character.level + 1) - level_devs) * percent)

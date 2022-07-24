@@ -4,12 +4,6 @@ defmodule ApathyDrive.Gossip.Core do
 
   @behaviour Gossip.Client.Core
 
-  @channel_colors %{
-    "gossip" => "dark-magenta",
-    "grapevine" => "magenta",
-    "announce" => "yellow"
-  }
-
   @impl true
   def authenticated do
     :noop

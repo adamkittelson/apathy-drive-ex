@@ -51,7 +51,7 @@ defmodule ApathyDrive.Mixfile do
   end
 
   defp extra_applications() do
-    extra_apps = [:logger, :runtime_tools]
+    extra_apps = [:logger, :runtime_tools, :bamboo]
 
     if Application.get_env(:logger, :handle_sasl_reports) do
       [:sasl | extra_apps]
@@ -62,6 +62,7 @@ defmodule ApathyDrive.Mixfile do
 
   defp deps do
     [
+      {:bamboo, "~> 2.2.0"},
       {:jason, "~> 1.2.0"},
       {:postgrex, "~> 0.15.9"},
       {:phoenix, "~> 1.5.9"},
