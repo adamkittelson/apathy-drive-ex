@@ -184,10 +184,16 @@ defmodule ApathyDrive.Character do
   end
 
   def total_development_points(level, power) when level > 0 do
-    total_development_points(level - 1, power + 100 * (level - 1))
+    total_development_points(level - 1, power + 10 * (level - 1))
   end
 
   def total_development_points(0, power), do: power
+
+  def dev_point_table do
+    Enum.each(1..50, fn n ->
+      IO.puts("level: #{n}, devs: #{100 + total_development_points(n)}")
+    end)
+  end
 
   def top_list(number \\ 10) do
     classes =

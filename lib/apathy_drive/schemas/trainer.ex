@@ -52,7 +52,7 @@ defmodule ApathyDrive.Trainer do
     Repo.get(Class, class_id).name
   end
 
-  def join_room?(%Room{class_id: class_id, trainable_skills: nil}) when not is_nil(class_id),
+  def join_room?(%Room{class_id: class_id}) when not is_nil(class_id),
     do: true
 
   def join_room?(_room), do: false

@@ -201,7 +201,9 @@ defmodule ApathyDrive.Trait do
             "Knife",
             "Staff",
             "Elementalism",
-            "Balance"
+            "Balance",
+            "Magery",
+            "Performance"
           ] ->
             "add"
 

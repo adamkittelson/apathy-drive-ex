@@ -105,15 +105,6 @@ defmodule ApathyDrive.Commands.Look do
       Mobile.send_scroll(character, "<p><span class='cyan'>#{room.name}</span> #{coords}</p>")
       Mobile.send_scroll(character, "<p>    #{room.description}</p>")
 
-      if Trainer.join_room?(room) do
-        guild = Trainer.guild_name(room)
-
-        Mobile.send_scroll(
-          character,
-          "<p style='font-style: italic;'>\nYou may <span class='green'>join</span> the #{guild}'s guild here.\n\n</p>"
-        )
-      end
-
       trainables =
         cond do
           Trainer.skill_trainer?(room) and Trainer.ability_trainer?(room) ->
@@ -130,38 +121,40 @@ defmodule ApathyDrive.Commands.Look do
         end
 
       if trainables do
-        guild = Trainer.guild_name(room)
+        if character.class_id == room.class_id do
+          guild = Trainer.guild_name(room)
 
-        modifier = (100 + character.race.race.exp_modifier) / 100
-        level = character.level
-        exp = trunc(character.experience)
-        tolevel = Level.exp_at_level(level, modifier)
-        remaining = tolevel - exp
+          modifier = (100 + character.race.race.exp_modifier) / 100
+          level = character.level
+          exp = trunc(character.experience)
+          tolevel = Level.exp_at_level(level, modifier)
+          remaining = tolevel - exp
 
-        level_text =
-          if remaining <= 0 and character.class_id == room.class_id do
-            cost =
-              character
-              |> Trainer.training_cost()
-              |> Currency.set_value()
-              |> Currency.to_string()
+          level_text =
+            if remaining <= 0 and character.class_id == room.class_id do
+              cost =
+                character
+                |> Trainer.training_cost()
+                |> Currency.set_value()
+                |> Currency.to_string()
 
-            "\n\nYou may <span class='green'>train</span> the #{guild} class to level #{character.level + 1} here for #{cost}."
-          else
-            ""
-          end
+              "\n\nYou may <span class='green'>train</span> the #{guild} class to level #{character.level + 1} here for #{cost}."
+            else
+              ""
+            end
 
-        train =
-          if character.class_id == room.class_id do
-            " and <span class='green'>train</span>"
-          else
-            ""
-          end
+          Mobile.send_scroll(
+            character,
+            "<p style='font-style: italic;'>\nYou may <span class='green'>list</span> and <span class='green'>train</span> #{guild} #{trainables} here. #{level_text}</span>\n\n</p>"
+          )
+        else
+          guild = Trainer.guild_name(room)
 
-        Mobile.send_scroll(
-          character,
-          "<p style='font-style: italic;'>\nYou may <span class='green'>list</span>#{train} #{guild} #{trainables} here. #{level_text}</span>\n\n</p>"
-        )
+          Mobile.send_scroll(
+            character,
+            "<p style='font-style: italic;'>\nYou may <span class='green'>join</span> the #{guild}'s guild here.\n\n</p>"
+          )
+        end
       end
 
       Mobile.send_scroll(
