@@ -34,6 +34,7 @@ defmodule ApathyDrive.Character do
     Text,
     TimerManager,
     Title,
+    Trainer,
     Trait
   }
 
@@ -79,6 +80,7 @@ defmodule ApathyDrive.Character do
     field(:welcome_token, :string)
     field(:email_verified, :boolean)
 
+    field(:dev_point_levels, :any, virtual: true)
     field(:experience, :integer, virtual: true, default: 0)
     field(:next_drain_at, :integer, virtual: true)
     field(:exp_buffer, :integer, virtual: true, default: 0)
@@ -170,24 +172,46 @@ defmodule ApathyDrive.Character do
     total_development_points(character) - devs_spent
   end
 
+  def total_development_points(%Character{class_id: nil}), do: 0
+
   def total_development_points(%Character{} = character) do
-    level_devs = total_development_points(character.level)
-    tolevel = Level.exp_at_level(character.level + 1)
-    percent = min(1, character.experience / tolevel)
+    level = character.level
+    modifier = (100 + character.race.race.exp_modifier) / 100
+    current_level = Level.exp_at_level(level - 1, modifier)
+    to_next_level = Level.exp_at_level(level, modifier)
 
-    100 + level_devs +
-      round((total_development_points(character.level + 1) - level_devs) * percent)
+    total_needed = to_next_level - current_level
+    remaining = to_next_level - character.experience
+
+    percent = min(1, 1 - remaining / total_needed)
+
+    level_devs = total_development_points(character, character.level)
+
+    level_devs +
+      round((total_development_points(character, character.level + 1) - level_devs) * percent)
   end
 
-  def total_development_points(level) when is_integer(level) do
-    total_development_points(level, 0)
+  def total_development_points(character, level) do
+    total_development_points(character, level, 0)
   end
 
-  def total_development_points(level, power) when level > 0 do
-    total_development_points(level - 1, power + 10 * (level - 1))
+  def total_development_points(character, level, total) when level > 0 do
+    devs =
+      character.dev_point_levels
+      |> Enum.sort(&(&1 >= &2))
+      |> Enum.map(fn {dev_level, devs} ->
+        if dev_level <= level do
+          devs
+        else
+          0
+        end
+      end)
+      |> Enum.sum()
+
+    total_development_points(character, level - 1, total + devs)
   end
 
-  def total_development_points(0, power), do: power
+  def total_development_points(_character, 0, total), do: total
 
   def dev_point_table do
     Enum.each(1..50, fn n ->
@@ -616,12 +640,27 @@ defmodule ApathyDrive.Character do
       |> Map.put(:exp_buffer, character_class.exp_buffer || 0)
       |> Map.put(:class, character_class.class)
       |> Map.put(:experience, character_class.experience || 0)
+      |> Map.put(:dev_point_levels, load_dev_point_levels(character))
     else
       character
       |> Map.put(:level, 1)
       |> Map.put(:exp_buffer, 0)
       |> Map.put(:class, nil)
+      |> Map.put(:dev_point_levels, nil)
     end
+  end
+
+  def load_dev_point_levels(%Character{class_id: id}) do
+    from(t in Trainer,
+      where: t.class_id == ^id,
+      distinct: t.skill_id,
+      preload: [:skill]
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn %{skill: skill}, map ->
+      map = Map.put_new(map, skill.required_level, 0)
+      update_in(map, [skill.required_level], &(&1 + skill.dev_cost))
+    end)
   end
 
   def load_race(%Character{race_id: race_id} = character) do
