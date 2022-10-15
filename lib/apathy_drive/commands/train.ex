@@ -219,7 +219,6 @@ defmodule ApathyDrive.Commands.Train do
         |> Character.load_abilities()
         |> Character.set_title()
         |> Character.update_exp_bar()
-        |> Character.set_attribute_levels()
 
       level =
         case character_skill.skill.type do

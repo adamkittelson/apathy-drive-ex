@@ -26,7 +26,7 @@ defmodule ApathyDriveWeb.MUDChannel do
               socket
               |> assign(:room_id, room_id)
               |> assign(:character, character.id)
-              |> assign(:power, Mobile.power_at_level(character, character.level))
+              |> assign(:power, Mobile.power(character))
               |> assign(:level, character.level)
               |> assign(:monster_ref, character.ref)
               |> assign(:commands, :queue.new())

@@ -105,9 +105,7 @@ defmodule ApathyDrive.Commands.Sell do
             {ref, %Character{} = mobile} when ref != char_ref ->
               Mobile.send_scroll(
                 mobile,
-                "<p>#{Mobile.colored_name(char)} sold #{
-                  Item.colored_name(item, character: mobile)
-                } for nothing.</p>"
+                "<p>#{Mobile.colored_name(char)} sold #{Item.colored_name(item, character: mobile)} for nothing.</p>"
               )
 
             _ ->
@@ -116,9 +114,7 @@ defmodule ApathyDrive.Commands.Sell do
         else
           Mobile.send_scroll(
             char,
-            "<p>You sold #{Item.colored_name(item, character: char)} for #{
-              Currency.to_string(currency)
-            }.</p>"
+            "<p>You sold #{Item.colored_name(item, character: char)} for #{Currency.to_string(currency)}.</p>"
           )
 
           char_ref = char.ref
@@ -127,9 +123,7 @@ defmodule ApathyDrive.Commands.Sell do
             {ref, %Character{} = mobile} when ref != char_ref ->
               Mobile.send_scroll(
                 mobile,
-                "<p>#{Mobile.colored_name(char)} sold #{
-                  Item.colored_name(item, character: mobile)
-                } for #{Currency.to_string(currency)}.</p>"
+                "<p>#{Mobile.colored_name(char)} sold #{Item.colored_name(item, character: mobile)} for #{Currency.to_string(currency)}.</p>"
               )
 
             _ ->
@@ -186,8 +180,7 @@ defmodule ApathyDrive.Commands.Sell do
   defp upgrade?(%Item{} = item, %Character{} = character) do
     %{character: with_item} = ApathyDrive.Commands.Wear.equip_item(character, item, false)
 
-    Mobile.power_at_level(with_item, character.level) >
-      Mobile.power_at_level(character, character.level)
+    Mobile.power(with_item) > Mobile.power(character)
   end
 
   def enchanted?(%Item{instance_id: nil}), do: false

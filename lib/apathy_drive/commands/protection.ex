@@ -65,9 +65,9 @@ defmodule ApathyDrive.Commands.Protection do
   def protection_amount(character, damage_type) do
     resist =
       if @damage_types[damage_type] == "physical" do
-        Mobile.physical_resistance_at_level(character, character.level)
+        Mobile.physical_resistance(character)
       else
-        Mobile.magical_resistance_at_level(character, character.level)
+        Mobile.magical_resistance(character)
       end
 
     resist_percent = percent_for_ac_mr(resist, character.level)

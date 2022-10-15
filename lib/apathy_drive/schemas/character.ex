@@ -112,12 +112,12 @@ defmodule ApathyDrive.Character do
     field(:ability_shift, :float, virtual: true)
     field(:ability_special, :float, virtual: true)
     field(:attack_target, :any, virtual: true)
-    field(:strength, :integer, virtual: true)
-    field(:agility, :integer, virtual: true)
-    field(:intellect, :integer, virtual: true)
-    field(:willpower, :integer, virtual: true)
-    field(:health, :integer, virtual: true)
-    field(:charm, :integer, virtual: true)
+    field(:strength, :integer, default: 0, virtual: true)
+    field(:agility, :integer, default: 0, virtual: true)
+    field(:intellect, :integer, default: 0, virtual: true)
+    field(:willpower, :integer, default: 0, virtual: true)
+    field(:health, :integer, default: 0, virtual: true)
+    field(:charm, :integer, default: 0, virtual: true)
     field(:leader, :any, virtual: true)
     field(:invitees, :any, virtual: true, default: [])
     field(:skills, :map, virtual: true, default: %{})
@@ -1297,17 +1297,16 @@ defmodule ApathyDrive.Character do
 
     %{
       name: character.name,
-      race: character.race.race.name,
       class: character.class && character.class.name,
       level: character.level,
       alignment: legal_status(character),
       devs: Character.development_points(character),
-      perception: Mobile.perception_at_level(character, character.level, room),
+      perception: Mobile.perception(character, room),
       attack: Mobile.accuracy_at_level(character, character.level, room),
       crits: Mobile.crits_at_level(character, character.level),
       lockpicking: ApathyDrive.Commands.Pick.skill(character),
       defense: Mobile.dodge_at_level(character, character.level, room),
-      stealth: Mobile.stealth_at_level(character, character.level),
+      stealth: Mobile.stealth(character),
       hp: hp_at_level(character, character.level),
       hp_regen: hp_regen,
       max_hp: max_hp,
@@ -1700,9 +1699,6 @@ defmodule ApathyDrive.Character do
     end
 
     def description(%Character{} = character, %Character{} = observer) do
-      character_level = character.level
-      observer_level = observer.level
-
       descriptions =
         [
           strength: [
@@ -1801,8 +1797,8 @@ defmodule ApathyDrive.Character do
     end
 
     def detected?(character, sneaker, room) do
-      perception = Mobile.perception_at_level(character, character.level, room)
-      stealth = Mobile.stealth_at_level(sneaker, sneaker.level)
+      perception = Mobile.perception(character, room)
+      stealth = Mobile.stealth(sneaker)
 
       :rand.uniform(100) >= stealth - div(perception, 3)
     end
@@ -2129,7 +2125,7 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
-    def magical_resistance_at_level(character, level) do
+    def magical_resistance(character) do
       willpower = attribute_value(character, :willpower)
       willpower_bonus = div(willpower, 4)
 
@@ -2168,7 +2164,7 @@ defmodule ApathyDrive.Character do
       Party.refs(room, character)
     end
 
-    def perception_at_level(character, _level, room) do
+    def perception(character, room) do
       base = ability_value(character, "Perception")
 
       light_modifier =
@@ -2188,14 +2184,14 @@ defmodule ApathyDrive.Character do
       ability_value(character, "Defense")
     end
 
-    def physical_resistance_at_level(character, level) do
+    def physical_resistance(character) do
       strength = attribute_value(character, :strength)
       strength_bonus = div(strength, 4)
 
       strength_bonus + defense_rating(character)
     end
 
-    def power_at_level(%Character{} = character, level) do
+    def power(%Character{} = character) do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.reduce(0, &(&2 + Mobile.attribute_value(character, &1)))
     end
@@ -2215,7 +2211,7 @@ defmodule ApathyDrive.Character do
         {:update_character,
          %{
            room_id: room_id,
-           power: Mobile.power_at_level(character, character.level),
+           power: Mobile.power(character),
            level: character.level
          }}
       )
@@ -2272,7 +2268,7 @@ defmodule ApathyDrive.Character do
       trunc(sc + ability_value(character, "Spellcasting"))
     end
 
-    def stealth_at_level(character, _level) do
+    def stealth(character) do
       ability_value(character, "Stealth")
     end
 
@@ -2335,8 +2331,8 @@ defmodule ApathyDrive.Character do
       end
     end
 
-    def tracking_at_level(character, level, room) do
-      perception = perception_at_level(character, level, room)
+    def tracking(character, room) do
+      perception = perception(character, room)
       modifier = ability_value(character, "Tracking")
       perception * (modifier / 100)
     end

@@ -1479,7 +1479,7 @@ defmodule ApathyDrive.Ability do
     dodge = Mobile.dodge_at_level(target, target.level, room)
 
     if dodge > 0 do
-      perception = Mobile.perception_at_level(target, target.level, room)
+      perception = Mobile.perception(target, room)
 
       evade?(accuracy, perception) and evade?(accuracy, dodge)
     else
@@ -1515,7 +1515,7 @@ defmodule ApathyDrive.Ability do
     parry = Mobile.parry_at_level(target, target.level, room)
 
     if parry > 0 do
-      perception = Mobile.perception_at_level(target, target.level, room)
+      perception = Mobile.perception(target, room)
 
       evade?(accuracy, perception) and evade?(accuracy, parry)
     else
@@ -1554,7 +1554,7 @@ defmodule ApathyDrive.Ability do
       block = Mobile.block_at_level(target, target.level, room)
 
       if block > 0 do
-        perception = Mobile.perception_at_level(target, target.level, room)
+        perception = Mobile.perception(target, room)
 
         evade?(accuracy, perception) and evade?(accuracy, block)
       else
@@ -2350,7 +2350,7 @@ defmodule ApathyDrive.Ability do
 
             ability_damage = ability_damage - Mobile.ability_value(target, "PhysicalDR")
 
-            resist = Mobile.physical_resistance_at_level(target, target.level)
+            resist = Mobile.physical_resistance(target)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
@@ -2371,7 +2371,7 @@ defmodule ApathyDrive.Ability do
             {caster, damage_percent + percent, target}
 
           %{damage: dmg, damage_type: "Physical"}, {caster, damage_percent, target} ->
-            resist = Mobile.physical_resistance_at_level(target, target.level)
+            resist = Mobile.physical_resistance(target)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
@@ -2397,7 +2397,7 @@ defmodule ApathyDrive.Ability do
 
             ability_damage = ability_damage - Mobile.ability_value(target, "MagicDR")
 
-            resist = Mobile.magical_resistance_at_level(target, target.level)
+            resist = Mobile.magical_resistance(target)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
@@ -2422,7 +2422,7 @@ defmodule ApathyDrive.Ability do
             {caster, damage_percent + percent, target}
 
           %{damage: damage, damage_type: type}, {caster, damage_percent, target} ->
-            resist = Mobile.magical_resistance_at_level(target, target.level)
+            resist = Mobile.magical_resistance(target)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
@@ -2815,7 +2815,7 @@ defmodule ApathyDrive.Ability do
 
             ability_damage = Enum.random(min..max)
 
-            resist = Mobile.physical_resistance_at_level(target, target.level)
+            resist = Mobile.physical_resistance(target)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 
@@ -2846,7 +2846,7 @@ defmodule ApathyDrive.Ability do
 
             ability_damage = Enum.random(min..max)
 
-            resist = Mobile.magical_resistance_at_level(target, target.level)
+            resist = Mobile.magical_resistance(target)
 
             resist_percent = Protection.percent_for_ac_mr(resist, target.level)
 

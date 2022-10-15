@@ -5,7 +5,7 @@ defmodule ApathyDrive.Commands.Sneak do
   def keywords, do: ["sn", "sneak"]
 
   def execute(%Room{} = room, %Character{ref: ref} = character, _args) do
-    stealth = Mobile.stealth_at_level(character, character.level)
+    stealth = Mobile.stealth(character)
 
     cond do
       stealth == 0 ->

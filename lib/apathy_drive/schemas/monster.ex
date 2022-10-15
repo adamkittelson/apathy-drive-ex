@@ -1129,7 +1129,7 @@ defmodule ApathyDrive.Monster do
     end
 
     def detected?(_monster, sneaker, _room) do
-      :rand.uniform(100) >= Mobile.stealth_at_level(sneaker, sneaker.level)
+      :rand.uniform(100) >= Mobile.stealth(sneaker)
     end
 
     def die?(monster) do
@@ -1321,7 +1321,7 @@ defmodule ApathyDrive.Monster do
     def hp_description(%Monster{hp: hp}) when hp >= 0.1, do: "critically wounded"
     def hp_description(%Monster{hp: _hp}), do: "very critically wounded"
 
-    def magical_resistance_at_level(monster, _level) do
+    def magical_resistance(monster) do
       defense_rating(monster)
     end
 
@@ -1349,7 +1349,7 @@ defmodule ApathyDrive.Monster do
       Party.refs(room, monster)
     end
 
-    def perception_at_level(monster, level, _room) do
+    def perception(monster, _room) do
       int = attribute_value(monster, :intellect)
       cha = attribute_value(monster, :charm)
       int = int + cha / 10
@@ -1361,11 +1361,11 @@ defmodule ApathyDrive.Monster do
       (6 + (monster.level - 1) * 0.105) * monster.level
     end
 
-    def physical_resistance_at_level(monster, _level) do
+    def physical_resistance(monster) do
       defense_rating(monster)
     end
 
-    def power_at_level(%Monster{} = monster, level) do
+    def power(%Monster{} = monster) do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
       |> Enum.reduce(0, &(&2 + Mobile.attribute_value(monster, &1)))
     end
@@ -1476,7 +1476,7 @@ defmodule ApathyDrive.Monster do
       trunc(sc + ability_value(monster, "Spellcasting"))
     end
 
-    def stealth_at_level(monster, level) do
+    def stealth(monster) do
       agi = attribute_value(monster, :agility)
       cha = attribute_value(monster, :charm)
       agi = agi + cha / 10
@@ -1493,8 +1493,8 @@ defmodule ApathyDrive.Monster do
       update_in(monster.energy, &(&1 - ability.energy))
     end
 
-    def tracking_at_level(monster, level, room) do
-      perception = perception_at_level(monster, level, room)
+    def tracking(monster, room) do
+      perception = perception(monster, room)
       modifier = ability_value(monster, "Tracking")
       perception * (modifier / 100)
     end

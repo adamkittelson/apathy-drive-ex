@@ -1,7 +1,9 @@
 * {
   box-sizing: border-box;
 }
-html, body.app {
+
+html,
+body.app {
   height: 100%;
   background-color: #000;
   overflow: hidden;
@@ -12,9 +14,12 @@ a.autolink {
   color: teal;
 }
 
-.container {margin-left: 25px;}
+.container {
+  margin: 0 0 0 25px !important;
+}
 
-p.item, span.item {
+p.item,
+span.item {
   text-align: center;
   width: 450px;
   padding-right: 0px !important;
@@ -25,7 +30,7 @@ p.item, span.item {
   border-radius: 25px;
 }
 
-span.item-name span.tooltip{
+span.item-name span.tooltip {
   visibility: hidden;
   z-index: 1;
   position: absolute;
@@ -46,16 +51,21 @@ span.item-name:hover span.tooltip {
   max-width: 100%;
   height: 100%;
   color: white;
+
   label.error {
     color: red;
   }
+
   input {
     background: #141414;
   }
+
   select {
     color: black;
   }
+
   margin: 0 0 0 25px;
+
   #scroll {
     overflow-y: scroll;
     margin-left: 360px;
@@ -68,10 +78,12 @@ span.item-name:hover span.tooltip {
     z-index: 1;
     //position: relative;
     font-size: 1.10em;
+
     p {
       padding-right: 800px;
     }
   }
+
   #footer {
     flex-shrink: 0;
     margin-left: 360px;
@@ -101,7 +113,7 @@ canvas {
   font-size: 0.90em;
 }
 
-#score-effects{
+#score-effects {
   position: relative;
   top: 5px;
 }
@@ -165,7 +177,7 @@ textarea.prompt {
   }
 
   div.yellow {
-    background: linear-gradient(#c0c000,#404000);
+    background: linear-gradient(#c0c000, #404000);
   }
 
   div.dark-magenta {
@@ -200,27 +212,27 @@ textarea.prompt {
 }
 
 .progress-bar.hp {
-  background-image: linear-gradient(#c00000,#400000), linear-gradient(#8b008b, #360036), linear-gradient(#292929,#292929);
-  background-repeat:no-repeat;
-  transition:1s;
+  background-image: linear-gradient(#c00000, #400000), linear-gradient(#8b008b, #360036), linear-gradient(#292929, #292929);
+  background-repeat: no-repeat;
+  transition: 1s;
 }
 
 .progress-bar.hp.poisoned {
-  background-image: linear-gradient(#00c000,#004000), linear-gradient(#8b008b, #360036), linear-gradient(#292929,#292929);
-  background-repeat:no-repeat;
-  transition:1s;
+  background-image: linear-gradient(#00c000, #004000), linear-gradient(#8b008b, #360036), linear-gradient(#292929, #292929);
+  background-repeat: no-repeat;
+  transition: 1s;
 }
 
 .progress-bar.mana {
-  background-image: linear-gradient(#0000dd, #000066), linear-gradient(#292929,#292929);
-  background-repeat:no-repeat;
-  transition:1s;
+  background-image: linear-gradient(#0000dd, #000066), linear-gradient(#292929, #292929);
+  background-repeat: no-repeat;
+  transition: 1s;
 }
 
 .progress-bar.experience {
-  background-image: linear-gradient(#008080,#004040), linear-gradient(#00FFFF, #008080), linear-gradient(#292929,#292929);
-  background-repeat:no-repeat;
-  transition:1s;
+  background-image: linear-gradient(#008080, #004040), linear-gradient(#00FFFF, #008080), linear-gradient(#292929, #292929);
+  background-repeat: no-repeat;
+  transition: 1s;
 }
 
 
@@ -231,10 +243,12 @@ div.attribute {
   position: relative;
   top: -2px;
 }
+
 span.attribute-row {
   position: relative;
   top: -64px;
 }
+
 div.experience {
   width: 258px;
   position: relative;
@@ -245,7 +259,9 @@ div.experience {
 }
 
 // hack because margin next to experience bar looks different on safari vs chrome / brave
-_::-webkit-full-page-media, _:future, :root div.experience {
+_::-webkit-full-page-media,
+_:future,
+:root div.experience {
   margin-right: 9px;
 }
 
@@ -258,7 +274,9 @@ _::-webkit-full-page-media, _:future, :root div.experience {
   display: flex;
   flex-direction: column;
 
-  #chat, #all, #announce {
+  #chat,
+  #all,
+  #announce {
     color: silver;
     line-height: 19px;
     font-family: "Inconsolata", "Andale Mono", Monospace;
@@ -267,10 +285,12 @@ _::-webkit-full-page-media, _:future, :root div.experience {
     margin-top: -1px;
     margin-bottom: 11px;
     overflow-y: scroll;
+
     p {
       margin-bottom: 0px;
       margin-right: 10px;
     }
+
     .time {
       text-align: center;
     }
@@ -280,17 +300,20 @@ _::-webkit-full-page-media, _:future, :root div.experience {
     flex-shrink: 0;
     font-family: "Inconsolata", "Andale Mono", Monospace;
     font-size: 0.90em;
+
     div.progress-bar {
       width: 157px;
       height: 3px;
       margin-left: 0px;
       margin-right: 5px;
     }
+
     ul {
       list-style-type: none;
       margin-bottom: 45px;
       margin-left: 0px;
     }
+
     h5 {
       margin-bottom: 0px;
     }
@@ -308,12 +331,16 @@ _::-webkit-full-page-media, _:future, :root div.experience {
     }
   }
 
-  .help-block { color: red;}
+  .help-block {
+    color: red;
+  }
+
   form {
     border: 2px solid #fff;
     padding: 20px;
     max-width: 500px;
   }
+
   .tabrow {
     left: 20px;
     list-style: none;
@@ -321,6 +348,7 @@ _::-webkit-full-page-media, _:future, :root div.experience {
     padding: 0;
     line-height: 24px;
   }
+
   .tabrow li {
     display: inline-block;
     height: 20px;
@@ -340,25 +368,31 @@ _::-webkit-full-page-media, _:future, :root div.experience {
 
     margin: 0;
   }
- .tabrow li:hover {
+
+  .tabrow li:hover {
     color: white;
-    background-color:teal;
+    background-color: teal;
   }
+
   .tabrow li.selected {
     color: white;
     background-color: teal;
   }
+
   .tabrow:before {
     z-index: 1;
   }
+
   .tabrow li {
     position: relative;
     z-index: 0;
   }
+
   .tabrow li.selected {
     z-index: 2;
     border-bottom-color: #fff;
   }
+
   .tabrow li:before,
   .tabrow li:after {
     position: absolute;
@@ -367,20 +401,25 @@ _::-webkit-full-page-media, _:future, :root div.experience {
     height: 6px;
     content: " ";
   }
+
   .tabrow li:before {
     left: -6px;
   }
+
   .tabrow li:after {
     right: -6px;
   }
+
   .tabrow li {
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
   }
+
   .tabrow li:before {
     border-bottom-right-radius: 6px;
     border-width: 0 1px 1px 0;
   }
+
   .tabrow li:after {
     border-bottom-left-radius: 6px;
     border-width: 0 0 1px 1px;
@@ -396,7 +435,8 @@ _::-webkit-full-page-media, _:future, :root div.experience {
 .underline {
   border-bottom: 1px solid green;
   padding-bottom: 3px;
-  margin-bottom: 20px; }
+  margin-bottom: 20px;
+}
 
 pre {
   font-family: "Inconsolata", "Andale Mono", Monospace;
@@ -409,10 +449,12 @@ pre {
 
 .prompt::selection {
   background-color: #0000aa;
-  color: white; }
+  color: white;
+}
 
 .prompt:disabled {
-  color: olive; }
+  color: olive;
+}
 
 #prompt {
   color: silver;
@@ -426,8 +468,9 @@ pre {
 .ability-index table {
   margin: 0px;
 }
+
 .ability th:first-child {
- width: 100px;
+  width: 100px;
 }
 
 .CodeMirror {
@@ -436,11 +479,21 @@ pre {
   border: 1px solid silver;
 }
 
-a.anchor{display: block; position: relative; top: -7.0rem; visibility: hidden;}
+a.anchor {
+  display: block;
+  position: relative;
+  top: -7.0rem;
+  visibility: hidden;
+}
 
-#fb {margin-top: 40px;}
+#fb {
+  margin-top: 40px;
+}
 
-.alert { color: red;}
+.alert {
+  color: red;
+}
 
-form.link { margin-bottom: 0;}
-
+form.link {
+  margin-bottom: 0;
+}

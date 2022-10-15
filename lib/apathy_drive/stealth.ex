@@ -2,9 +2,9 @@ defmodule ApathyDrive.Stealth do
   alias ApathyDrive.Mobile
 
   def visible?(sneaker, observer, room) do
-    stealth = Mobile.stealth_at_level(sneaker, sneaker.level)
+    stealth = Mobile.stealth(sneaker)
 
-    perception = Mobile.perception_at_level(observer, observer.level, room)
+    perception = Mobile.perception(observer, room)
 
     stealth < perception
   end

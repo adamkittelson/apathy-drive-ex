@@ -311,7 +311,7 @@ defmodule ApathyDrive.Room do
 
   def mobile_entered(%Room{} = room, %kind{} = mobile, message \\ nil) do
     mobile =
-      if mobile.sneaking && :rand.uniform(100) > Mobile.stealth_at_level(mobile, mobile.level) do
+      if mobile.sneaking && :rand.uniform(100) > Mobile.stealth(mobile) do
         mobile
         |> Mobile.send_scroll(
           "<p><span class='dark-red'>You make a noise as you enter the room!</span></p>"

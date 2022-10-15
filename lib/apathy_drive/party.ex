@@ -35,10 +35,4 @@ defmodule ApathyDrive.Party do
   def leader(%Room{} = room, %{leader: ref}) do
     room.mobiles[ref]
   end
-
-  def charm_at_level(%Room{} = room, member, level) do
-    room
-    |> members(member)
-    |> Enum.reduce(0, &(&2 + Mobile.attribute_value(&1, :charm)))
-  end
 end

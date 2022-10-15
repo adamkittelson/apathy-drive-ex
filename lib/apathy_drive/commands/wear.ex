@@ -82,7 +82,7 @@ defmodule ApathyDrive.Commands.Wear do
                 {:update_character,
                  %{
                    room_id: room.id,
-                   power: Mobile.power_at_level(character, character.level),
+                   power: Mobile.power(character),
                    level: character.level
                  }}
               )
@@ -113,7 +113,7 @@ defmodule ApathyDrive.Commands.Wear do
                 {:update_character,
                  %{
                    room_id: room.id,
-                   power: Mobile.power_at_level(character, character.level),
+                   power: Mobile.power(character),
                    level: character.level
                  }}
               )

@@ -59,9 +59,7 @@ defmodule ApathyDrive.Commands.Remove do
                 {ref, %Character{} = mobile} when ref != char_ref ->
                   Mobile.send_scroll(
                     mobile,
-                    "<p>#{Mobile.colored_name(character)} removes the #{
-                      Item.colored_name(item_to_remove, character: mobile)
-                    } and extinguishes it.</p>"
+                    "<p>#{Mobile.colored_name(character)} removes the #{Item.colored_name(item_to_remove, character: mobile)} and extinguishes it.</p>"
                   )
 
                 _ ->
@@ -79,9 +77,7 @@ defmodule ApathyDrive.Commands.Remove do
                 {ref, %Character{} = mobile} when ref != char_ref ->
                   Mobile.send_scroll(
                     mobile,
-                    "<p>#{Mobile.colored_name(character)} removes the #{
-                      Item.colored_name(item_to_remove, character: mobile)
-                    }.</p>"
+                    "<p>#{Mobile.colored_name(character)} removes the #{Item.colored_name(item_to_remove, character: mobile)}.</p>"
                   )
 
                 _ ->
@@ -94,7 +90,7 @@ defmodule ApathyDrive.Commands.Remove do
               {:update_character,
                %{
                  room_id: room.id,
-                 power: Mobile.power_at_level(char, char.level),
+                 power: Mobile.power(char),
                  level: char.level
                }}
             )
