@@ -30,14 +30,10 @@ defmodule ApathyDriveWeb.CharacterController do
         |> redirect(to: Routes.game_path(conn, :game))
 
       {:error, changeset} ->
-        {races, traits} = ApathyDriveWeb.SessionController.races_and_traits()
-
         render(
           conn,
           ApathyDriveWeb.SessionView,
           "new.html",
-          races: races,
-          traits: traits,
           changeset: changeset,
           tab: "signup_tab"
         )

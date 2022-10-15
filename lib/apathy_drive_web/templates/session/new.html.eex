@@ -39,35 +39,6 @@
     </div>
 
     <div class="form-group">
-      <label for="faction">Gender <%= error_tag f, :gender %></label>
-      <%= select(f, :gender, ["Male": "male", "Female": "female"], prompt: "Choose Your Character's Gender", class: "u-full-width") %>
-    </div>
-
-    <div class="form-group">
-      <label for="class">Race <%= error_tag f, :race_id %></label>
-      <%= select(f, :race_id, ApathyDrive.Race.select, prompt: "Choose Your Character's Race", class: "u-full-width", id: "race") %>
-
-      <div>
-        <%= for race <- @races do %>
-          <div id="race-<%= race.id %>" class="races" style="display: none;">
-            <div style="white-space: pre-wrap;"><span class='dark-cyan'><%=race.name |> to_string |> String.pad_trailing(55) %></span> <span class='dark-green'>Exp Penalty:</span> <span class='dark-cyan'><%= race.exp_modifier %>%</span></div>
-            <div style="text-indent: 25px;"><%= race.description %></div>
-            <p></p>
-            <div style="white-space: pre-wrap;"><span class='dark-green'>Strength:</span>  <span class='dark-cyan'><%=race.strength%></span>            <span class='dark-green'>Agility:</span> <span class='dark-cyan'><%=race.agility%></span></div>
-            <div style="white-space: pre-wrap;"><span class='dark-green'>Intellect:</span> <span class='dark-cyan'><%=race.intellect%></span>            <span class='dark-green'>Health:</span>  <span class='dark-cyan'><%=race.health%></span></div>
-            <div style="white-space: pre-wrap;"><span class='dark-green'>Willpower:</span> <span class='dark-cyan'><%=race.willpower%></span>            <span class='dark-green'>Charm:</span>   <span class='dark-cyan'><%=race.charm%></span></div>
-            <p></p>
-            <%= unless "" == :erlang.element(2, Map.get(@traits, race.id)) do %>
-              <div style="white-space: pre-wrap;"><span class='dark-green'>Traits:</span></div>
-            <% end %>
-            <%= Map.get(@traits, race.id) %>
-          </div>
-        <% end %>
-        <p></p>
-      </div>
-    </div>
-
-    <div class="form-group">
       <label for="email">Email Address <%= error_tag f, :email %></label>
       <%= text_input f, :email, class: "u-full-width" %>
     </div>

@@ -13,7 +13,6 @@ defmodule ApathyDrive.Character do
     Character,
     CharacterClass,
     CharacterMaterial,
-    CharacterRace,
     CharacterSkill,
     CharacterTrait,
     Class,
@@ -27,7 +26,6 @@ defmodule ApathyDrive.Character do
     Monster,
     Mobile,
     Party,
-    RaceTrait,
     Room,
     RoomServer,
     Skill,
@@ -349,10 +347,8 @@ defmodule ApathyDrive.Character do
 
   def changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(name race_id gender))
-    |> validate_required(~w(name race_id gender)a)
-    |> validate_inclusion(:race_id, ApathyDrive.Race.ids())
-    |> validate_inclusion(:gender, ["male", "female"])
+    |> cast(params, ~w(name))
+    |> validate_required(~w(name)a)
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)
@@ -360,16 +356,14 @@ defmodule ApathyDrive.Character do
 
   def sign_up_changeset(character, params \\ %{}) do
     character
-    |> cast(params, ~w(email password name race_id gender)a)
+    |> cast(params, ~w(email password name)a)
     |> put_change(:email, String.downcase(to_string(params["email"])))
-    |> validate_required(~w(email password name race_id gender)a)
+    |> validate_required(~w(email password name)a)
     |> validate_format(:email, ~r/@/)
     |> validate_length(:email, min: 3, max: 100)
     |> validate_length(:password, min: 6)
     |> unique_constraint(:email, name: :characters_lower_email_index, on: Repo)
     |> validate_confirmation(:password)
-    |> validate_inclusion(:race_id, ApathyDrive.Race.ids())
-    |> validate_inclusion(:gender, ["male", "female"])
     |> validate_format(:name, ~r/^[a-zA-Z]+$/)
     |> unique_constraint(:name, name: :characters_lower_name_index, on: Repo)
     |> validate_length(:name, min: 1, max: 12)
@@ -384,24 +378,6 @@ defmodule ApathyDrive.Character do
         |> Repo.all()
       else
         []
-      end
-
-    skills =
-      if character.race.race.stealth and !Enum.find(skills, &(&1.skill.name == "Stealth")) do
-        stealth = %ApathyDrive.CharacterSkill{
-          current_level_times_trained: 0,
-          devs_spent: 0,
-          level: 0,
-          skill: %ApathyDrive.Skill{
-            name: "Stealth",
-            required_level: 1,
-            type: "skill"
-          }
-        }
-
-        [stealth | skills]
-      else
-        skills
       end
 
     skills =
@@ -599,28 +575,6 @@ defmodule ApathyDrive.Character do
     Systems.Effect.add(character, effect)
   end
 
-  def set_attribute_levels(%Character{} = character) do
-    [:strength, :agility, :intellect, :willpower, :health, :charm]
-    |> Enum.reduce(character, fn stat, character ->
-      exp = get_in(character, [Access.key!(:race), Access.key!(:"#{stat}_experience")])
-
-      modifier = (100 + character.race.race.exp_modifier) / 100
-
-      level = Level.level_at_exp(exp, modifier)
-
-      character =
-        character
-        |> put_in([Access.key!(:attribute_levels), stat], level)
-        |> put_in(
-          [Access.key!(stat)],
-          get_in(character, [Access.key!(:race), Access.key!(:race), Access.key!(stat)]) + level
-        )
-
-      Character.update_attribute_bar(character, stat)
-      character
-    end)
-  end
-
   def load_classes(%Character{} = character) do
     classes =
       character
@@ -663,30 +617,32 @@ defmodule ApathyDrive.Character do
     end)
   end
 
-  def load_race(%Character{race_id: race_id} = character) do
-    character_race =
-      CharacterRace
-      |> Repo.get_by(%{character_id: character.id, race_id: race_id})
-      |> case do
-        %CharacterRace{} = character_race ->
-          character_race
+  def load_race(%Character{} = character) do
+    # character_race =
+    #   CharacterRace
+    #   |> Repo.get_by(%{character_id: character.id, race_id: race_id})
+    #   |> case do
+    #     %CharacterRace{} = character_race ->
+    #       character_race
 
-        nil ->
-          %CharacterRace{character_id: character.id, race_id: race_id}
-          |> Repo.insert!()
-      end
-      |> Repo.preload(:race)
+    #     nil ->
+    #       %CharacterRace{character_id: character.id, race_id: race_id}
+    #       |> Repo.insert!()
+    #   end
+    #   |> Repo.preload(:race)
 
-    effect =
-      race_id
-      |> RaceTrait.load_traits()
-      |> Ability.process_duration_traits(character, character, nil)
-      |> Map.put("stack_key", "race")
-      |> Map.put("stack_count", 1)
+    # effect =
+    #   race_id
+    #   |> RaceTrait.load_traits()
+    #   |> Ability.process_duration_traits(character, character, nil)
+    #   |> Map.put("stack_key", "race")
+    #   |> Map.put("stack_count", 1)
+
+    # character
+    # |> Map.put(:race, character_race)
+    # |> Systems.Effect.add(effect)
 
     character
-    |> Map.put(:race, character_race)
-    |> Systems.Effect.add(effect)
   end
 
   def load_materials(%Character{} = character) do
@@ -1067,8 +1023,6 @@ defmodule ApathyDrive.Character do
 
     character =
       if new_attribute_level > attribute_level do
-        character = Character.set_attribute_levels(character)
-
         message =
           "<p><span class='yellow'>Your #{attribute} increased to #{Map.get(character, attribute)}!</span></p>"
 
@@ -1545,9 +1499,8 @@ defmodule ApathyDrive.Character do
 
   def update_exp_bar(%Character{socket: socket} = character) do
     level = character.level
-    modifier = (100 + character.race.race.exp_modifier) / 100
-    current_level = Level.exp_at_level(level - 1, modifier)
-    to_next_level = Level.exp_at_level(level, modifier)
+    current_level = Level.exp_at_level(level - 1)
+    to_next_level = Level.exp_at_level(level)
 
     total_needed = to_next_level - current_level
     remaining = to_next_level - character.experience
@@ -1924,7 +1877,6 @@ defmodule ApathyDrive.Character do
           |> Map.put(:timers, %{})
           |> Character.load_race()
           |> Character.load_traits()
-          |> Character.set_attribute_levels()
           |> Character.add_equipped_items_effects()
           |> Character.load_abilities()
           |> Mobile.update_prompt(room)

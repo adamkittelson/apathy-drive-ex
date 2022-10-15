@@ -1022,7 +1022,6 @@ defmodule ApathyDrive.Room do
       |> Character.load_traits()
       |> Character.load_race()
       |> Character.load_classes()
-      |> Character.set_attribute_levels()
       |> Character.update_exp_bar()
       |> Character.load_abilities()
       |> Character.load_items()
