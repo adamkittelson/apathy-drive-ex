@@ -53,18 +53,16 @@ defmodule ApathyDrive.Skill do
             total =
               attributes
               |> Enum.map(
-                &Mobile.attribute_at_level(
+                &Mobile.attribute_value(
                   character,
-                  String.to_existing_atom(&1),
-                  character.level
+                  String.to_existing_atom(&1)
                 )
               )
               |> Enum.sum()
 
             average = total / length(attributes)
 
-            with_charm =
-              (average * 5 + Mobile.attribute_at_level(character, :charm, character.level)) / 6
+            with_charm = (average * 5 + Mobile.attribute_value(character, :charm)) / 6
 
             trunc(with_charm + base)
 

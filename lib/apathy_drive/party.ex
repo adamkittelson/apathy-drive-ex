@@ -39,6 +39,6 @@ defmodule ApathyDrive.Party do
   def charm_at_level(%Room{} = room, member, level) do
     room
     |> members(member)
-    |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(&1, :charm, level)))
+    |> Enum.reduce(0, &(&2 + Mobile.attribute_value(&1, :charm)))
   end
 end

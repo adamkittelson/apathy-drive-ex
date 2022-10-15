@@ -314,7 +314,7 @@ defmodule ApathyDrive.Script do
         },
         script
       ) do
-    if Mobile.attribute_at_level(mobile, :strength, mobile.level) <
+    if Mobile.attribute_value(mobile, :strength) <
          :rand.uniform(100) + amount do
       execute_script(room, mobile, failure_script)
     else
@@ -334,7 +334,7 @@ defmodule ApathyDrive.Script do
         },
         script
       ) do
-    if Mobile.attribute_at_level(mobile, :agility, mobile.level) <
+    if Mobile.attribute_value(mobile, :agility) <
          :rand.uniform(100) + amount do
       execute_script(room, mobile, failure_script)
     else
@@ -354,7 +354,7 @@ defmodule ApathyDrive.Script do
         },
         script
       ) do
-    if Mobile.attribute_at_level(mobile, :intellect, mobile.level) <
+    if Mobile.attribute_value(mobile, :intellect) <
          :rand.uniform(100) + amount do
       execute_script(room, mobile, failure_script)
     else
@@ -374,7 +374,7 @@ defmodule ApathyDrive.Script do
         },
         script
       ) do
-    if Mobile.attribute_at_level(mobile, :wisdom, mobile.level) <
+    if Mobile.attribute_value(mobile, :wisdom) <
          :rand.uniform(100) + amount do
       execute_script(room, mobile, failure_script)
     else

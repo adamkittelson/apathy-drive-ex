@@ -22,8 +22,8 @@ defmodule ApathyDrive.Commands.Pick do
 
   def skill(%{} = mobile) do
     skill_level = mobile.level
-    agility = Mobile.attribute_at_level(mobile, :agility, mobile.level)
-    intellect = Mobile.attribute_at_level(mobile, :intellect, mobile.level)
+    agility = Mobile.attribute_value(mobile, :agility)
+    intellect = Mobile.attribute_value(mobile, :intellect)
 
     cond do
       skill_level == 0 ->
@@ -63,9 +63,7 @@ defmodule ApathyDrive.Commands.Pick do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} pick open the #{name} #{
-            ApathyDrive.Exit.direction_description(room_exit["direction"])
-          }.</p>",
+          "<p>You see #{Mobile.colored_name(mobile)} pick open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>",
           [mobile]
         )
 
@@ -77,9 +75,7 @@ defmodule ApathyDrive.Commands.Pick do
 
         Room.send_scroll(
           room,
-          "<p>You see #{Mobile.colored_name(mobile)} attempt to pick open the #{name} #{
-            ApathyDrive.Exit.direction_description(room_exit["direction"])
-          }.</p>",
+          "<p>You see #{Mobile.colored_name(mobile)} attempt to pick open the #{name} #{ApathyDrive.Exit.direction_description(room_exit["direction"])}.</p>",
           [mobile]
         )
 

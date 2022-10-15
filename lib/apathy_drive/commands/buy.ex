@@ -304,7 +304,7 @@ defmodule ApathyDrive.Commands.Buy do
   def determine_item_quality(character, item) do
     magic_find =
       Mobile.ability_value(character, "MagicFind") +
-        Mobile.attribute_at_level(character, :charm, character.level)
+        Mobile.attribute_value(character, :charm)
 
     cond do
       Monster.rare?(character.level, item.quality_level, magic_find) ->

@@ -101,7 +101,7 @@ defmodule ApathyDrive.Trainer do
   end
 
   def training_cost(%Character{level: level} = character) do
-    charm = Mobile.attribute_at_level(character, :charm, character.level)
+    charm = Mobile.attribute_value(character, :charm)
 
     cost_multiplier = trunc(3.5 + 2.43 * (level - 2))
 

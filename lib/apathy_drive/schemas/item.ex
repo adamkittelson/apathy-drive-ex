@@ -928,11 +928,11 @@ defmodule ApathyDrive.Item do
   end
 
   def not_enough_strength?(character, item) do
-    Mobile.attribute_at_level(character, :strength, character.level) < required_strength(item)
+    Mobile.attribute_value(character, :strength) < required_strength(item)
   end
 
   def not_enough_agility?(character, item) do
-    Mobile.attribute_at_level(character, :agility, character.level) < required_agility(item)
+    Mobile.attribute_value(character, :agility) < required_agility(item)
   end
 
   def required_strength(%Item{} = item) do

@@ -653,7 +653,7 @@ defmodule ApathyDrive.Commands.Look do
 
   def required_strength(character, %Item{} = item) do
     if (strength = Item.required_strength(item)) > 0 do
-      if Mobile.attribute_at_level(character, :strength, character.level) >= strength do
+      if Mobile.attribute_value(character, :strength) >= strength do
         "\nRequired Strength: #{strength}"
       else
         "\n<span class='red'>Required Strength: #{strength}</span>"
@@ -665,7 +665,7 @@ defmodule ApathyDrive.Commands.Look do
 
   def required_agility(character, %Item{} = item) do
     if (agility = Item.required_agility(item)) > 0 do
-      if Mobile.attribute_at_level(character, :agility, character.level) >= agility do
+      if Mobile.attribute_value(character, :agility) >= agility do
         "\nRequired Agility: #{agility}"
       else
         "\n<span class='red'>Required Agility: #{agility}</span>"
@@ -697,7 +697,7 @@ defmodule ApathyDrive.Commands.Look do
     level = character.level
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
-    agility = Mobile.attribute_at_level(character, :agility, level)
+    agility = Mobile.attribute_value(character, :agility)
 
     combat_level = Character.combat_level(character)
 

@@ -334,7 +334,7 @@ defmodule ApathyDrive.Character do
 
   def max_encumbrance(%Character{} = character) do
     trunc(
-      Mobile.attribute_at_level(character, :strength, character.level) * 48 *
+      Mobile.attribute_value(character, :strength) * 48 *
         (1 + Systems.Effect.effect_bonus(character, "Encumbrance") / 100)
     )
   end
@@ -1316,12 +1316,12 @@ defmodule ApathyDrive.Character do
       max_mana: Mobile.max_mana_at_level(character, character.level) + powerstone,
       energy: character.energy,
       max_energy: character.max_energy,
-      strength: Mobile.attribute_at_level(character, :strength, character.level),
-      agility: Mobile.attribute_at_level(character, :agility, character.level),
-      intellect: Mobile.attribute_at_level(character, :intellect, character.level),
-      willpower: Mobile.attribute_at_level(character, :willpower, character.level),
-      health: Mobile.attribute_at_level(character, :health, character.level),
-      charm: Mobile.attribute_at_level(character, :charm, character.level),
+      strength: Mobile.attribute_value(character, :strength),
+      agility: Mobile.attribute_value(character, :agility),
+      intellect: Mobile.attribute_value(character, :intellect),
+      willpower: Mobile.attribute_value(character, :willpower),
+      health: Mobile.attribute_value(character, :health),
+      charm: Mobile.attribute_value(character, :charm),
       effects: effects,
       round_length_in_ms: 5000,
       spellcasting:
@@ -1371,7 +1371,7 @@ defmodule ApathyDrive.Character do
     level = character.level
     encumbrance = Character.encumbrance(character)
     max_encumbrance = Character.max_encumbrance(character)
-    agility = Mobile.attribute_at_level(character, :agility, level)
+    agility = Mobile.attribute_value(character, :agility)
 
     combat_level = Character.combat_level(character)
 
@@ -1399,7 +1399,7 @@ defmodule ApathyDrive.Character do
 
     attribute_value =
       (ability.attributes || [])
-      |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
+      |> Enum.map(&Mobile.attribute_value(character, String.to_atom(&1)))
       |> Room.average()
 
     magic_level = magic_level(character)
@@ -1611,7 +1611,7 @@ defmodule ApathyDrive.Character do
       ability_value(character, "Accuracy") + ability_value(character, weapon_type)
     end
 
-    def attribute_at_level(%Character{} = character, attribute, _level) do
+    def attribute_value(%Character{} = character, attribute) do
       Map.get(character, attribute) +
         ability_value(character, attribute |> to_string |> String.capitalize())
     end
@@ -1691,8 +1691,8 @@ defmodule ApathyDrive.Character do
     end
 
     def crits_at_level(character, level) do
-      intellect = attribute_at_level(character, :intellect, level)
-      charm = attribute_at_level(character, :charm, level)
+      intellect = attribute_value(character, :intellect)
+      charm = attribute_value(character, :charm)
 
       base = div(intellect * 3 + charm, 6) + level * 2
 
@@ -1773,8 +1773,8 @@ defmodule ApathyDrive.Character do
           ]
         ]
         |> Enum.reduce(%{}, fn {stat, stat_descriptions}, descriptions ->
-          character_stat = Mobile.attribute_at_level(character, stat, character_level)
-          observer_stat = Mobile.attribute_at_level(observer, stat, observer_level)
+          character_stat = Mobile.attribute_value(character, stat)
+          observer_stat = Mobile.attribute_value(observer, stat)
 
           if character_stat < observer_stat do
             index =
@@ -1984,7 +1984,7 @@ defmodule ApathyDrive.Character do
 
       bonus =
         Mobile.ability_value(character, "HPRegen") +
-          Mobile.attribute_at_level(character, :willpower, character.level)
+          Mobile.attribute_value(character, :willpower)
 
       regen_per_second = max_hp * (100 + bonus) / 12000
 
@@ -2019,7 +2019,7 @@ defmodule ApathyDrive.Character do
 
       bonus =
         Mobile.ability_value(character, "ManaRegen") +
-          Mobile.attribute_at_level(character, :willpower, character.level)
+          Mobile.attribute_value(character, :willpower)
 
       regen_per_second = max_mana * (100 + bonus) / 12000
 
@@ -2130,14 +2130,14 @@ defmodule ApathyDrive.Character do
     def hp_description(%Character{hp: _hp}), do: "very critically wounded"
 
     def magical_resistance_at_level(character, level) do
-      willpower = attribute_at_level(character, :willpower, level)
+      willpower = attribute_value(character, :willpower)
       willpower_bonus = div(willpower, 4)
 
       willpower_bonus + defense_rating(character)
     end
 
     def max_hp_at_level(mobile, level) do
-      health = attribute_at_level(mobile, :health, level)
+      health = attribute_value(mobile, :health)
 
       base = health * 2
       # default 2 HP/Level
@@ -2151,8 +2151,8 @@ defmodule ApathyDrive.Character do
     end
 
     def max_mana_at_level(mobile, level) do
-      intellect = attribute_at_level(mobile, :intellect, level)
-      willpower = attribute_at_level(mobile, :willpower, level)
+      intellect = attribute_value(mobile, :intellect)
+      willpower = attribute_value(mobile, :willpower)
 
       base_mana = div(intellect + intellect + willpower, 2) - 10
 
@@ -2189,7 +2189,7 @@ defmodule ApathyDrive.Character do
     end
 
     def physical_resistance_at_level(character, level) do
-      strength = attribute_at_level(character, :strength, level)
+      strength = attribute_value(character, :strength)
       strength_bonus = div(strength, 4)
 
       strength_bonus + defense_rating(character)
@@ -2197,7 +2197,7 @@ defmodule ApathyDrive.Character do
 
     def power_at_level(%Character{} = character, level) do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(character, &1, level)))
+      |> Enum.reduce(0, &(&2 + Mobile.attribute_value(character, &1)))
     end
 
     def send_scroll(character, nil), do: character
@@ -2260,7 +2260,7 @@ defmodule ApathyDrive.Character do
     def spellcasting_at_level(character, level, ability) do
       attribute_value =
         (ability.attributes || [])
-        |> Enum.map(&Mobile.attribute_at_level(character, String.to_atom(&1), character.level))
+        |> Enum.map(&Mobile.attribute_value(character, String.to_atom(&1)))
         |> Room.average()
 
       magic_level = Character.magic_level(character)

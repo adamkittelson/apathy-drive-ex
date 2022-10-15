@@ -39,7 +39,7 @@ defmodule ApathyDrive.Commands.Bash do
         Mobile.send_scroll(mobile, "<p>The #{name} is already open.</p>")
         room
 
-      bash?(room_exit, Mobile.attribute_at_level(mobile, :strength, mobile.level)) ->
+      bash?(room_exit, Mobile.attribute_value(mobile, :strength)) ->
         mirror_bash!(room_exit, room.id)
         Mobile.send_scroll(mobile, "<p>You bashed the #{name} open.</p>")
 

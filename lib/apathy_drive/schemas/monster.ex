@@ -462,7 +462,7 @@ defmodule ApathyDrive.Monster do
       ) do
     magic_find =
       Mobile.ability_value(character, "MagicFind") +
-        Mobile.attribute_at_level(character, :charm, character.level)
+        Mobile.attribute_value(character, :charm)
 
     picks = trunc(magic_find / 100 + 1)
 
@@ -547,7 +547,7 @@ defmodule ApathyDrive.Monster do
 
     magic_find =
       Mobile.ability_value(character, "MagicFind") +
-        Mobile.attribute_at_level(character, :charm, character.level)
+        Mobile.attribute_value(character, :charm)
 
     if Monster.rare?(monster.level, level, magic_find) do
       item =
@@ -1018,8 +1018,8 @@ defmodule ApathyDrive.Monster do
       trunc(attack_rating(monster))
     end
 
-    def attribute_at_level(%Monster{} = monster, attribute, level) do
-      Map.get(monster, attribute) + level - 1 +
+    def attribute_value(%Monster{} = monster, attribute) do
+      Map.get(monster, attribute) +
         ability_value(monster, attribute |> to_string |> String.capitalize())
     end
 
@@ -1116,8 +1116,8 @@ defmodule ApathyDrive.Monster do
     end
 
     def crits_at_level(monster, level) do
-      intellect = attribute_at_level(monster, :intellect, level)
-      charm = attribute_at_level(monster, :charm, level)
+      intellect = attribute_value(monster, :intellect)
+      charm = attribute_value(monster, :charm)
 
       base = div(intellect * 3 + charm, 6) + level * 2
 
@@ -1350,8 +1350,8 @@ defmodule ApathyDrive.Monster do
     end
 
     def perception_at_level(monster, level, _room) do
-      int = attribute_at_level(monster, :intellect, level)
-      cha = attribute_at_level(monster, :charm, level)
+      int = attribute_value(monster, :intellect)
+      cha = attribute_value(monster, :charm)
       int = int + cha / 10
       modifier = ability_value(monster, "Perception")
       trunc(int * (1 + modifier / 100))
@@ -1367,7 +1367,7 @@ defmodule ApathyDrive.Monster do
 
     def power_at_level(%Monster{} = monster, level) do
       [:strength, :agility, :intellect, :willpower, :health, :charm]
-      |> Enum.reduce(0, &(&2 + Mobile.attribute_at_level(monster, &1, level)))
+      |> Enum.reduce(0, &(&2 + Mobile.attribute_value(monster, &1)))
     end
 
     def heartbeat(%Monster{} = monster, %Room{} = room) do
@@ -1477,8 +1477,8 @@ defmodule ApathyDrive.Monster do
     end
 
     def stealth_at_level(monster, level) do
-      agi = attribute_at_level(monster, :agility, level)
-      cha = attribute_at_level(monster, :charm, level)
+      agi = attribute_value(monster, :agility)
+      cha = attribute_value(monster, :charm)
       agi = agi + cha / 10
       modifier = ability_value(monster, "Stealth")
       trunc(agi * (modifier / 100))
