@@ -48,8 +48,16 @@ defmodule ApathyDrive.Aggression do
 
   def attacking_owner?(%{}, _mobile, _room), do: false
 
+  def enemy?(%Character{monster: nil}, %{} = _mobile) do
+    false
+  end
+
   def enemy?(%Character{} = character, %Monster{} = monster) do
     character.auto_attack && (hated?(monster, character) or enemy?(monster, character))
+  end
+
+  def enemy?(%Monster{}, %Character{monster: nil} = _mobile) do
+    false
   end
 
   def enemy?(%Monster{npc: true}, %{} = _mobile) do

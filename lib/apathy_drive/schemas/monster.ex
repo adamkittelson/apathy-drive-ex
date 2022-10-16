@@ -1124,10 +1124,6 @@ defmodule ApathyDrive.Monster do
       trunc(base / (250 + base) * 100) + ability_value(monster, "Crits")
     end
 
-    def description(monster, _observer) do
-      monster.description
-    end
-
     def detected?(_monster, sneaker, _room) do
       :rand.uniform(100) >= Mobile.stealth(sneaker)
     end

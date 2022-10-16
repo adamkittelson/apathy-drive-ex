@@ -9,7 +9,6 @@ defmodule ApathyDrive.Character do
     AbilityTrait,
     AI,
     Attunement,
-    ChannelHistory,
     Character,
     CharacterClass,
     CharacterMaterial,
@@ -78,6 +77,7 @@ defmodule ApathyDrive.Character do
     field(:welcome_token, :string)
     field(:email_verified, :boolean)
 
+    field(:monster, :any, virtual: true)
     field(:dev_point_levels, :any, virtual: true)
     field(:experience, :integer, virtual: true, default: 0)
     field(:next_drain_at, :integer, virtual: true)
@@ -320,7 +320,6 @@ defmodule ApathyDrive.Character do
         copper: character.copper + currency.copper
       })
       |> Repo.update!()
-      |> Character.add_attribute_experience(%{charm: 1})
     else
       character
     end
@@ -998,67 +997,6 @@ defmodule ApathyDrive.Character do
     end)
   end
 
-  def add_attribute_experience(%Character{} = character, attribute, amount) do
-    Character.pulse_score_attribute(character, attribute)
-
-    attribute_level = character.attribute_levels[attribute]
-
-    character =
-      character
-      |> update_in([:race], fn character_race ->
-        character_race
-        |> Ecto.Changeset.change(%{
-          "#{attribute}_experience":
-            Map.get(character_race, :"#{attribute}_experience") + trunc(amount)
-        })
-        |> Repo.update!()
-      end)
-
-    modifier = (100 + character.race.race.exp_modifier) / 100
-
-    new_attribute_level =
-      character
-      |> get_in([Access.key!(:race), Access.key!(:"#{attribute}_experience")])
-      |> Level.level_at_exp(modifier)
-
-    character =
-      if new_attribute_level > attribute_level do
-        message =
-          "<p><span class='yellow'>Your #{attribute} increased to #{Map.get(character, attribute)}!</span></p>"
-
-        Repo.insert!(%ChannelHistory{
-          character_id: character.id,
-          message: message
-        })
-
-        Character.send_chat(
-          character,
-          message
-        )
-
-        character
-      else
-        character
-      end
-
-    Character.update_attribute_bar(character, attribute)
-    Character.update_exp_bar(character)
-
-    character
-  end
-
-  def add_attribute_experience(%Character{} = character, %{} = attributes) do
-    exp = attribute_exp(character.level)
-
-    Enum.reduce(attributes, character, fn {attribute, percent}, character ->
-      amount = max(1, trunc(exp * percent))
-
-      Character.add_attribute_experience(character, attribute, amount)
-    end)
-  end
-
-  def add_attribute_experience(%{} = character, %{} = _attributes), do: character
-
   def skill_points(%Character{id: id} = character) do
     spent =
       CharacterSkill
@@ -1698,104 +1636,6 @@ defmodule ApathyDrive.Character do
       trunc(base / (250 + base) * 100) + ability_value(character, "Crits")
     end
 
-    def description(%Character{} = character, %Character{} = observer) do
-      descriptions =
-        [
-          strength: [
-            "puny",
-            "weak",
-            "slightly built",
-            "moderately built",
-            "well built",
-            "muscular",
-            "powerfully built",
-            "heroically proportioned",
-            "Herculean",
-            "physically Godlike"
-          ],
-          health: [
-            "frail",
-            "thin",
-            "healthy",
-            "stout",
-            "solid",
-            "massive",
-            "gigantic",
-            "colossal"
-          ],
-          agility: [
-            "slowly",
-            "clumsily",
-            "slugishly",
-            "cautiously",
-            "gracefully",
-            "very swiftly",
-            "with uncanny speed",
-            "with catlike agility",
-            "blindingly fast"
-          ],
-          charm: [
-            "openly hostile and quite revolting.",
-            "hostile and unappealing.",
-            "quite unfriendly and aloof.",
-            "likeable in an unassuming sort of way.",
-            "quite attractive and pleasant to be around.",
-            "charismatic and outgoing. You can't help but like {{target:him/her/them}}.",
-            "extremely likeable, and fairly radiates charisma.",
-            "incredibly charismatic. You are almost overpowered by {{target:his/her/their}} strong personality.",
-            "overwhelmingly charismatic. You almost drop to your knees in wonder at the sight of {{target:him/her/them}}!"
-          ],
-          intellect: [
-            "utterly moronic",
-            "quite stupid",
-            "slightly dull",
-            "intelligent",
-            "bright",
-            "extremely clever",
-            "brilliant",
-            "a genius",
-            "all-knowing"
-          ],
-          willpower: [
-            "selfish and hot-tempered",
-            "sullen and impulsive",
-            "a little naive",
-            "looks fairly knowledgeable",
-            "looks quite experienced and wise",
-            "has a worldly air about {{target:him/her/them}}",
-            "seems to possess a wisdom beyond {{target:his/her/their}} years",
-            "seem to be in an enlightened state of mind",
-            "looks like {{target:he is/she is/they are}} one with the Gods"
-          ]
-        ]
-        |> Enum.reduce(%{}, fn {stat, stat_descriptions}, descriptions ->
-          character_stat = Mobile.attribute_value(character, stat)
-          observer_stat = Mobile.attribute_value(observer, stat)
-
-          if character_stat < observer_stat do
-            index =
-              trunc((character_stat - observer_stat) / 2) + div(length(stat_descriptions), 2)
-
-            Map.put(
-              descriptions,
-              stat,
-              Enum.at(stat_descriptions, index, Enum.at(stat_descriptions, 0))
-            )
-          else
-            index =
-              trunc((character_stat - observer_stat) / 2) + div(length(stat_descriptions), 2)
-
-            Map.put(
-              descriptions,
-              stat,
-              Enum.at(stat_descriptions, index, Enum.at(stat_descriptions, -1))
-            )
-          end
-        end)
-
-      "#{character.name} is a #{descriptions[:health]}, #{descriptions[:strength]} #{character.race.race.name}. {{target:He moves/She moves/They move}} #{descriptions[:agility]}, and {{target:is/is/are}} #{descriptions[:charm]} #{character.name} appears to be #{descriptions[:intellect]} and #{descriptions[:willpower]}."
-    end
-
     def detected?(character, sneaker, room) do
       perception = Mobile.perception(character, room)
       stealth = Mobile.stealth(sneaker)
@@ -1959,8 +1799,16 @@ defmodule ApathyDrive.Character do
     # only characters can receive evil points
     def evil_points(_character, %{} = _attacker), do: 0
 
+    def enter_message(%Character{monster: nil, name: name}) do
+      "<p><span class='dark-green'>The ghost of</span> <span class='yellow'>#{name}</span><span class='dark-green'> glides in from {{direction}}.</span></p>"
+    end
+
     def enter_message(%Character{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks in from {{direction}}.</span></p>"
+    end
+
+    def exit_message(%Character{monster: nil, name: name}) do
+      "<p><span class='dark-green'>The ghost of</span> <span class='yellow'>#{name}</span><span class='dark-green'> glides off {{direction}}.</span></p>"
     end
 
     def exit_message(%Character{name: name}) do
@@ -2305,30 +2153,7 @@ defmodule ApathyDrive.Character do
     end
 
     def subtract_energy(character, ability) do
-      character = update_in(character.energy, &(&1 - ability.energy))
-
-      attributes = ability.attributes || []
-
-      charm? = "charm" in attributes
-      count = length(attributes)
-
-      if count > 0 do
-        attributes =
-          if charm? do
-            Enum.reduce(attributes, %{}, fn attribute, attributes ->
-              Map.put(attributes, String.to_atom(attribute), 1 / count)
-            end)
-          else
-            Enum.reduce(attributes, %{}, fn attribute, attributes ->
-              Map.put(attributes, String.to_atom(attribute), 1 / count - 1 / 6 / count)
-            end)
-            |> Map.put(:charm, 1 / 6)
-          end
-
-        Character.add_attribute_experience(character, attributes)
-      else
-        character
-      end
+      update_in(character.energy, &(&1 - ability.energy))
     end
 
     def tracking(character, room) do

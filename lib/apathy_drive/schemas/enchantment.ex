@@ -78,9 +78,7 @@ defmodule ApathyDrive.Enchantment do
 
           Mobile.send_scroll(
             enchanter,
-            "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-              formatted_time_left(time_left)
-            }</span></p>"
+            "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{formatted_time_left(time_left)}</span></p>"
           )
 
           next_tick_time = next_tick_time(enchanter, enchantment)
@@ -191,9 +189,7 @@ defmodule ApathyDrive.Enchantment do
             end
 
             message =
-              "<p><span class='blue'>You've enchanted #{item.name} with #{
-                enchantment.ability.name
-              }.</span></p>"
+              "<p><span class='blue'>You've enchanted #{item.name} with #{enchantment.ability.name}.</span></p>"
 
             Character.send_chat(enchanter, message)
 
@@ -206,9 +202,7 @@ defmodule ApathyDrive.Enchantment do
 
             Mobile.send_scroll(
               enchanter,
-              "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{
-                formatted_time_left(time_left)
-              }</span></p>"
+              "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{formatted_time_left(time_left)}</span></p>"
             )
 
             next_tick_time = next_tick_time(enchanter, enchantment)
@@ -236,19 +230,13 @@ defmodule ApathyDrive.Enchantment do
     Room.load_items(room)
   end
 
-  def add_enchantment_exp(enchanter, enchantment) do
+  def add_enchantment_exp(enchanter, _enchantment) do
     exp = enchantment_exp(enchanter)
 
     # skill = Repo.get(Skill, enchantment.ability.skill_id)
     # enchanter = Character.add_skill_experience(enchanter, skill.name, exp)
 
-    Enum.reduce(enchantment.ability.attributes, enchanter, fn attribute, enchanter ->
-      attribute = String.to_atom(attribute)
-
-      Character.add_attribute_experience(enchanter, %{
-        attribute => 1 / length(enchantment.ability.attributes)
-      })
-    end)
+    enchanter
     |> ApathyDrive.Character.add_experience(exp)
   end
 

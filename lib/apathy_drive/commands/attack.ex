@@ -20,6 +20,7 @@ defmodule ApathyDrive.Commands.Attack do
       |> Map.values()
       |> Enum.reject(&(&1.ref in Party.refs(room, character)))
       |> Enum.reject(&(&1.sneaking && !(&1.ref in character.detected_characters)))
+      |> Enum.reject(&(Map.has_key?(&1, :monster) and is_nil(Map.get(&1, :monster))))
       |> Match.one(:keyword_starts_with, query)
 
     room =
@@ -31,6 +32,10 @@ defmodule ApathyDrive.Commands.Attack do
     Room.update_mana_bar(room, character.ref)
 
     room
+  end
+
+  def attack(%{monster: nil} = character, _target) do
+    Mobile.send_scroll(character, "<p>You need a body to do that.</p>")
   end
 
   def attack(%{} = character, nil) do

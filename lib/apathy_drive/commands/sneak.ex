@@ -29,10 +29,6 @@ defmodule ApathyDrive.Commands.Sneak do
             character
             |> Map.put(:sneaking, true)
             |> Map.put(:resting, false)
-            |> Character.add_attribute_experience(%{
-              agility: 0.75,
-              charm: 0.25
-            })
           end)
 
         room =

@@ -328,7 +328,7 @@ defmodule ApathyDrive.Room do
 
     room = Room.display_enter_message(room, mobile, message)
 
-    unless mobile.sneaking do
+    if !Map.get(mobile, :monster) and !mobile.sneaking do
       mobile.room_id
       |> RoomServer.find()
       |> RoomServer.tell_monsters_to_follow(mobile, room.id)

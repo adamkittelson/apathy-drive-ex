@@ -259,6 +259,13 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
+  def look_at_mobile(%Character{monster: nil} = character, %Character{} = observer, _room) do
+    Mobile.send_scroll(
+      observer,
+      "<p>The incorporeal ghost of #{character.name} hovers before you.</p>"
+    )
+  end
+
   def look_at_mobile(%Character{} = target, %{} = character, _room) do
     if character != target,
       do:
@@ -274,8 +281,7 @@ defmodule ApathyDrive.Commands.Look do
       |> interpolate(%{"target" => target})
 
     description =
-      target
-      |> Mobile.description(character)
+      target.monster.description
       |> interpolate(%{"target" => target})
 
     Mobile.send_scroll(character, "<p>#{description}</p>")
@@ -318,8 +324,7 @@ defmodule ApathyDrive.Commands.Look do
       |> interpolate(%{"target" => target})
 
     description =
-      target
-      |> Mobile.description(character)
+      target.description
       |> interpolate(%{"target" => target})
 
     Mobile.send_scroll(character, "<p>#{description}</p>")

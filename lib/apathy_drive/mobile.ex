@@ -12,7 +12,6 @@ defprotocol ApathyDrive.Mobile do
   def confused(mobile, room)
   def crits_at_level(mobile, level)
   def defense_rating(mobile)
-  def description(mobile, observer)
   def detected?(mobile, sneaker, room)
   def die(mobile, room)
   def die?(mobile)

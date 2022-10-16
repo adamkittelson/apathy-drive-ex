@@ -8,9 +8,7 @@ defmodule ApathyDrive.Commands.Gossip do
     raw_message = Enum.join(args, " ")
 
     message =
-      "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{
-        Character.sanitize(raw_message)
-      }</p>"
+      "<p>[<span class='dark-magenta'>gossip</span> : #{character.name}] #{Character.sanitize(raw_message)}</p>"
 
     Repo.insert!(%ChannelHistory{
       message: message,
