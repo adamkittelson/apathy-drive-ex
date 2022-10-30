@@ -2,7 +2,7 @@ defmodule ApathyDrive.Shop do
   use ApathyDriveWeb, :model
   require Logger
 
-  alias ApathyDrive.{Character, Item, ItemInstance, Mobile, Room, Shop, ShopItem, ShopItemType}
+  alias ApathyDrive.{Item, ItemInstance, Mobile, Room, Shop, ShopItem, ShopItemType}
 
   schema "shops" do
     field(:cost_multiplier, :float)
@@ -80,7 +80,7 @@ defmodule ApathyDrive.Shop do
     end
   end
 
-  def buy_price(%Shop{} = shop, %Character{} = character, %Item{} = item) do
+  def buy_price(%Shop{} = shop, %{} = character, %Item{} = item) do
     charm = Mobile.attribute_value(character, :charm)
 
     trunc(
@@ -89,7 +89,7 @@ defmodule ApathyDrive.Shop do
     )
   end
 
-  def sell_price(shop, %Character{} = character, %Item{} = item) do
+  def sell_price(shop, %{} = character, %Item{} = item) do
     charm = Mobile.attribute_value(character, :charm)
 
     sell_price = trunc(Item.cost_in_copper(item) * (div(charm, 2) + 25) / 100)

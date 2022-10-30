@@ -5,6 +5,7 @@ defmodule ApathyDrive.Commands.Move do
     Currency,
     Doors,
     Mobile,
+    Monster,
     Party,
     Repo,
     Room,
@@ -112,15 +113,15 @@ defmodule ApathyDrive.Commands.Move do
   def execute(
         %Room{} = room,
         %{} = character,
-        %{"kind" => "Alignment", "max" => max, "min" => min} = room_exit,
+        %{"kind" => "Alignment", "max" => _max, "min" => _min} = room_exit,
         energy
       ) do
-    if character.evil_points <= max and character.evil_points >= min do
-      execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), energy)
-    else
-      Mobile.send_scroll(character, "<p>A strange power holds you back!</p>")
-      room
-    end
+    # if character.evil_points <= max and character.evil_points >= min do
+    execute(room, room.mobiles[character.ref], Map.put(room_exit, "kind", "Normal"), energy)
+    # else
+    #   Mobile.send_scroll(character, "<p>A strange power holds you back!</p>")
+    #   room
+    # end
   end
 
   def execute(
@@ -493,13 +494,12 @@ defmodule ApathyDrive.Commands.Move do
     room
   end
 
-  def energy_cost(%Character{} = character) do
+  def energy_cost(%Character{} = _character), do: 0
+
+  def energy_cost(%Monster{} = character) do
     energy = 100
 
     cond do
-      is_nil(character.monster) ->
-        0
-
       character.sneaking ->
         modifier = max(1.0, 2 - Mobile.stealth(character) / 100)
         energy * modifier
@@ -508,6 +508,4 @@ defmodule ApathyDrive.Commands.Move do
         energy
     end
   end
-
-  def energy_cost(%{} = _mobile), do: 0
 end

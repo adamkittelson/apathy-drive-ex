@@ -381,11 +381,8 @@ defmodule ApathyDrive.Room do
       room.mobiles
       |> Map.values()
       |> Enum.map(fn
-        %Character{} = character ->
-          [character | [character.inventory | character.equipment]]
-
-        %{} ->
-          []
+        %{} = mobile ->
+          [mobile | [mobile.inventory | mobile.equipment]]
       end)
 
     [room_items, mobile_items]
@@ -1033,7 +1030,6 @@ defmodule ApathyDrive.Room do
 
     Directory.add_character(%{
       name: character.name,
-      evil_points: character.evil_points,
       room: character.room_id,
       ref: character.ref,
       title: character.title

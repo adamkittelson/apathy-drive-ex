@@ -68,6 +68,17 @@ defmodule ApathyDrive.Monster do
     field(:lawful, :boolean)
     field(:npc, :boolean)
 
+    field(:enchantment, :any, virtual: true)
+    field(:editing, :any, virtual: true)
+    field(:resting, :boolean, virtual: true, default: false)
+    field(:admin, :boolean, virtual: true, default: false)
+    field(:skills, :map, virtual: true, default: %{})
+    field(:inventory, :any, virtual: true, default: [])
+    field(:equipment, :any, virtual: true, default: [])
+    field(:current_command, :any, virtual: true)
+    field(:current_command_error_count, :any, virtual: true, default: 0)
+    field(:commands, :any, virtual: true, default: :queue.new())
+    field(:possessing_character, :any, virtual: true)
     field(:remaining_energy, :integer, virtual: true, default: 0)
     field(:gcd, :integer, virtual: true, default: 0)
     field(:hate, :map, virtual: true, default: %{})
@@ -1254,27 +1265,6 @@ defmodule ApathyDrive.Monster do
       monster.mana >= cost / mana
     end
 
-    def evil_points(monster, %Character{} = attacker) do
-      cond do
-        Ability.retaliate?(monster, attacker) ->
-          # attacker has already received evil points for attacking monster
-          0
-
-        Ability.retaliate?(attacker, monster) ->
-          # monster has attacked the character, it's not evil to fight back
-          0
-
-        monster.alignment == "good" ->
-          40
-
-        :else ->
-          0
-      end
-    end
-
-    # only characters can receive evil points
-    def evil_points(_monster, %{} = _attacker), do: 0
-
     def enter_message(%Monster{name: name}) do
       "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks in from {{direction}}.</span></p>"
     end
@@ -1404,12 +1394,18 @@ defmodule ApathyDrive.Monster do
           |> RoomServer.execute_casting_ability(room)
         end)
 
-      if :rand.uniform(100) > 75 do
-        ApathyDrive.Aggression.react(room, monster.ref)
+      room =
+        if :rand.uniform(100) > 75 do
+          ApathyDrive.Aggression.react(room, monster.ref)
+        else
+          room
+        end
+
+      if :rand.uniform(100) > 95 do
+        AI.think(room, monster.ref)
       else
         room
       end
-      |> AI.think(monster.ref)
     end
 
     def hp_regen_per_30(%Monster{} = monster) do
@@ -1430,7 +1426,12 @@ defmodule ApathyDrive.Monster do
       end
     end
 
-    def send_scroll(%Monster{} = monster, _html) do
+    def send_scroll(%Monster{possessing_character: nil} = monster, _html) do
+      monster
+    end
+
+    def send_scroll(%Monster{possessing_character: character} = monster, html) do
+      Mobile.send_scroll(character, html)
       monster
     end
 
@@ -1495,9 +1496,17 @@ defmodule ApathyDrive.Monster do
       perception * (modifier / 100)
     end
 
-    def update_prompt(%Monster{} = monster, room) do
+    def update_prompt(%Monster{possessing_character: nil} = monster, room) do
       Room.update_hp_bar(room, monster.ref)
       Room.update_mana_bar(room, monster.ref)
+      monster
+    end
+
+    def update_prompt(%Monster{possessing_character: character} = monster, room) do
+      Room.update_hp_bar(room, monster.ref)
+      Room.update_mana_bar(room, monster.ref)
+
+      send(character.socket, {:update_prompt, Character.prompt(monster)})
       monster
     end
 

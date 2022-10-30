@@ -48,7 +48,7 @@ defmodule ApathyDrive.Commands.Look do
 
   def keywords, do: ["look", "l"]
 
-  def execute(%Room{} = room, %Character{} = character, ignore_light: true) do
+  def execute(%Room{} = room, %{} = character, ignore_light: true) do
     coords =
       if character.admin do
         "<span style='font-size:0.7em'>Room##{room.id} (x:#{room.coordinates["x"]} y:#{room.coordinates["y"]} z:#{room.coordinates["z"]})</span>"
@@ -72,7 +72,7 @@ defmodule ApathyDrive.Commands.Look do
     )
   end
 
-  def execute(%Room{} = room, %Character{} = character, args) do
+  def execute(%Room{} = room, %{} = character, args) do
     if blind?(character) do
       Mobile.send_scroll(character, "<p>You are blind.</p>")
     else
@@ -82,13 +82,13 @@ defmodule ApathyDrive.Commands.Look do
     room
   end
 
-  def look(%Room{id: id} = room, %Character{room_id: room_id} = character, [])
+  def look(%Room{id: id} = room, %{room_id: room_id} = character, [])
       when id != room_id do
     peek(room, character, room_id)
     look(room, Map.put(character, :room_id, id), [])
   end
 
-  def look(%Room{} = room, %Character{} = character, []) do
+  def look(%Room{} = room, %{} = character, []) do
     light =
       room
       |> Room.light()
@@ -175,7 +175,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look(%Room{} = room, %Character{} = character, arguments) when is_list(arguments) do
+  def look(%Room{} = room, %{} = character, arguments) when is_list(arguments) do
     cond do
       Enum.member?(@directions, Enum.join(arguments, " ")) ->
         room_exit = Room.get_exit(room, Enum.join(arguments, " "))
@@ -200,16 +200,16 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look(%Room{}, %Character{} = character, nil) do
+  def look(%Room{}, %{} = character, nil) do
     Mobile.send_scroll(character, "<p>There is no exit in that direction!</p>")
   end
 
-  def look(%Room{}, %Character{} = character, %{"kind" => kind})
+  def look(%Room{}, %{} = character, %{"kind" => kind})
       when kind in ["RemoteAction", "Command"] do
     Mobile.send_scroll(character, "<p>There is no exit in that direction!</p>")
   end
 
-  def look(%Room{} = room, %Character{} = character, %{"kind" => "Door"} = room_exit) do
+  def look(%Room{} = room, %{} = character, %{"kind" => "Door"} = room_exit) do
     if Doors.open?(room, room_exit) do
       look(room, character, Map.put(room_exit, "kind", "Normal"))
     else
@@ -217,7 +217,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look(%Room{} = room, %Character{} = character, %{"kind" => "Key"} = room_exit) do
+  def look(%Room{} = room, %{} = character, %{"kind" => "Key"} = room_exit) do
     if Doors.open?(room, room_exit) do
       look(room, character, Map.put(room_exit, "kind", "Normal"))
     else
@@ -225,7 +225,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look(%Room{} = room, %Character{} = character, %{"kind" => "Hidden"} = room_exit) do
+  def look(%Room{} = room, %{} = character, %{"kind" => "Hidden"} = room_exit) do
     if Doors.open?(room, room_exit) do
       look(room, character, Map.put(room_exit, "kind", "Normal"))
     else
@@ -233,13 +233,13 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look(%Room{}, %Character{} = character, %{"destination" => destination}) do
+  def look(%Room{}, %{} = character, %{"destination" => destination}) do
     destination
     |> RoomServer.find()
     |> RoomServer.look(character, [])
   end
 
-  def peek(%Room{} = room, %Character{} = character, room_id) do
+  def peek(%Room{} = room, %{} = character, room_id) do
     mirror_exit = Room.mirror_exit(room, room_id)
 
     if mirror_exit do
@@ -259,7 +259,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_at_mobile(%Character{monster: nil} = character, %Character{} = observer, _room) do
+  def look_at_mobile(%Character{} = character, %Character{} = observer, _room) do
     Mobile.send_scroll(
       observer,
       "<p>The incorporeal ghost of #{character.name} hovers before you.</p>"
@@ -280,9 +280,9 @@ defmodule ApathyDrive.Commands.Look do
       "{{target:He appears/She appears/They appear}} to be #{hp_description}."
       |> interpolate(%{"target" => target})
 
-    description =
-      target.monster.description
-      |> interpolate(%{"target" => target})
+    description = "todo"
+    # target.monster.description
+    # |> interpolate(%{"target" => target})
 
     Mobile.send_scroll(character, "<p>#{description}</p>")
     Mobile.send_scroll(character, "<p>#{hp_description}\n\n</p>")
@@ -359,7 +359,7 @@ defmodule ApathyDrive.Commands.Look do
     mobiles_to_show =
       mobiles
       |> Map.values()
-      |> List.delete(character)
+      |> Enum.reject(&(&1.ref == (character && character.ref)))
       |> Enum.filter(&(!&1.sneaking))
       |> Enum.map(&Mobile.colored_name(&1))
 
@@ -443,7 +443,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def look_items(%Room{} = room, %Character{} = character) do
+  def look_items(%Room{} = room, %{} = character) do
     items =
       room.items
       |> Enum.reject(& &1.hidden)
@@ -460,7 +460,7 @@ defmodule ApathyDrive.Commands.Look do
     end
   end
 
-  def blind?(%Character{} = character) do
+  def blind?(%{} = character) do
     Mobile.has_ability?(character, "Blind")
   end
 
@@ -742,7 +742,7 @@ defmodule ApathyDrive.Commands.Look do
 
   def item_tooltip(character, item, opts \\ [])
 
-  def item_tooltip(%Character{} = character, %Item{} = item, opts) do
+  def item_tooltip(%{} = character, %Item{} = item, opts) do
     value =
       %Shop{cost_multiplier: 1}
       |> Shop.sell_price(character, item)

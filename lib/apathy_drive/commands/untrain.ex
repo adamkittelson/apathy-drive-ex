@@ -82,9 +82,7 @@ defmodule ApathyDrive.Commands.Untrain do
 
             Mobile.send_scroll(
               character,
-              "<p><span class='yellow'>Your #{class} level has decreased to #{
-                character_class.level
-              }!</span></p>"
+              "<p><span class='yellow'>Your #{class} level has decreased to #{character_class.level}!</span></p>"
             )
 
             hp_diff = Mobile.max_hp_at_level(character, character.level) - old_hp
@@ -98,7 +96,6 @@ defmodule ApathyDrive.Commands.Untrain do
 
             Directory.add_character(%{
               name: character.name,
-              evil_points: character.evil_points,
               room: character.room_id,
               ref: character.ref,
               title: character.title

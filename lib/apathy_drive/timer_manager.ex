@@ -1,5 +1,5 @@
 defmodule ApathyDrive.TimerManager do
-  alias ApathyDrive.{Character, Room, RoomServer}
+  alias ApathyDrive.{Room, RoomServer}
   require Logger
 
   def seconds(seconds), do: seconds |> :timer.seconds() |> trunc
@@ -76,7 +76,7 @@ defmodule ApathyDrive.TimerManager do
       end)
 
     Room.update_mobile(room, mobile_ref, fn
-      room, %Character{} = mobile ->
+      room, %{} = mobile ->
         room =
           Enum.reduce(mobile.inventory, room, fn item, room ->
             item.timers
@@ -129,9 +129,6 @@ defmodule ApathyDrive.TimerManager do
             end
           end)
         end)
-
-      _room, %{} = mobile ->
-        mobile
     end)
   end
 

@@ -5,8 +5,8 @@ defmodule ApathyDrive.RoomMonster do
   schema "rooms_monsters" do
     belongs_to(:room, ApathyDrive.Room)
     belongs_to(:monster, ApathyDrive.Monster)
-    belongs_to(:character, ApathyDrive.Character)
     belongs_to(:owner, ApathyDrive.Character)
+    belongs_to(:possessing_character, ApathyDrive.Character)
     field(:strength, :integer)
     field(:agility, :integer)
     field(:intellect, :integer)

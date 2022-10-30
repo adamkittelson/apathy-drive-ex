@@ -120,7 +120,7 @@ defmodule ApathyDrive.MonsterSpawning do
 
   defp monsters_to_load(room_id) do
     RoomMonster
-    |> Ecto.Query.where([rm], rm.room_id == ^room_id and is_nil(rm.character_id))
+    |> Ecto.Query.where([rm], rm.room_id == ^room_id and is_nil(rm.possessing_character_id))
     |> Repo.all()
   end
 

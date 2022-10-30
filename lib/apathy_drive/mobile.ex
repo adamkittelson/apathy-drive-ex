@@ -18,7 +18,6 @@ defprotocol ApathyDrive.Mobile do
   def dodge_at_level(mobile, level, room)
   def enough_mana_for_ability?(mobile, ability)
   def enter_message(mobile)
-  def evil_points(mobile, attacker)
   def exhausted(mobile, energy \\ nil)
   def exit_message(mobile)
   def has_ability?(mobile, ability_name)

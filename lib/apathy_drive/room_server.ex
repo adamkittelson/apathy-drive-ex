@@ -13,11 +13,13 @@ defmodule ApathyDrive.RoomServer do
     ItemInstance,
     LairMonster,
     Mobile,
+    Monster,
     MonsterSpawning,
     Party,
     PubSub,
     Repo,
     Room,
+    RoomMonster,
     RoomSupervisor,
     Shop,
     TimerManager,
@@ -305,42 +307,66 @@ defmodule ApathyDrive.RoomServer do
       ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
 
       character =
-        character
-        |> Map.put(:monitor_ref, monitor_ref)
-        |> Map.put(:ref, ref)
-        |> Map.put(:leader, ref)
-        |> Map.put(:socket, socket)
-        |> Character.load_traits()
-        |> Character.load_race()
-        |> Character.load_classes()
-        |> Character.update_exp_bar()
-        |> Character.load_skills()
-        |> Character.load_abilities()
-        |> Character.load_items()
-        |> Character.set_title()
-        |> Character.set_lore()
-        |> Character.load_materials()
-        |> Character.load_attunements()
-        |> TimerManager.send_after(
-          {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, ref}}
-        )
-        |> TimerManager.send_after(
-          {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
-        )
+        if character.possessed_monster_id do
+          character =
+            character
+            |> Map.put(:monitor_ref, monitor_ref)
+            |> Map.put(:ref, ref)
+            |> Map.put(:leader, ref)
+            |> Map.put(:socket, socket)
+
+          monster =
+            RoomMonster
+            |> Repo.get(character.possessed_monster_id)
+            |> Monster.from_room_monster()
+            |> Map.put(:possessing_character, character)
+            |> Map.put(:admin, character.admin)
+
+          Directory.add_character(%{
+            name: monster.possessing_character.name,
+            room: monster.room_id,
+            ref: monster.possessing_character.ref,
+            title: monster.name
+          })
+
+          monster
+        else
+          character =
+            character
+            |> Map.put(:monitor_ref, monitor_ref)
+            |> Map.put(:ref, ref)
+            |> Map.put(:leader, ref)
+            |> Map.put(:socket, socket)
+            |> Character.load_traits()
+            |> Character.load_race()
+            |> Character.load_classes()
+            |> Character.update_exp_bar()
+            |> Character.load_skills()
+            |> Character.load_abilities()
+            |> Character.load_items()
+            |> Character.set_title()
+            |> Character.set_lore()
+            |> Character.load_materials()
+            |> Character.load_attunements()
+            |> TimerManager.send_after(
+              {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
+            )
+
+          Directory.add_character(%{
+            name: character.name,
+            room: character.room_id,
+            ref: character.ref,
+            title: character.title
+          })
+
+          character
+        end
 
       Mobile.update_prompt(character, room)
 
       room = put_in(room.mobiles[character.ref], character)
 
       Gossip.player_sign_in(character.name)
-
-      Directory.add_character(%{
-        name: character.name,
-        evil_points: character.evil_points,
-        room: character.room_id,
-        ref: character.ref,
-        title: character.title
-      })
 
       Room.update_moblist(room)
 
@@ -533,6 +559,8 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_info({:execute_command, mobile_ref}, room) do
+    Logger.info(":execute_command received for #{mobile_ref}")
+
     room =
       Room.update_mobile(room, mobile_ref, fn room, mobile ->
         if mobile.current_command do
@@ -558,6 +586,8 @@ defmodule ApathyDrive.RoomServer do
               {:noreply, room}
 
             {{:value, {command, args}}, commands} ->
+              Logger.info("executing command: #{command} for #{mobile.name}")
+
               room
               |> put_in([:mobiles, mobile_ref, :commands], commands)
               |> put_in([:mobiles, mobile_ref, :current_command], {command, args})
@@ -696,30 +726,6 @@ defmodule ApathyDrive.RoomServer do
   def handle_info({:rest, mobile_ref}, room) do
     Room.update_hp_bar(room, mobile_ref)
     Room.update_mana_bar(room, mobile_ref)
-
-    {:noreply, room}
-  end
-
-  def handle_info({:reduce_evil_points, mobile_ref}, room) do
-    room =
-      Room.update_mobile(room, mobile_ref, fn _room, character ->
-        points = Character.evil_points_to_restore(character)
-
-        character = Character.alter_evil_points(character, -points)
-
-        Directory.add_character(%{
-          name: character.name,
-          evil_points: character.evil_points,
-          room: character.room_id,
-          ref: character.ref,
-          title: character.title
-        })
-
-        TimerManager.send_after(
-          character,
-          {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
-        )
-      end)
 
     {:noreply, room}
   end

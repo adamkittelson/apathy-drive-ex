@@ -48,15 +48,11 @@ defmodule ApathyDrive.Aggression do
 
   def attacking_owner?(%{}, _mobile, _room), do: false
 
-  def enemy?(%Character{monster: nil}, %{} = _mobile) do
+  def enemy?(%Character{}, %{} = _mobile) do
     false
   end
 
-  def enemy?(%Character{} = character, %Monster{} = monster) do
-    character.auto_attack && (hated?(monster, character) or enemy?(monster, character))
-  end
-
-  def enemy?(%Monster{}, %Character{monster: nil} = _mobile) do
+  def enemy?(%Monster{}, %Character{} = _mobile) do
     false
   end
 
@@ -73,14 +69,6 @@ defmodule ApathyDrive.Aggression do
   end
 
   def enemy?(%Monster{owner_id: id}, _) when not is_nil(id), do: false
-
-  def enemy?(%Monster{alignment: "good", lawful: true}, %Character{} = character) do
-    if Character.legal_status(character) in ["Outlaw", "Criminal", "Villain", "FIEND"] do
-      true
-    else
-      false
-    end
-  end
 
   def enemy?(%Monster{alignment: "good"}, %Character{}) do
     false

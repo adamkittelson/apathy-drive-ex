@@ -26,6 +26,7 @@ defmodule ApathyDrive.Character do
     Mobile,
     Party,
     Room,
+    RoomMonster,
     RoomServer,
     Skill,
     Text,
@@ -67,17 +68,14 @@ defmodule ApathyDrive.Character do
     field(:auto_flee, :boolean)
     field(:auto_attack, :boolean)
     field(:auto_pet_casting, :boolean, default: true)
-    field(:evil_points, :float)
     field(:attack_color, :string, default: "red")
     field(:target_color, :string, default: "red")
     field(:spectator_color, :string, default: "red")
     field(:lore_name, :string)
-    field(:evil_points_last_reduced_at, :utc_datetime_usec)
     field(:chat_tab, :string)
     field(:welcome_token, :string)
     field(:email_verified, :boolean)
 
-    field(:monster, :any, virtual: true)
     field(:dev_point_levels, :any, virtual: true)
     field(:experience, :integer, virtual: true, default: 0)
     field(:next_drain_at, :integer, virtual: true)
@@ -137,6 +135,7 @@ defmodule ApathyDrive.Character do
     field(:death_race_id, :integer, virtual: true)
     belongs_to(:room, Room)
     belongs_to(:class, Class)
+    belongs_to(:possessed_monster, RoomMonster)
 
     has_many(:items_instances, ApathyDrive.ItemInstance)
     has_many(:characters_items, ApathyDrive.CharacterItem)
@@ -252,26 +251,8 @@ defmodule ApathyDrive.Character do
     |> Systems.Effect.add(effect)
   end
 
-  def legal_status(%Character{evil_points: points}) when points >= 210, do: "FIEND"
-  def legal_status(%Character{evil_points: points}) when points >= 120, do: "Villain"
-  def legal_status(%Character{evil_points: points}) when points >= 80, do: "Criminal"
-  def legal_status(%Character{evil_points: points}) when points >= 40, do: "Outlaw"
-  def legal_status(%Character{evil_points: points}) when points >= 30, do: "Seedy"
-  def legal_status(%Character{evil_points: points}) when points > -50, do: "Neutral"
-  def legal_status(%Character{evil_points: points}) when points > -200, do: "Good"
-  def legal_status(%Character{}), do: "Saint"
-
-  def alignment(character) do
-    case legal_status(character) do
-      status when status in ["Saint", "Good"] ->
-        "good"
-
-      "Neutral" ->
-        "neutral"
-
-      _ ->
-        "evil"
-    end
+  def alignment(_character) do
+    "neutral"
   end
 
   def change_class(%Character{} = character, class_id) do
@@ -1055,7 +1036,7 @@ defmodule ApathyDrive.Character do
 
   def add_experience(character, _exp, _silent), do: character
 
-  def prompt(%Character{level: level, hp: hp_percent} = character) do
+  def prompt(%{level: level, hp: hp_percent} = character) do
     max_mana = Mobile.max_mana_at_level(character, level)
 
     powerstone =
@@ -1110,13 +1091,13 @@ defmodule ApathyDrive.Character do
   def hp_prompt_color(hp_percent) when hp_percent > 0.2, do: "dark-red"
   def hp_prompt_color(_hp_percent), do: "red"
 
-  def hp_at_level(%Character{} = character, level) do
+  def hp_at_level(%{} = character, level) do
     max_hp = Mobile.max_hp_at_level(character, level)
 
     trunc(max_hp * character.hp)
   end
 
-  def mana_at_level(%Character{} = character, level) do
+  def mana_at_level(%{} = character, level) do
     base_max_mana = Mobile.max_mana_at_level(character, level)
 
     powerstone_uses =
@@ -1237,7 +1218,7 @@ defmodule ApathyDrive.Character do
       name: character.name,
       class: character.class && character.class.name,
       level: character.level,
-      alignment: legal_status(character),
+      alignment: "neutral",
       devs: Character.development_points(character),
       perception: Mobile.perception(character, room),
       attack: Mobile.accuracy_at_level(character, character.level, room),
@@ -1480,63 +1461,6 @@ defmodule ApathyDrive.Character do
     character
   end
 
-  def evil_points_to_restore(%Character{evil_points_last_reduced_at: nil}), do: 0
-
-  def evil_points_to_restore(%Character{evil_points_last_reduced_at: time}) do
-    DateTime.diff(DateTime.utc_now(), time) * 0.01 / 60
-  end
-
-  def alter_evil_points(character, points) do
-    initial_legal_status = Character.legal_status(character)
-
-    change =
-      if points > 0 do
-        Mobile.send_scroll(
-          character,
-          "<p><span class='dark-grey'>A dark cloud passes over you</span></p>"
-        )
-
-        %{
-          evil_points: min(300.0, character.evil_points + points)
-        }
-      else
-        %{
-          evil_points: max(-220.0, character.evil_points + points),
-          evil_points_last_reduced_at: DateTime.utc_now()
-        }
-      end
-
-    character =
-      character
-      |> Ecto.Changeset.cast(change, ~w(evil_points evil_points_last_reduced_at)a)
-      |> Repo.update!()
-
-    Directory.add_character(%{
-      name: character.name,
-      evil_points: character.evil_points,
-      room: character.room_id,
-      ref: character.ref,
-      title: character.title
-    })
-
-    legal_status = Character.legal_status(character)
-
-    if legal_status != initial_legal_status do
-      color = ApathyDrive.Commands.Who.color(legal_status)
-
-      status = "<span class='#{color}'>#{legal_status}</span>"
-
-      Mobile.send_scroll(
-        character,
-        "<p>Your legal status has changed to #{status}.</p>"
-      )
-
-      Character.load_abilities(character)
-    else
-      character
-    end
-  end
-
   defimpl ApathyDrive.Mobile, for: Character do
     def ability_value(character, ability) do
       Trait.get_cached(character, ability)
@@ -1717,9 +1641,6 @@ defmodule ApathyDrive.Character do
           |> Character.load_abilities()
           |> Mobile.update_prompt(room)
           |> TimerManager.send_after(
-            {:reduce_evil_points, :timer.seconds(60), {:reduce_evil_points, character.ref}}
-          )
-          |> TimerManager.send_after(
             {:heartbeat, ApathyDrive.Regeneration.tick_time(character),
              {:heartbeat, character.ref}}
           )
@@ -1764,55 +1685,12 @@ defmodule ApathyDrive.Character do
       mana >= Ability.mana_cost(character, ability)
     end
 
-    def evil_points(character, %Character{} = attacker) do
-      cond do
-        character.ref == attacker.ref ->
-          0
-
-        Ability.retaliate?(character, attacker) ->
-          # attacker has already received evil points for attacking character
-          0
-
-        Ability.retaliate?(attacker, character) ->
-          # character has attacked the attacker, it's not evil to fight back
-          0
-
-        :else ->
-          character
-          |> Character.legal_status()
-          |> case do
-            "Saint" ->
-              60
-
-            "Good" ->
-              40
-
-            "Neutral" ->
-              20
-
-            _ ->
-              0
-          end
-      end
-    end
-
-    # only characters can receive evil points
-    def evil_points(_character, %{} = _attacker), do: 0
-
-    def enter_message(%Character{monster: nil, name: name}) do
+    def enter_message(%Character{name: name}) do
       "<p><span class='dark-green'>The ghost of</span> <span class='yellow'>#{name}</span><span class='dark-green'> glides in from {{direction}}.</span></p>"
     end
 
-    def enter_message(%Character{name: name}) do
-      "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks in from {{direction}}.</span></p>"
-    end
-
-    def exit_message(%Character{monster: nil, name: name}) do
-      "<p><span class='dark-green'>The ghost of</span> <span class='yellow'>#{name}</span><span class='dark-green'> glides off {{direction}}.</span></p>"
-    end
-
     def exit_message(%Character{name: name}) do
-      "<p><span class='yellow'>#{name}</span><span class='dark-green'> walks off {{direction}}.</span></p>"
+      "<p><span class='dark-green'>The ghost of</span> <span class='yellow'>#{name}</span><span class='dark-green'> glides off {{direction}}.</span></p>"
     end
 
     def has_ability?(%Character{} = character, ability_name) do
@@ -2066,7 +1944,6 @@ defmodule ApathyDrive.Character do
 
       Directory.add_character(%{
         name: character.name,
-        evil_points: character.evil_points,
         room: room_id,
         ref: character.ref,
         title: character.title

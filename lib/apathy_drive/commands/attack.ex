@@ -1,6 +1,6 @@
 defmodule ApathyDrive.Commands.Attack do
   use ApathyDrive.Command
-  alias ApathyDrive.{Match, Mobile, Party}
+  alias ApathyDrive.{Character, Match, Mobile, Party}
 
   def keywords, do: ["a", "attack", "k", "kill"]
 
@@ -34,7 +34,7 @@ defmodule ApathyDrive.Commands.Attack do
     room
   end
 
-  def attack(%{monster: nil} = character, _target) do
+  def attack(%Character{} = character, _target) do
     Mobile.send_scroll(character, "<p>You need a body to do that.</p>")
   end
 

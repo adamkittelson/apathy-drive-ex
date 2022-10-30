@@ -71,6 +71,7 @@ defmodule ApathyDrive.Command do
       Commands.Open,
       Commands.Party,
       Commands.Pick,
+      Commands.Possess,
       Commands.Protection,
       Commands.Read,
       Commands.Remove,

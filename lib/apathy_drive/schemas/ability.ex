@@ -1163,8 +1163,6 @@ defmodule ApathyDrive.Ability do
           mobile
 
         can_execute?(room, caster, ability) ->
-          IO.puts("#{caster.name} using #{ability.name} on targets: #{inspect(targets)}")
-
           if ability.stealth? and (caster && !caster.sneaking) do
             Room.update_mobile(room, caster.ref, fn room, caster ->
               ApathyDrive.AI.auto_attack(caster, room, List.first(targets)) || room
@@ -1573,7 +1571,6 @@ defmodule ApathyDrive.Ability do
       ) do
     cond do
       dodged?(caster, target, ability, room) ->
-        room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
         target = room.mobiles[target.ref]
         Process.put(:ability_result, :dodged)
@@ -1586,7 +1583,6 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       parried?(caster, target, ability, room) ->
-        room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
         target = room.mobiles[target.ref]
         Process.put(:ability_result, :parried)
@@ -1599,7 +1595,6 @@ defmodule ApathyDrive.Ability do
         put_in(room.mobiles[target.ref], target)
 
       blocked?(caster, target, ability, room) ->
-        room = add_evil_points(room, ability, caster, target)
         caster = room.mobiles[caster.ref]
         target = room.mobiles[target.ref]
         Process.put(:ability_result, :blocked)
@@ -1656,7 +1651,6 @@ defmodule ApathyDrive.Ability do
   end
 
   def apply_ability(%Room{} = room, %{} = caster, %{} = target, %Ability{} = ability) do
-    room = add_evil_points(room, ability, caster, target)
     caster = room.mobiles[caster.ref]
     target = room.mobiles[target.ref]
 
@@ -1794,23 +1788,6 @@ defmodule ApathyDrive.Ability do
       _ ->
         "E"
     end
-  end
-
-  def add_evil_points(room, %Ability{kind: kind} = ability, %Character{} = caster, target)
-      when kind in ["attack", "auto attack", "curse"] do
-    evil_points = Mobile.evil_points(target, caster)
-
-    if evil_points > 0 do
-      caster = Character.alter_evil_points(caster, evil_points)
-
-      retaliate(room, ability, caster, target)
-    else
-      retaliate(room, ability, caster, target)
-    end
-  end
-
-  def add_evil_points(room, ability, caster, target) do
-    retaliate(room, ability, caster, target)
   end
 
   def retaliate?(caster, target) do
