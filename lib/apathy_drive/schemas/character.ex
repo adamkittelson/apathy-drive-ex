@@ -1438,6 +1438,8 @@ defmodule ApathyDrive.Character do
     character
   end
 
+  def update_exp_bar(character), do: character
+
   def update_attribute_bar(%Character{socket: socket} = character, attribute) do
     level = character.attribute_levels[attribute]
 

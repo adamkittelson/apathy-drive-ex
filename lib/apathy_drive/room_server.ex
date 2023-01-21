@@ -276,101 +276,132 @@ defmodule ApathyDrive.RoomServer do
   end
 
   def handle_call({:character_connected, %Character{id: id} = character, socket}, _from, room) do
-    if existing_character = Room.find_character(room, id) do
-      monitor_ref =
-        if existing_character.socket != socket do
-          Process.demonitor(existing_character.monitor_ref)
-          send(existing_character.socket, :go_home)
-          Process.monitor(socket)
-        else
-          Process.monitor(socket)
-        end
+    case Room.find_character(room, id) do
+      %Character{} = existing_character ->
+        monitor_ref =
+          if existing_character.socket != socket do
+            Process.demonitor(existing_character.monitor_ref)
+            send(existing_character.socket, :go_home)
+            Process.monitor(socket)
+          else
+            Process.monitor(socket)
+          end
 
-      room =
-        Room.update_mobile(room, existing_character.ref, fn _room, mob ->
-          mob
-          |> Map.put(:socket, socket)
-          |> TimerManager.cancel(:logout)
-          |> Map.put(:monitor_ref, monitor_ref)
-        end)
-
-      room.mobiles[existing_character.ref]
-      |> Mobile.update_prompt(room)
-      |> Character.update_exp_bar()
-
-      Room.update_moblist(room)
-
-      {:reply, room.mobiles[existing_character.ref], room}
-    else
-      monitor_ref = Process.monitor(socket)
-
-      ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
-
-      character =
-        if character.possessed_monster_id do
-          character =
-            character
-            |> Map.put(:monitor_ref, monitor_ref)
-            |> Map.put(:ref, ref)
-            |> Map.put(:leader, ref)
+        room =
+          Room.update_mobile(room, existing_character.ref, fn _room, mob ->
+            mob
             |> Map.put(:socket, socket)
-
-          monster =
-            RoomMonster
-            |> Repo.get(character.possessed_monster_id)
-            |> Monster.from_room_monster()
-            |> Map.put(:possessing_character, character)
-            |> Map.put(:admin, character.admin)
-
-          Directory.add_character(%{
-            name: monster.possessing_character.name,
-            room: monster.room_id,
-            ref: monster.possessing_character.ref,
-            title: monster.name
-          })
-
-          monster
-        else
-          character =
-            character
+            |> TimerManager.cancel(:logout)
             |> Map.put(:monitor_ref, monitor_ref)
-            |> Map.put(:ref, ref)
-            |> Map.put(:leader, ref)
-            |> Map.put(:socket, socket)
-            |> Character.load_traits()
-            |> Character.load_race()
-            |> Character.load_classes()
-            |> Character.update_exp_bar()
-            |> Character.load_skills()
-            |> Character.load_abilities()
-            |> Character.load_items()
-            |> Character.set_title()
-            |> Character.set_lore()
-            |> Character.load_materials()
-            |> Character.load_attunements()
-            |> TimerManager.send_after(
-              {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
-            )
+          end)
 
-          Directory.add_character(%{
-            name: character.name,
-            room: character.room_id,
-            ref: character.ref,
-            title: character.title
-          })
+        room.mobiles[existing_character.ref]
+        |> Mobile.update_prompt(room)
+        |> Character.update_exp_bar()
 
-          character
-        end
+        Room.update_moblist(room)
 
-      Mobile.update_prompt(character, room)
+        {:reply, room.mobiles[existing_character.ref], room}
 
-      room = put_in(room.mobiles[character.ref], character)
+      %Monster{possessing_character: existing_character} = monster ->
+        monitor_ref =
+          if existing_character.socket != socket do
+            Process.demonitor(existing_character.monitor_ref)
+            send(existing_character.socket, :go_home)
+            Process.monitor(socket)
+          else
+            Process.monitor(socket)
+          end
 
-      Gossip.player_sign_in(character.name)
+        room =
+          Room.update_mobile(room, monster.ref, fn _room, mob ->
+            character =
+              existing_character
+              |> Map.put(:socket, socket)
+              |> TimerManager.cancel(:logout)
+              |> Map.put(:monitor_ref, monitor_ref)
 
-      Room.update_moblist(room)
+            Map.put(mob, :possessing_character, character)
+          end)
 
-      {:reply, character, room}
+        room.mobiles[monster.ref]
+        |> Mobile.update_prompt(room)
+        |> Character.update_exp_bar()
+
+        Room.update_moblist(room)
+
+        {:reply, room.mobiles[monster.ref], room}
+
+      nil ->
+        monitor_ref = Process.monitor(socket)
+
+        ref = :crypto.hash(:md5, inspect(make_ref())) |> Base.encode16()
+
+        character =
+          if character.possessed_monster_id do
+            character =
+              character
+              |> Map.put(:monitor_ref, monitor_ref)
+              |> Map.put(:ref, ref)
+              |> Map.put(:leader, ref)
+              |> Map.put(:socket, socket)
+
+            monster =
+              RoomMonster
+              |> Repo.get(character.possessed_monster_id)
+              |> Monster.from_room_monster()
+              |> Map.put(:possessing_character, character)
+              |> Map.put(:admin, character.admin)
+
+            Directory.add_character(%{
+              name: monster.possessing_character.name,
+              room: monster.room_id,
+              ref: monster.possessing_character.ref,
+              title: monster.name
+            })
+
+            monster
+          else
+            character =
+              character
+              |> Map.put(:monitor_ref, monitor_ref)
+              |> Map.put(:ref, ref)
+              |> Map.put(:leader, ref)
+              |> Map.put(:socket, socket)
+              |> Character.load_traits()
+              |> Character.load_race()
+              |> Character.load_classes()
+              |> Character.update_exp_bar()
+              |> Character.load_skills()
+              |> Character.load_abilities()
+              |> Character.load_items()
+              |> Character.set_title()
+              |> Character.set_lore()
+              |> Character.load_materials()
+              |> Character.load_attunements()
+              |> TimerManager.send_after(
+                {:heartbeat, ApathyDrive.Regeneration.tick_time(character), {:heartbeat, ref}}
+              )
+
+            Directory.add_character(%{
+              name: character.name,
+              room: character.room_id,
+              ref: character.ref,
+              title: character.title
+            })
+
+            character
+          end
+
+        Mobile.update_prompt(character, room)
+
+        room = put_in(room.mobiles[character.ref], character)
+
+        Gossip.player_sign_in(character.name)
+
+        Room.update_moblist(room)
+
+        {:reply, character, room}
     end
   end
 

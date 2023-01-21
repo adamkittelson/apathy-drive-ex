@@ -192,6 +192,16 @@ defmodule ApathyDrive.Room do
           Room.update_mana_bar(room, ref)
         end)
 
+      {_ref, %Monster{possessing_character: %{socket: socket}} = character} ->
+        list = moblist(room, character)
+
+        send(socket, {:update_moblist, list})
+
+        Enum.each(room.mobiles, fn {ref, _mobile} ->
+          Room.update_hp_bar(room, ref)
+          Room.update_mana_bar(room, ref)
+        end)
+
       _ ->
         :noop
     end)
@@ -434,6 +444,9 @@ defmodule ApathyDrive.Room do
     |> Map.values()
     |> Enum.find(fn
       %Character{id: ^character_id} ->
+        true
+
+      %Monster{possessing_character: %Character{id: ^character_id}} ->
         true
 
       _ ->
