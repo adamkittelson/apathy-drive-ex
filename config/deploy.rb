@@ -65,7 +65,7 @@ namespace :db do
     end
     run_locally do
       # TODO: change adamkittelson to something from the dev config
-      execute :scp, "apotheos.is:/home/adam/database.tar", "database.tar"
+      execute :scp, "-O", "apotheos.is:/home/adam/database.tar", "database.tar"
       execute :psql, "-U akittelson", "-d template1", "-w", "-h localhost", "-c \"DROP DATABASE apathy_drive;\"" rescue nil
       execute :createdb, "-h localhost", "-U akittelson", "-w", "-O akittelson", "apathy_drive"
       execute :pg_restore, "-U akittelson", "-w", "-h localhost", "-O", "-d apathy_drive", "--role=akittelson", "-Ft database.tar"
