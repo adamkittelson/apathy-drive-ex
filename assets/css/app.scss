@@ -138,6 +138,8 @@
      max-width: 900px;
      min-width: 725px;
      color: white;
+     margin-left: auto;
+     margin-right: auto;
 
      label.error {
        color: red;
@@ -156,7 +158,6 @@
        color: black;
      }
 
-     margin: 0 0 0 25px;
    }
 
    .header {
