@@ -175,43 +175,8 @@ defmodule ApathyDrive.Character do
   def total_development_points(%Character{class_id: nil}), do: 0
 
   def total_development_points(%Character{} = character) do
-    level = character.level
-    modifier = (100 + character.race.race.exp_modifier) / 100
-    current_level = Level.exp_at_level(level - 1, modifier)
-    to_next_level = Level.exp_at_level(level, modifier)
-
-    total_needed = to_next_level - current_level
-    remaining = to_next_level - character.experience
-
-    percent = min(1, 1 - remaining / total_needed)
-
-    level_devs = total_development_points(character, character.level)
-
-    level_devs +
-      round((total_development_points(character, character.level + 1) - level_devs) * percent)
+    10 * character.level
   end
-
-  def total_development_points(character, level) do
-    total_development_points(character, level, 0)
-  end
-
-  def total_development_points(character, level, total) when level > 0 do
-    devs =
-      character.dev_point_levels
-      |> Enum.sort(&(&1 >= &2))
-      |> Enum.map(fn {dev_level, devs} ->
-        if dev_level <= level do
-          devs
-        else
-          0
-        end
-      end)
-      |> Enum.sum()
-
-    total_development_points(character, level - 1, total + devs)
-  end
-
-  def total_development_points(_character, 0, total), do: total
 
   def dev_point_table do
     Enum.each(1..50, fn n ->
@@ -782,7 +747,7 @@ defmodule ApathyDrive.Character do
       [] ->
         punch = %Item{
           type: "Weapon",
-          name: "fist",
+          short_name: "fist",
           weapon_type: "Melee",
           hit_verbs: [["punch", "punches"]],
           miss_verbs: ["throw a punch", "throws a punch"],

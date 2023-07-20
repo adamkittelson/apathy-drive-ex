@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.ChainLightning do
-  alias ApathyDrive.{Ability, Mobile, Skill}
+  alias ApathyDrive.{Ability, Mobile}
   use ApathyDrive.Skill
 
   def ability(character, level \\ nil) do

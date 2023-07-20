@@ -144,7 +144,7 @@ defmodule ApathyDrive.Commands.Train do
       end
 
     dev_points = Character.development_points(character)
-    cost = Trainer.dev_cost(character, skill, trainer.cost_modifier)
+    cost = Trainer.dev_cost(character, skill)
     module = Skill.module(skill.name)
 
     cond do
@@ -237,7 +237,7 @@ defmodule ApathyDrive.Commands.Train do
         "<p>You spend #{devs_spent} to train #{String.downcase(character_skill.skill.name)} to #{level}.</p>"
       )
 
-      cost = Trainer.dev_cost(character, character_skill.skill, trainer.cost_modifier)
+      cost = Trainer.dev_cost(character, character_skill.skill)
 
       Mobile.send_scroll(
         character,

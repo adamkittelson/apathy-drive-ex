@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.VineStrike do
-  alias ApathyDrive.{Ability, Mobile, Skill}
+  alias ApathyDrive.{Ability, Mobile}
   use ApathyDrive.Skill
 
   @skill ApathyDrive.Skills.Elementalism

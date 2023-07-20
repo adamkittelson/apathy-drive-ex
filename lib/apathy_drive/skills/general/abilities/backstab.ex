@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.Backstab do
-  alias ApathyDrive.{Mobile, Skill}
+  alias ApathyDrive.Mobile
   use ApathyDrive.Skill
 
   @skill ApathyDrive.Skills.Stealth

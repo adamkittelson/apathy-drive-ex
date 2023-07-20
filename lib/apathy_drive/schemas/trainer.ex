@@ -5,25 +5,18 @@ defmodule ApathyDrive.Trainer do
   alias ApathyDrive.{Character, Class, Mobile, Repo, Room, Skill, Trainer}
 
   schema "trainers" do
-    field :cost_modifier, :float
-
     belongs_to(:room, Room)
     belongs_to(:skill, Skill)
     belongs_to(:class, Class)
   end
 
-  def dev_cost(%Character{} = character, %Skill{type: "skill"} = skill, multiplier) do
+  def dev_cost(%Character{} = character, %Skill{type: "skill"} = skill) do
     times = Skill.module(skill.name).current_level_times_trained(character)
 
-    if times > 0 do
-      multiplier * times * skill.fast_dev_cost
-    else
-      multiplier * skill.dev_cost
-    end
-    |> trunc()
+    times + 1
   end
 
-  def dev_cost(%Character{} = character, %Skill{type: "ability"} = skill, multiplier) do
+  def dev_cost(%Character{} = character, %Skill{type: "ability"} = skill) do
     times = Skill.module(skill.name).current_level_times_trained(character)
     power_level = Skill.module(skill.name).skill_level(character) + 1
 
@@ -35,15 +28,10 @@ defmodule ApathyDrive.Trainer do
       end
 
     IO.puts(
-      "times: #{times}, power level: #{power_level}, mult: #{multiplier}, cost: #{skill.dev_cost}/#{skill.fast_dev_cost}"
+      "times: #{times}, power level: #{power_level}, cost: #{skill.dev_cost}/#{skill.fast_dev_cost}"
     )
 
-    if times > 0 do
-      power_level * multiplier * times * skill.fast_dev_cost
-    else
-      power_level * multiplier * skill.dev_cost
-    end
-    |> trunc()
+    power_level * times
   end
 
   def guild_name(%Room{class_id: nil}), do: nil
@@ -82,7 +70,7 @@ defmodule ApathyDrive.Trainer do
       |> Ecto.Query.where(room_id: ^id)
       |> Ecto.Query.preload([:skill])
       |> Repo.all()
-      |> Enum.map(&%{skill: &1.skill, class_id: &1.class_id, cost_modifier: &1.cost_modifier})
+      |> Enum.map(&%{skill: &1.skill, class_id: &1.class_id})
 
     case skills do
       [%{skill: nil, class_id: class_id}] ->

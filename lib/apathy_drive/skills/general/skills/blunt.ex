@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.Blunt do
-  alias ApathyDrive.{Ability, Mobile, Skill}
+  alias ApathyDrive.{Ability, Mobile}
   use ApathyDrive.Skill
 
   def ability(character) do

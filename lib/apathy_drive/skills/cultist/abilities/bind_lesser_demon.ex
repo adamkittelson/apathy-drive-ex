@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.BindLesserDemon do
-  alias ApathyDrive.{Ability, Mobile, Skill}
+  alias ApathyDrive.{Ability, Mobile}
   use ApathyDrive.Skill
 
   def prereq(), do: ApathyDrive.Skills.SummonLesserDemon

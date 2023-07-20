@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.Alertness do
-  alias ApathyDrive.{Ability, Character, Mobile, Skill}
+  alias ApathyDrive.{Ability, Character, Mobile}
   use ApathyDrive.Skill
 
   @skill ApathyDrive.Skills.Balance

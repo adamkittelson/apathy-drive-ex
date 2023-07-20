@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.Parry do
-  alias ApathyDrive.{Ability, Mobile, Skill}
+  alias ApathyDrive.{Ability, Mobile}
   use ApathyDrive.Skill
 
   def ability(character) do

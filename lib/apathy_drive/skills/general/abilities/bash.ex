@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.Bash do
-  alias ApathyDrive.{Character, Mobile, Skill}
+  alias ApathyDrive.{Character, Mobile}
   use ApathyDrive.Skill
 
   def ability(character) do

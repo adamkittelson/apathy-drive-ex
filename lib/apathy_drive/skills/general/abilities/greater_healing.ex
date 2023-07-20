@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.GreaterHealing do
-  alias ApathyDrive.{Ability, Character, Mobile, Skill}
+  alias ApathyDrive.{Ability, Character, Mobile}
   use ApathyDrive.Skill
 
   def prereq(), do: ApathyDrive.Skills.MajorHealing

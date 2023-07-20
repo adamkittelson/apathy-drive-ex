@@ -119,10 +119,10 @@ defmodule ApathyDrive.Commands.List do
 
       list
       |> Enum.sort_by(& &1.skill.name)
-      |> Enum.each(fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
+      |> Enum.each(fn %{class_id: _, skill: %Skill{} = skill} ->
         name = String.pad_trailing(skill.name, 30)
 
-        cost = Trainer.dev_cost(character, skill, cost_modifier)
+        cost = Trainer.dev_cost(character, skill)
 
         string =
           cost
@@ -172,10 +172,10 @@ defmodule ApathyDrive.Commands.List do
 
       list
       |> Enum.sort_by(& &1.skill.name)
-      |> Enum.each(fn %{class_id: _, skill: %Skill{} = skill, cost_modifier: cost_modifier} ->
+      |> Enum.each(fn %{class_id: _, skill: %Skill{} = skill} ->
         name = String.pad_trailing(skill.name, 30)
 
-        cost = Trainer.dev_cost(character, skill, cost_modifier)
+        cost = Trainer.dev_cost(character, skill)
 
         string =
           cost

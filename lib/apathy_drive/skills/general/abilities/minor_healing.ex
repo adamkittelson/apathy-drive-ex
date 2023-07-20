@@ -1,5 +1,5 @@
 defmodule ApathyDrive.Skills.MinorHealing do
-  alias ApathyDrive.{Ability, Character, Mobile, Skill}
+  alias ApathyDrive.{Ability, Character, Mobile}
   use ApathyDrive.Skill
 
   def ability(%Character{} = character) do
