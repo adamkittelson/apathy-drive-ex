@@ -17,6 +17,7 @@ defmodule ApathyDrive.Character do
     CharacterSkill,
     CharacterTrait,
     Class,
+    ClassAttribute,
     Currency,
     Directory,
     ElementalLores,
@@ -287,7 +288,6 @@ defmodule ApathyDrive.Character do
         copper: character.copper + currency.copper
       })
       |> Repo.update!()
-      |> Character.add_attribute_experience(%{charm: 1})
     else
       character
     end
@@ -564,21 +564,43 @@ defmodule ApathyDrive.Character do
     Systems.Effect.add(character, effect)
   end
 
-  def set_attribute_levels(%Character{} = character) do
-    [:strength, :agility, :intellect, :willpower, :health, :charm]
+  def set_attribute_levels(%Character{id: id} = character) do
+    attributes =
+      CharacterSkill
+      |> Ecto.Query.where(character_id: ^id)
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn %{level: level, class_id: class_id}, attributes ->
+        ratios =
+          ClassAttribute.load_ratios(class_id)
+
+        ratio_total =
+          Enum.reduce(ratios, 0, &(&1.ratio + &2))
+
+        ratios
+        |> Enum.reduce(attributes, fn %{ratio: ratio, attribute: %{name: name}}, attributes ->
+          attributes = Map.put_new(attributes, name, 0)
+
+          update_in(attributes[name], fn amount ->
+            amount + level * ratio / ratio_total
+          end)
+        end)
+      end)
+
+    ["strength", "agility", "intellect", "willpower", "health", "charm"]
     |> Enum.reduce(character, fn stat, character ->
-      exp = get_in(character, [Access.key!(:race), Access.key!(:"#{stat}_experience")])
+      # round up if it is e.g. 0.99999999
+      amount = attributes[stat] || 0.0
+      amount = Float.ceil(amount, 2)
 
-      modifier = (100 + character.race.race.exp_modifier) / 100
-
-      level = Level.level_at_exp(exp, modifier)
+      stat = :"#{stat}"
 
       character =
         character
-        |> put_in([Access.key!(:attribute_levels), stat], level)
+        |> put_in([Access.key!(:attribute_levels), stat], amount)
         |> put_in(
           [Access.key!(stat)],
-          get_in(character, [Access.key!(:race), Access.key!(:race), Access.key!(stat)]) + level
+          get_in(character, [Access.key!(:race), Access.key!(:race), Access.key!(stat)]) +
+            amount
         )
 
       Character.update_attribute_bar(character, stat)
@@ -1535,13 +1557,7 @@ defmodule ApathyDrive.Character do
   def update_attribute_bar(%Character{socket: socket} = character, attribute) do
     level = character.attribute_levels[attribute]
 
-    exp = get_in(character, [Access.key!(:race), Access.key!(:"#{attribute}_experience")])
-    modifier = (100 + character.race.race.exp_modifier) / 100
-
-    current = Level.exp_at_level(level, modifier)
-    to_level = Level.exp_at_level(level + 1, modifier)
-
-    percent = ((exp - current) / (to_level - current) * 100) |> trunc
+    percent = trunc((level - trunc(level)) * 100)
 
     send(
       socket,
@@ -1624,7 +1640,7 @@ defmodule ApathyDrive.Character do
     end
 
     def attribute_at_level(%Character{} = character, attribute, _level) do
-      Map.get(character, attribute) +
+      trunc(Map.get(character, attribute)) +
         ability_value(character, attribute |> to_string |> String.capitalize())
     end
 

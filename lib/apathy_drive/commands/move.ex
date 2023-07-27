@@ -202,10 +202,6 @@ defmodule ApathyDrive.Commands.Move do
       if character.sneaking do
         character
         |> Mobile.send_scroll("<p>Sneaking...</p>")
-        |> Character.add_attribute_experience(%{
-          agility: 0.75,
-          charm: 0.25
-        })
       else
         character
         |> Map.put(:resting, false)
@@ -279,10 +275,6 @@ defmodule ApathyDrive.Commands.Move do
         if character.sneaking do
           character
           |> Mobile.send_scroll("<p>Sneaking...</p>")
-          |> Character.add_attribute_experience(%{
-            agility: 0.75,
-            charm: 0.25
-          })
         else
           character
           |> Map.put(:resting, false)
@@ -333,10 +325,6 @@ defmodule ApathyDrive.Commands.Move do
         if character.sneaking do
           character
           |> Mobile.send_scroll("<p>Sneaking...</p>")
-          |> Character.add_attribute_experience(%{
-            agility: 0.75,
-            charm: 0.25
-          })
         else
           character
           |> Map.put(:resting, false)
@@ -400,10 +388,6 @@ defmodule ApathyDrive.Commands.Move do
           if character.sneaking do
             character
             |> Mobile.send_scroll("<p>Sneaking...</p>")
-            |> Character.add_attribute_experience(%{
-              agility: 0.75,
-              charm: 0.25
-            })
           else
             character
             |> Map.put(:resting, false)

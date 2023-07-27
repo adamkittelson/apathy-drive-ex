@@ -876,8 +876,7 @@ defmodule ApathyDrive.Ability do
 
                     Mobile.send_scroll(
                       caster,
-                      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{Enchantment.time_left(caster, enchantment)
-                      |> Enchantment.formatted_time_left()}</span></p>"
+                      "<p><span class='dark-green'>Time Left:</span> <span class='dark-cyan'>#{Enchantment.time_left(caster, enchantment) |> Enchantment.formatted_time_left()}</span></p>"
                     )
 
                     TimerManager.send_after(
@@ -1582,10 +1581,6 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Character.add_attribute_experience(%{
-            agility: 0.9,
-            charm: 0.1
-          })
 
         put_in(room.mobiles[target.ref], target)
 
@@ -1599,10 +1594,6 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Character.add_attribute_experience(%{
-            agility: 0.9,
-            charm: 0.1
-          })
 
         put_in(room.mobiles[target.ref], target)
 
@@ -1622,10 +1613,6 @@ defmodule ApathyDrive.Ability do
         target =
           target
           |> aggro_target(ability, caster)
-          |> Character.add_attribute_experience(%{
-            agility: 0.75,
-            charm: 0.24
-          })
           |> update_in([:remaining_energy], &max(0, &1 - block_energy))
 
         put_in(room.mobiles[target.ref], target)
@@ -2504,19 +2491,6 @@ defmodule ApathyDrive.Ability do
         |> Map.put(:ability_special, :normal)
         |> Map.update(:ability_shift, 0, &(&1 - damage_percent))
 
-      target_attribute =
-        if ability.mana > 0 do
-          :willpower
-        else
-          :strength
-        end
-
-      target =
-        Character.add_attribute_experience(target, %{
-          target_attribute => 0.2,
-          :health => 0.8
-        })
-
       enmity = abs(trunc(damage_percent * Mobile.max_hp_at_level(target, target.level)))
 
       target = Aggression.add_hate(target, caster.ref, enmity)
@@ -2546,12 +2520,6 @@ defmodule ApathyDrive.Ability do
     end
 
     if :rand.uniform(100) < crit_chance do
-      caster =
-        Character.add_attribute_experience(caster, %{
-          intellect: 0.5,
-          charm: 0.5
-        })
-
       ability =
         ability
         |> update_in([Access.key!(:traits), "Damage"], fn damages ->

@@ -3,6 +3,7 @@ defmodule ApathyDrive.Commands.Train do
   require Ecto.Query
 
   alias ApathyDrive.{
+    ChannelHistory,
     Character,
     CharacterSkill,
     Currency,
@@ -210,6 +211,8 @@ defmodule ApathyDrive.Commands.Train do
             |> Repo.preload([:skill])
         end
 
+      initial_character = character
+
       character =
         character
         |> Character.load_race()
@@ -234,7 +237,7 @@ defmodule ApathyDrive.Commands.Train do
 
       Mobile.send_scroll(
         character,
-        "<p>You spend #{devs_spent} to train #{String.downcase(character_skill.skill.name)} to #{level}.</p>"
+        "<p>You spend #{devs_spent} development point to train #{String.downcase(character_skill.skill.name)} to #{level}.</p>"
       )
 
       cost = Trainer.dev_cost(character, character_skill.skill)
@@ -250,6 +253,27 @@ defmodule ApathyDrive.Commands.Train do
         character,
         "<p>You have #{devs} development points left.</p>"
       )
+
+      character.attribute_levels
+      |> Enum.each(fn {attribute, _amount} ->
+        new = Mobile.attribute_at_level(character, attribute, character.level)
+        old = Mobile.attribute_at_level(initial_character, attribute, initial_character.level)
+
+        if new > old do
+          message =
+            "<p><span class='yellow'>Your #{attribute} increased to #{new}!</span></p>"
+
+          Repo.insert!(%ChannelHistory{
+            character_id: character.id,
+            message: message
+          })
+
+          Character.send_chat(
+            character,
+            message
+          )
+        end
+      end)
 
       character
     end)
